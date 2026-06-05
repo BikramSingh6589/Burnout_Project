@@ -1,534 +1,758 @@
-# Software Requirements Specification (SRS)
+# Product Requirements Document (PRD)
 
 # Academic Burnout Prediction and Monitoring Platform
 
 Version: 1.0
 
----
-
-# 1. Introduction
-
-## 1.1 Purpose
-
-The purpose of this system is to monitor student well-being, identify early signs of academic burnout, and provide personalized recommendations to reduce burnout risk before academic performance deteriorates.
-
-The platform continuously analyzes student behavior, self-reported assessments, academic performance, and emotional indicators to generate a Burnout Risk Score.
+Owner: Student Wellness Project Team
 
 ---
 
-## 1.2 Scope
+# 1. Product Overview
 
-The Academic Burnout Prediction Platform is a web-based application that enables students and educational institutions to:
+## Product Name
 
-* Assess burnout levels using scientifically inspired indicators.
-* Track academic and lifestyle behaviors.
-* Visualize burnout trends over time.
-* Predict burnout risk levels.
-* Provide personalized recommendations.
-* Alert students when burnout risk becomes high.
+Academic Burnout Prediction and Monitoring Platform
 
-The system does not provide medical diagnosis. It only estimates burnout risk based on collected indicators.
+## Product Vision
+
+To help students identify, monitor, and prevent academic burnout through continuous behavioral analysis, emotional monitoring, personalized recommendations, and AI-assisted wellness support before burnout significantly impacts academic performance and well-being.
 
 ---
 
-## 1.3 Objectives
+# 2. Problem Statement
 
-The system shall:
+Students often experience burnout due to:
 
-* Detect early burnout symptoms.
-* Monitor stress and wellness trends.
-* Improve student productivity and mental well-being.
-* Reduce academic performance decline.
-* Encourage healthier study habits.
+* Academic pressure
+* Continuous examinations
+* Poor sleep habits
+* Excessive screen time
+* Assignment overload
+* Lack of motivation
+* Stress and anxiety
+* Poor study-life balance
+* Procrastination
 
----
+Most students recognize burnout only after:
 
-# 2. Overall Description
+* Grades decline
+* Productivity decreases
+* Attendance drops
+* Motivation disappears
+* Stress becomes overwhelming
 
-## 2.1 Product Perspective
+Current systems provide little to no early-warning support.
 
-The platform acts as a burnout monitoring and prediction system.
-
-Input Sources:
-
-* Student questionnaires
-* Attendance records
-* Assignment records
-* Study logs
-* Sleep tracking
-* Mood journal entries
-
-Output:
-
-* Burnout Score
-* Burnout Risk Level
-* Trend Analysis
-* Recommendations
+The platform aims to detect burnout early and recommend effective interventions.
 
 ---
 
-## 2.2 User Classes
+# 3. Target Users
+
+## Primary User
 
 ### Student
 
-Can:
+Needs:
 
-* Register account
-* Complete assessments
-* Track burnout score
-* Maintain mood journal
-* View recommendations
+* Burnout monitoring
+* Emotional awareness
+* Personalized wellness guidance
+* Progress tracking
+* Early risk detection
 
-### Faculty (Optional)
+Pain Points:
 
-Can:
-
-* View class-level burnout analytics
-* Monitor student engagement
-* Generate reports
-
-### Administrator
-
-Can:
-
-* Manage users
-* Manage questionnaires
-* View platform statistics
-* Configure burnout thresholds
+* Stress
+* Poor sleep
+* Academic overload
+* Low motivation
+* Procrastination
 
 ---
 
-# 3. Functional Requirements
+## Secondary User
 
-## FR-1 User Authentication
+### Administrator
 
-The system shall allow:
+Needs:
 
-* User Registration
+* Monitor high-risk students
+* Manage users
+* Send alerts and notifications
+* Review risk trends
+* Manage recommendation templates
+
+---
+
+# 4. Product Goals
+
+## Goal 1
+
+Detect burnout before severe academic decline occurs.
+
+## Goal 2
+
+Monitor behavioral and emotional changes continuously.
+
+## Goal 3
+
+Provide personalized recommendations.
+
+## Goal 4
+
+Learn which interventions work best for each student.
+
+## Goal 5
+
+Improve student awareness of burnout indicators.
+
+---
+
+# 5. User Roles
+
+## Student
+
+Capabilities:
+
+* Register account
+* Complete assessments
+* Use Wellness AI Assistant
+* Write mood journals
+* View analytics
+* View recommendations
+* Submit recommendation feedback
+* Receive alerts
+
+---
+
+## Administrator
+
+Capabilities:
+
 * Login
-* Logout
-* Password Reset
-* Secure Authentication
+* View student risk status
+* Manage users
+* Manage recommendations
+* Send notifications
+* Monitor platform health
 
-Fields:
+Note:
 
-* Name
+Admin accounts are created manually by the system owner.
+
+No admin registration page exists.
+
+---
+
+# 6. Authentication
+
+## Student Registration
+
+Required Fields:
+
+* Full Name
+* Phone Number
+* Email Address
+* Gender
+* Age
+* Password
+* Confirm Password
+
+---
+
+## Student Login
+
 * Email
-* Student ID
 * Password
 
 ---
 
-## FR-2 Burnout Assessment Questionnaire
+## Admin Login
 
-The system shall provide burnout assessment forms.
-
-Question Categories:
-
-### Stress
-
-Example:
-
-* Rate your stress level from 1-10.
-
-### Motivation
-
-Example:
-
-* How motivated are you to study?
-
-### Energy
-
-Example:
-
-* How energetic do you feel today?
-
-### Sleep Quality
-
-Example:
-
-* Rate last night's sleep.
-
-### Academic Satisfaction
-
-Example:
-
-* How satisfied are you with your academic progress?
-
-Response Scale:
-
-1–10
+* Username
+* Password
 
 ---
 
-## FR-3 Academic Data Tracking
+## Password Recovery
 
-The system shall collect:
-
-### Attendance
-
-Input:
-
-* Attendance percentage
-
-### Grades
-
-Input:
-
-* Current GPA
-* Subject scores
-
-### Assignments
-
-Input:
-
-* Total assignments
-* Pending assignments
+Supported through email verification.
 
 ---
 
-## FR-4 Lifestyle Tracking
+# 7. Core Features
 
-The system shall record:
+## Feature 1: Initial Burnout Assessment (Mandatory)
 
-* Sleep hours
-* Sleep quality
-* Daily study hours
-* Exercise duration
-* Screen time
+Immediately after registration every student must complete an assessment.
+
+Purpose:
+
+* Create baseline profile
+* Generate first burnout score
+* Create personalized recommendations
+
+Questions:
+
+* Stress Level (1–10)
+* Motivation Level (1–10)
+* Energy Level (1–10)
+* Academic Satisfaction (1–10)
+* Sleep Hours
+* Study Hours
+* Screen Time
+* Assignment Backlog
+* Procrastination Level (1–10)
+
+Priority: Critical
 
 ---
 
-## FR-5 Mood Journal
+## Feature 2: Periodic Reassessment
 
-Students shall be able to submit daily journal entries.
+Students complete weekly assessments.
+
+Purpose:
+
+* Track behavioral changes
+* Update burnout profile
+* Validate AI-generated insights
+
+Priority: High
+
+---
+
+## Feature 3: Mood Journal
+
+Students can write daily reflections.
+
+Examples:
+
+* "I feel exhausted."
+* "I am stressed about exams."
+* "I feel productive today."
+
+Priority: High
+
+---
+
+## Feature 4: Sentiment Analysis
+
+The system analyzes journal entries.
+
+Outputs:
+
+* Positive
+* Neutral
+* Negative
+
+Purpose:
+
+* Detect emotional changes
+* Feed burnout prediction engine
+
+Priority: High
+
+---
+
+## Feature 5: Wellness AI Assistant
+
+Available after the initial assessment is completed.
+
+Purpose:
+
+* Daily wellness conversations
+* Burnout monitoring
+* Recommendation feedback collection
+* Wellness guidance
+
+Capabilities:
+
+* Mood check-ins
+* Stress discussions
+* Wellness conversations
+* Recommendation discussions
+* Daily support interactions
+
+Priority: High
+
+---
+
+## Feature 6: Feature Extraction Engine
+
+Extracts burnout-related indicators from:
+
+* AI Assistant conversations
+* Mood Journals
+* Recommendation feedback
 
 Example:
 
-"I feel exhausted and overwhelmed by assignments."
+User:
 
-Stored Data:
+"I slept only four hours yesterday."
 
-* Date
-* Text Entry
+Extracted:
 
----
+* Sleep Hours = 4
 
-## FR-6 Sentiment Analysis Module
+Example:
 
-The system shall analyze mood journal text.
+"I feel overwhelmed with assignments."
 
-Detected Features:
+Extracted:
 
-* Positive sentiment
-* Neutral sentiment
-* Negative sentiment
+* Stress = High
+* Backlog = High
 
-Stress Keywords:
+Only useful indicators are stored.
 
-* tired
-* exhausted
-* overwhelmed
-* burnout
-* hopeless
-* anxious
-
-Output:
-
-Sentiment Score
-
-Range:
-
-0–100
+Priority: Critical
 
 ---
 
-## FR-7 Burnout Score Calculation
+## Feature 7: Burnout Prediction Engine
 
-The system shall calculate a burnout score.
-
-Formula:
-
-Burnout Score =
-(30% Stress Score)
-+
-(20% Sleep Score)
-+
-(15% Motivation Score)
-+
-(15% Attendance Score)
-+
-(10% Assignment Backlog Score)
-+
-(10% Sentiment Score)
+Calculates burnout risk score.
 
 Output Range:
 
 0–100
 
+Priority: Critical
+
 ---
 
-## FR-8 Risk Classification
+## Feature 8: Risk Classification
+
+Categories:
 
 ### Low Risk
 
-0–30
+0–39
 
 ### Moderate Risk
 
-31–60
+40–69
 
 ### High Risk
 
-61–100
+70–100
+
+Priority: Critical
 
 ---
 
-## FR-9 Trend Analysis
+## Feature 9: Recommendation Engine
 
-The system shall track burnout progression.
+Generates personalized recommendations based on:
 
-Weekly Burnout History:
-
-Week 1 → Score 25
-
-Week 2 → Score 38
-
-Week 3 → Score 52
-
-Week 4 → Score 69
-
-The system shall identify:
-
-* Increasing trend
-* Stable trend
-* Decreasing trend
-
----
-
-## FR-10 Recommendation Engine
-
-The platform shall provide recommendations.
+* Burnout score
+* Mood trends
+* Sleep patterns
+* Personal history
+* Population insights
 
 Examples:
 
-If Sleep < 5 Hours:
+* Improve sleep schedule
+* Reduce screen time
+* Take structured study breaks
+* Reduce procrastination
 
-Recommendation:
-
-"Improve sleep duration to at least 7 hours."
-
-If Stress > 8:
-
-Recommendation:
-
-"Consider stress management exercises."
-
-If Attendance < 60%:
-
-Recommendation:
-
-"Focus on attending upcoming classes regularly."
+Priority: Critical
 
 ---
 
-## FR-11 Notifications
+## Feature 10: Recommendation Feedback System
 
-The system shall generate alerts when:
+Students provide structured feedback.
 
-* Burnout risk becomes High
-* Stress level spikes significantly
-* Mood becomes highly negative
-* Attendance falls below threshold
+Options:
 
-Notification Channels:
+* Followed Recommendation
+* Partially Followed
+* Did Not Follow
 
-* Dashboard alerts
-* Email alerts
+Rating:
 
----
+1–5 Stars
 
-## FR-12 Dashboard
-
-The dashboard shall display:
-
-### Current Burnout Score
-
-### Risk Category
-
-### Weekly Trends
-
-### Attendance Statistics
-
-### Sleep Statistics
-
-### Assignment Status
-
-### Mood Analysis
+Priority: High
 
 ---
 
-# 4. Non-Functional Requirements
+## Feature 11: Natural Language Feedback
 
-## Performance
+Students can explain their experiences.
 
-Dashboard load time:
+Examples:
 
-< 3 seconds
+"I started sleeping before 10 PM and feel less stressed."
 
-Burnout prediction generation:
+"Reducing screen time improved my focus."
 
-< 2 seconds
+The system extracts:
 
----
+* Intervention
+* Effectiveness
+* Emotional impact
+* Confidence level
 
-## Scalability
-
-Support:
-
-* 10,000+ students
-
----
-
-## Reliability
-
-Availability:
-
-99% uptime
+Priority: High
 
 ---
 
-## Security
+## Feature 12: Notification System
 
-Password encryption
+Triggers:
 
-Role-based access control
+* High Burnout Risk
+* Stress Increase
+* Negative Mood Trend
+* Missed Assessments
 
-Secure authentication
+Delivery Channels:
 
-Protected personal information
+* In-App Notifications
+* Email Notifications
 
----
-
-## Usability
-
-Responsive UI
-
-Mobile-friendly
-
-Simple navigation
-
-Accessibility support
+Priority: High
 
 ---
 
-# 5. Database Requirements
+## Feature 13: Analytics Dashboard
 
-## Users Table
+Displays:
 
-| Field         | Type    |
-| ------------- | ------- |
-| user_id       | UUID    |
-| name          | VARCHAR |
-| email         | VARCHAR |
-| password_hash | VARCHAR |
+* Burnout Score
+* Risk Level
+* Sleep Trends
+* Mood Trends
+* Study Trends
+* Screen Time Trends
+* Recommendation Impact
 
----
-
-## Assessment Table
-
-| Field            | Type |
-| ---------------- | ---- |
-| assessment_id    | UUID |
-| user_id          | UUID |
-| stress_score     | INT  |
-| motivation_score | INT  |
-| sleep_score      | INT  |
-| energy_score     | INT  |
+Priority: Critical
 
 ---
 
-## Academic Records Table
+# 8. Burnout Intelligence Architecture
 
-| Field               | Type  |
-| ------------------- | ----- |
-| record_id           | UUID  |
-| user_id             | UUID  |
-| attendance          | FLOAT |
-| GPA                 | FLOAT |
-| pending_assignments | INT   |
+The platform uses a five-layer intelligence architecture.
 
 ---
 
-## Mood Journal Table
+## Layer 1: Rule-Based Burnout Scoring
 
-| Field           | Type  |
-| --------------- | ----- |
-| journal_id      | UUID  |
-| user_id         | UUID  |
-| entry_text      | TEXT  |
-| sentiment_score | FLOAT |
+Initial score based on weighted indicators.
 
----
+Inputs:
 
-## Burnout Score Table
-
-| Field         | Type      |
-| ------------- | --------- |
-| burnout_id    | UUID      |
-| user_id       | UUID      |
-| burnout_score | FLOAT     |
-| risk_level    | VARCHAR   |
-| created_at    | TIMESTAMP |
+* Stress
+* Motivation
+* Energy
+* Academic Satisfaction
+* Sleep
+* Study Hours
+* Screen Time
+* Assignment Backlog
+* Procrastination
+* Mood Sentiment
 
 ---
 
-# 6. System Architecture
+## Layer 2: Personal Baseline Analysis
 
-Frontend
+Creates a unique behavioral baseline for each student.
 
-* React.js
-* Tailwind CSS
-* Chart.js
+Purpose:
 
-Backend
+Detect changes relative to the student's own history.
 
-* Node.js
-* Express.js
+Example:
 
-Database
+Day 1
 
-* MongoDB
+Sleep = 7
 
-AI Module
+Stress = 4
 
-* Python
-* NLP Sentiment Analysis
+Day 30
 
-Deployment
+Sleep = 4
 
-* Docker
-* AWS / Render / Railway
+Stress = 8
+
+The system identifies deterioration even if population averages remain normal.
 
 ---
 
-# 7. Future Enhancements
+## Layer 3: Population Machine Learning Model
 
-* AI Chatbot Support
+Uses historical data from all users.
+
+Factors:
+
+* Age
+* Sleep
+* Stress
+* Motivation
+* Study Hours
+* Screen Time
+* Procrastination
+* Mood Sentiment
+
+Purpose:
+
+Identify common burnout patterns.
+
+---
+
+## Layer 4: Feature Extraction Engine
+
+Processes:
+
+* AI conversations
+* Mood journals
+* Feedback submissions
+
+Extracts:
+
+* Stress indicators
+* Sleep indicators
+* Mood indicators
+* Behavioral indicators
+
+Only useful burnout-related information is retained.
+
+---
+
+## Layer 5: Recommendation Learning Engine
+
+Tracks:
+
+* Recommendations given
+* User feedback
+* Burnout score changes
+* Mood improvements
+
+Purpose:
+
+Learn which interventions work best for each student.
+
+---
+
+# 9. Privacy Model
+
+Student privacy is a core requirement.
+
+Administrators can view:
+
+* Burnout score
+* Risk level
+* Sentiment summaries
+* Trend analytics
+
+Administrators cannot view:
+
+* Private AI conversations
+* Raw mood journal content
+
+The system stores only relevant extracted wellness indicators for prediction purposes.
+
+---
+
+# 10. Student Portal
+
+Pages:
+
+### Authentication
+
+* Register
+* Login
+* Forgot Password
+
+### Dashboard
+
+* Burnout Score
+* Risk Level
+* Weekly Insights
+
+### Initial Assessment
+
+### Weekly Assessment
+
+### Mood Journal
+
+### Wellness AI Assistant
+
+### Recommendations
+
+### Notification Center
+
+### History & Trends
+
+### Profile Management
+
+---
+
+# 11. Admin Portal
+
+Pages:
+
+### Admin Login
+
+### Dashboard
+
+Shows:
+
+* Total Students
+* Active Students
+* High-Risk Students
+
+### Student Monitoring
+
+View:
+
+* Burnout Scores
+* Risk Levels
+* Trend History
+
+### High-Risk Student Center
+
+Monitor students requiring intervention.
+
+### Recommendation Management
+
+Create and update recommendation templates.
+
+### Notification Management
+
+Send:
+
+* Individual Alerts
+* Bulk Notifications
+
+### System Settings
+
+Manage platform configurations.
+
+---
+
+# 12. Weekly Wellness Insight Card
+
+Generated automatically.
+
+Example:
+
+Average Sleep: 6.1 Hours
+
+Stress Trend: +15%
+
+Burnout Risk: Moderate
+
+Most Effective Recommendation:
+
+Earlier Sleep Schedule
+
+Suggested Focus:
+
+Reduce screen time before bedtime.
+
+---
+
+# 13. Success Metrics
+
+Student Engagement:
+
+* Daily Active Users
+* Weekly Active Users
+
+Assessment Completion:
+
+* 80% completion rate
+
+Journal Participation:
+
+* 50% of students submit entries weekly
+
+Recommendation Feedback Rate:
+
+* 60% participation
+
+Burnout Detection Accuracy:
+
+* Early identification of high-risk students
+
+---
+
+# 14. MVP Scope
+
+Included:
+
+✓ Student Portal
+
+✓ Admin Portal
+
+✓ Authentication
+
+✓ Initial Assessment
+
+✓ Weekly Assessment
+
+✓ Mood Journal
+
+✓ Sentiment Analysis
+
+✓ Wellness AI Assistant
+
+✓ Burnout Prediction
+
+✓ Risk Classification
+
+✓ Recommendation Engine
+
+✓ Recommendation Feedback
+
+✓ Email Notifications
+
+✓ In-App Notifications
+
+✓ Analytics Dashboard
+
+Not Included:
+
+✗ Mobile Application
+
+✗ Wearable Integration
+
+✗ Smartwatch Tracking
+
+✗ Voice Assistant
+
+✗ Deep Learning Models
+
+---
+
+# 15. Future Roadmap
+
+## Phase 2
+
+* AI Study Planner
+* Smart Timetable Generator
+* Advanced Recommendation Engine
+
+## Phase 3
+
 * Wearable Device Integration
-* Smart Burnout Prediction using Machine Learning
-* Personalized Study Planner
-* Counselor Referral System
-* Institutional Analytics Dashboard
+* Smartwatch Sleep Tracking
+* Advanced Predictive Models
 
----
+## Phase 4
 
-# 8. Success Criteria
-
-The project shall be considered successful if it can:
-
-* Calculate burnout scores accurately.
-* Detect increasing burnout trends.
-* Provide personalized recommendations.
-* Visualize student wellness data.
-* Predict high-risk burnout situations before severe academic decline occurs.
+* Professional Counselor Integration
+* Mental Health Referral Support
+* Advanced Behavioral Analytics

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Inlcude Redix and Cloudnary In my project
 
 
@@ -554,3 +555,5 @@ Not Included
 ✗ Mobile Application
 
 These features will be developed in future phases.
+=======
+>>>>>>> 3870b49 (updating srs)
