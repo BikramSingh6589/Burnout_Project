@@ -53,7 +53,7 @@ The platform aims to detect these warning signs early.
 
 ## Primary Users
 
-### University Students
+### University Students | School and Coaching Students
 
 Need:
 
@@ -64,9 +64,9 @@ Need:
 Pain Points:
 
 * Stress
-* Lack of time management
-* Poor sleep habits
-* Academic overload
+* Lack of time management.
+* Poor sleep habits.
+* Academic overload.
 
 ---
 
@@ -80,13 +80,6 @@ Need:
 * Student engagement monitoring
 
 ---
-
-### Administrators
-
-Need:
-
-* Institution-wide burnout trends
-* Risk reporting
 
 ---
 
@@ -162,9 +155,7 @@ Identify high-risk students before significant GPA decline
 ### Student
 
 As a student,
-
 I want to create an account
-
 so that I can track my burnout status.
 
 ---
@@ -172,9 +163,7 @@ so that I can track my burnout status.
 ## Burnout Assessment
 
 As a student,
-
 I want to answer wellness questions
-
 so that the system can calculate my burnout score.
 
 ---
@@ -182,9 +171,7 @@ so that the system can calculate my burnout score.
 ## Mood Journal
 
 As a student,
-
 I want to write how I feel daily
-
 so that the platform can analyze my emotional state.
 
 ---
@@ -192,9 +179,7 @@ so that the platform can analyze my emotional state.
 ## Dashboard
 
 As a student,
-
 I want to see my burnout trends
-
 so that I can monitor my mental well-being.
 
 ---
@@ -202,9 +187,7 @@ so that I can monitor my mental well-being.
 ## Recommendations
 
 As a student,
-
 I want personalized suggestions
-
 so that I can reduce burnout risk.
 
 ---
@@ -212,9 +195,7 @@ so that I can reduce burnout risk.
 ## Alerts
 
 As a student,
-
 I want warnings when burnout risk increases
-
 so that I can take action early.
 
 ---
@@ -240,15 +221,13 @@ High
 
 Students answer questions about:
 
-* Stress
-* Motivation
-* Energy
-* Sleep
-* Academic Satisfaction
+* Stress.
+* Motivation.
+* Energy.
+* Sleep.
+* Academic Satisfaction.
 
-Priority:
-
-High
+Priority: High
 
 ---
 
@@ -256,13 +235,11 @@ High
 
 Students enter:
 
-* Attendance
-* GPA
-* Assignment Backlog
+* GPA | Percentage | Score of the previous test
+* Backlog (for college students only)
+* Procastination Status [How many tasks you have skipped that are mentioned in your todo but you have not done it?]
 
-Priority:
-
-High
+Priority: High
 
 ---
 
@@ -270,17 +247,15 @@ High
 
 Students record:
 
-* Sleep Hours
-* Study Hours
-* Exercise Time
-* Screen Time
+* Sleep Hours (Approx..).
+* Study Hours (Only Self Study | Library study also included).
+* Exercise Time (Self exercise + Gym)
+* Screen Time* (Includes only non-productive time like social media , games unnexessary videos or shorts in yt etc.)
 
-Priority:
 
-Medium
+Priority: Medium
 
 ---
-
 ## Feature 5: Mood Journal
 
 Students write daily reflections.
@@ -288,42 +263,30 @@ Students write daily reflections.
 Examples:
 
 "I am exhausted after studying all night."
-
 "I feel motivated today."
 
-Priority:
-
-High
+Priority: High
 
 ---
 
 ## Feature 6: Sentiment Analysis
 
 The system analyzes journal entries and determines:
-
 * Positive Mood
 * Neutral Mood
 * Negative Mood
 
-Priority:
-
-High
+Priority: High
 
 ---
 
 ## Feature 7: Burnout Prediction Engine
 
 Calculates:
-
 Burnout Score
+Range: 0–100
 
-Range:
-
-0–100
-
-Priority:
-
-Critical
+Priority: Critical
 
 ---
 
@@ -332,14 +295,11 @@ Critical
 Levels:
 
 Low Risk
-
 Moderate Risk
-
 High Risk
 
-Priority:
 
-Critical
+Priority: Critical
 
 ---
 
@@ -348,16 +308,11 @@ Critical
 Examples:
 
 Sleep Recommendation
-
 Stress Recommendation
-
 Attendance Recommendation
-
 Study Planning Recommendation
 
-Priority:
-
-High
+Priority: High
 
 ---
 
@@ -372,9 +327,7 @@ Displays:
 * Attendance Analytics
 * Sentiment Analytics
 
-Priority:
-
-Critical
+Priority: Critical
 
 ---
 
@@ -396,33 +349,19 @@ High
 
 Inputs:
 
-Stress
+Stress -> Weight: 30%
 
-Weight: 30%
+Sleep Quality -> Weight: 20%
 
-Sleep Quality
+Motivation -> Weight: 15%
 
-Weight: 20%
+Attendance -> Weight: 15%
 
-Motivation
+Assignment Backlog -> Weight: 10%
 
-Weight: 15%
+Mood Sentiment -> Weight: 10%
 
-Attendance
-
-Weight: 15%
-
-Assignment Backlog
-
-Weight: 10%
-
-Mood Sentiment
-
-Weight: 10%
-
-Final Score:
-
-0–100
+Final Score: 0–100
 
 ---
 
