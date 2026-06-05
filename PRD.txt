@@ -1,3 +1,6 @@
+Inlcude Redix and Cloudnary In my project
+
+
 # Product Requirements Document (PRD)
 
 # Academic Burnout Prediction and Monitoring Platform
