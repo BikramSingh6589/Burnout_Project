@@ -1,4 +1,4 @@
-# Product Requirements Document (PRD)
+#System Requirement Specification (SRS)
 
 # Academic Burnout Prediction and Monitoring Platform
 
