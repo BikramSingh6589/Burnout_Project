@@ -75,15 +75,15 @@ export const Register: React.FC = () => {
       <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -z-10"></div>
       <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-secondary/5 rounded-full blur-3xl -z-10"></div>
 
-      <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-8 rounded-2xl border border-slate-100 shadow-level2 glass-card">
+      <div className="max-w-md w-full space-y-8 bg-white/80 dark:bg-[#1E293B]/80 backdrop-blur-md p-8 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-level2 glass-card">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <div className="p-3 bg-primary/10 text-primary rounded-2xl">
               <Activity className="h-8 w-8 stroke-[3]" />
             </div>
           </div>
-          <h2 className="text-3xl font-display font-extrabold text-neutral-slate tracking-tight">Create Account</h2>
-          <p className="text-sm text-neutral-outline">Start monitoring your academic wellness</p>
+          <h2 className="text-3xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC] tracking-tight">Create Account</h2>
+          <p className="text-sm text-neutral-outline dark:text-[#CBD5E1]">Start monitoring your academic wellness</p>
         </div>
 
         {error && (
@@ -95,52 +95,52 @@ export const Register: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-slate" htmlFor="reg-name">Full Name</label>
+              <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="reg-name">Full Name</label>
               <input
                 id="reg-name"
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
                 placeholder="Bikram Singh"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-slate" htmlFor="reg-phone">Phone Number</label>
+              <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="reg-phone">Phone Number</label>
               <input
                 id="reg-phone"
                 type="text"
                 required
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
                 placeholder="+91 98765 43210"
               />
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-neutral-slate" htmlFor="reg-email">Email Address</label>
+            <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="reg-email">Email Address</label>
             <input
               id="reg-email"
               type="email"
               required
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
               placeholder="biko@university.edu"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-slate" htmlFor="reg-gender">Gender</label>
+              <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="reg-gender">Gender</label>
               <select
                 id="reg-gender"
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 bg-white"
+                className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
               >
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -148,14 +148,14 @@ export const Register: React.FC = () => {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-slate" htmlFor="reg-age">Age</label>
+              <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="reg-age">Age</label>
               <input
                 id="reg-age"
                 type="number"
                 required
                 value={formData.age}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
                 placeholder="21"
               />
             </div>
@@ -163,26 +163,26 @@ export const Register: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-slate" htmlFor="reg-password">Password</label>
+              <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="reg-password">Password</label>
               <input
                 id="reg-password"
                 type="password"
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
                 placeholder="••••••••"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-slate" htmlFor="reg-confirm">Confirm Password</label>
+              <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="reg-confirm">Confirm Password</label>
               <input
                 id="reg-confirm"
                 type="password"
                 required
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
                 placeholder="••••••••"
               />
             </div>
@@ -202,13 +202,13 @@ export const Register: React.FC = () => {
             <div className="w-full border-t border-slate-100"></div>
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-neutral-outline">Or Sign Up With</span>
+            <span className="bg-white dark:bg-[#1E293B] px-2 text-neutral-outline dark:text-[#CBD5E1]">Or Sign Up With</span>
           </div>
         </div>
 
         <button
           onClick={handleGoogleSignup}
-          className="w-full border border-slate-200 bg-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 text-neutral-slate hover:bg-slate-50 transition-colors text-xs"
+          className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 text-neutral-slate dark:text-[#E2E8F0] hover:bg-slate-50 dark:hover:bg-[#273449] transition-colors text-xs"
         >
           <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />

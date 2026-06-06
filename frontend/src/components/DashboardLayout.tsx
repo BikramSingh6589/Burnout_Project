@@ -69,13 +69,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-[13px] tracking-tight font-medium whitespace-nowrap transition-all duration-200 ${
+                  className={`group flex items-center space-x-3 px-4 py-3 rounded-xl text-[13px] tracking-tight font-medium whitespace-nowrap transition-all duration-200 ${
                     isActive
                       ? 'bg-primary text-white shadow-md'
-                      : 'text-text-secondary hover:bg-surface-elevated hover:text-primary'
+                      : 'text-text-secondary hover:bg-surface-elevated hover:text-primary dark:hover:bg-[rgba(124,92,252,0.18)] dark:hover:text-[#9B84FF]'
                   }`}
                 >
-                  <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-white' : 'text-text-muted'}`} />
+                  <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-white' : 'text-text-muted dark:group-hover:text-[#9B84FF]'}`} />
                   <span>{item.name}</span>
                 </Link>
               );

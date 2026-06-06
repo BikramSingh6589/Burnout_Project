@@ -20,15 +20,15 @@ export const ForgotPassword: React.FC = () => {
 
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden">
-      <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-8 rounded-2xl border border-slate-100 shadow-level2 glass-card">
+      <div className="max-w-md w-full space-y-8 bg-white/80 dark:bg-[#1E293B]/80 backdrop-blur-md p-8 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-level2 glass-card">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <div className="p-3 bg-primary/10 text-primary rounded-2xl">
               <Mail className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <h2 className="text-3xl font-display font-extrabold text-neutral-slate tracking-tight">Recover Password</h2>
-          <p className="text-sm text-neutral-outline">Reset your password via verified email link</p>
+          <h2 className="text-3xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC] tracking-tight">Recover Password</h2>
+          <p className="text-sm text-neutral-outline dark:text-[#CBD5E1]">Reset your password via verified email link</p>
         </div>
 
         {submitted ? (
@@ -38,7 +38,7 @@ export const ForgotPassword: React.FC = () => {
             </div>
             <Link
               to="/auth/login"
-              className="w-full border border-slate-200 bg-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 text-neutral-slate hover:bg-slate-50 transition-colors text-xs"
+              className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 text-neutral-slate dark:text-[#E2E8F0] hover:bg-slate-50 dark:hover:bg-[#273449] transition-colors text-xs"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               <span>Back to Login</span>
@@ -47,7 +47,7 @@ export const ForgotPassword: React.FC = () => {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-neutral-slate" htmlFor="recovery-email">
+              <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="recovery-email">
                 Email Address
               </label>
               <input
@@ -56,7 +56,7 @@ export const ForgotPassword: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+                className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-4 focus:ring-primary/10"
                 placeholder="biko@university.edu"
               />
             </div>

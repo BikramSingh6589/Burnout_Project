@@ -157,7 +157,7 @@ export const Assessment: React.FC = () => {
                     max="24"
                     value={formData.studyHours}
                     onChange={(e) => setFormData({ ...formData, studyHours: Math.min(24, Math.max(0, Number(e.target.value))) })}
-                    className="w-full border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
 
@@ -171,7 +171,7 @@ export const Assessment: React.FC = () => {
                     max="50"
                     value={formData.assignmentBacklog}
                     onChange={(e) => setFormData({ ...formData, assignmentBacklog: Math.max(0, Number(e.target.value)) })}
-                    className="w-full border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
               </div>
@@ -180,7 +180,7 @@ export const Assessment: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleNext}
-                  className="bg-primary text-white font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 hover:bg-primary/95 transition-all text-xs"
+                  className="bg-primary text-white font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 text-xs"
                 >
                   <span>Next Step</span>
                   <ArrowRight className="h-4 w-4" />
@@ -241,7 +241,7 @@ export const Assessment: React.FC = () => {
                     step="0.5"
                     value={formData.sleepHours}
                     onChange={(e) => setFormData({ ...formData, sleepHours: Math.min(24, Math.max(0, Number(e.target.value))) })}
-                    className="w-full border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
 
@@ -256,7 +256,7 @@ export const Assessment: React.FC = () => {
                     step="0.5"
                     value={formData.screenTime}
                     onChange={(e) => setFormData({ ...formData, screenTime: Math.min(24, Math.max(0, Number(e.target.value))) })}
-                    className="w-full border border-border rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
               </div>
@@ -265,7 +265,7 @@ export const Assessment: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleBack}
-                  className="bg-transparent hover:bg-surface-elevated text-text-primary border border-border font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 text-xs transition-all"
+                  className="bg-surface dark:bg-[#111827] hover:bg-surface-elevated dark:hover:bg-slate-800 text-text-primary dark:text-[#E2E8F0] border border-border dark:border-[#334155] font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 text-xs transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span>Back</span>
@@ -273,7 +273,7 @@ export const Assessment: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="bg-primary text-white font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 hover:bg-primary/95 transition-all text-xs"
+                  className="bg-primary text-white font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 text-xs"
                 >
                   <span>Submit Assessment</span>
                   <CheckCircle2 className="h-4 w-4" />

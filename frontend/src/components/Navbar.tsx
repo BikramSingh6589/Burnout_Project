@@ -1,16 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Bell, LogOut, Activity, ChevronDown, Menu, X, Settings, Moon, Sun } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated, notifications, logout, markNotificationRead } = useStore();
+  const { user, isAuthenticated, notifications, logout, markNotificationRead, deleteAllNotifications } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
+  const notifRef = useRef<HTMLDivElement | null>(null);
+  const profileRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (notifDropdownOpen && notifRef.current && !notifRef.current.contains(target)) {
+        setNotifDropdownOpen(false);
+      }
+      if (profileDropdownOpen && profileRef.current && !profileRef.current.contains(target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [notifDropdownOpen, profileDropdownOpen]);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -48,9 +65,9 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <nav className="sticky top-0 z-40 w-full glass-nav transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+    <nav className="sticky top-0 z-40 w-full glass-nav overflow-visible transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 overflow-visible">
+        <div className="flex justify-between h-16 overflow-visible">
           {/* Left Section - Logo */}
           <div className="flex items-center">
             <Link to="/home" className="flex items-center space-x-2 text-primary font-display font-extrabold text-2xl tracking-tight transition-transform duration-200 hover:scale-105">
@@ -142,7 +159,7 @@ export const Navbar: React.FC = () => {
                   {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                 </button>
 
-                <div className="relative">
+                <div className="relative" ref={notifRef}>
                   <button
                     onClick={() => {
                       setNotifDropdownOpen(!notifDropdownOpen);
@@ -150,7 +167,7 @@ export const Navbar: React.FC = () => {
                     }}
                     className="p-2 rounded-full text-text-primary hover:bg-surface-elevated hover:text-primary relative transition-all"
                   >
-                    <Bell className="h-5. w-5" />
+                    <Bell className="h-5 w-5" />
                     {activeNotifications.length > 0 && (
                       <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-error rounded-full animate-pulse">
                         {activeNotifications.length}
@@ -160,20 +177,33 @@ export const Navbar: React.FC = () => {
 
                   {/* Notification Dropdown */}
                   {notifDropdownOpen && (
-                    <div className="absolute right-0 mt-3 w-80 bg-white/95 dark:bg-[#1E293B] backdrop-blur-xl rounded-2xl border border-slate-200/60 dark:border-[#334155] shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
-                      <div className="px-5 py-3 border-b border-slate-100/50 dark:border-[#334155] flex justify-between items-center bg-slate-50/50 dark:bg-[#111827]/50">
+                    <div className="absolute right-0 mt-3 w-96 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-sm rounded-3xl border border-slate-200/60 dark:border-[#334155] shadow-2xl py-2 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                      <div className="px-5 py-4 border-b border-slate-100/50 dark:border-[#334155] flex justify-between items-center bg-slate-50/60 dark:bg-[#111827]/70">
                         <span className="font-semibold text-sm tracking-tight dark:text-[#F8FAFC]">Notifications</span>
-                        <Link
-                          to="/notifications"
-                          onClick={() => setNotifDropdownOpen(false)}
-                          className="text-xs text-primary hover:underline"
-                        >
-                          View All
-                        </Link>
+                        <div className="flex items-center gap-3">
+                          {notifications.length > 0 && (
+                            <button
+                              onClick={() => {
+                                deleteAllNotifications();
+                                setNotifDropdownOpen(false);
+                              }}
+                              className="text-xs text-error hover:underline"
+                            >
+                              Clear All
+                            </button>
+                          )}
+                          <Link
+                            to="/notifications"
+                            onClick={() => setNotifDropdownOpen(false)}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            View All
+                          </Link>
+                        </div>
                       </div>
-                      <div className="max-h-64 overflow-y-auto">
+                      <div className="max-h-72 overflow-y-auto">
                         {notifications.length === 0 ? (
-                          <div className="px-4 py-6 text-center text-xs text-text-muted">
+                          <div className="px-5 py-8 text-center text-sm text-text-muted dark:text-[#CBD5E1]">
                             No notifications
                           </div>
                         ) : (
@@ -186,7 +216,7 @@ export const Navbar: React.FC = () => {
                                 if (n.category === 'Recommendation') navigate('/dashboard/recommendations');
                                 setNotifDropdownOpen(false);
                               }}
-                              className={`px-5 py-3 hover:bg-slate-50 dark:hover:bg-[#273449] cursor-pointer border-b border-slate-100/50 dark:border-[#334155] last:border-0 text-xs transition-colors ${
+                              className={`px-5 py-4 hover:bg-slate-50 dark:hover:bg-[#273449] cursor-pointer border-b border-slate-100/50 dark:border-[#334155] last:border-0 text-sm transition-colors ${
                                 !n.read ? 'bg-primary/5 dark:bg-primary/10 font-medium' : ''
                               }`}
                             >
@@ -211,7 +241,7 @@ export const Navbar: React.FC = () => {
                 </div>
 
                 {/* Profile dropdown */}
-                <div className="relative">
+                <div className="relative" ref={profileRef}>
                   <button
                     onClick={() => {
                       setProfileDropdownOpen(!profileDropdownOpen);
@@ -226,10 +256,10 @@ export const Navbar: React.FC = () => {
                   </button>
 
                   {profileDropdownOpen && (
-                    <div className="absolute right-0 mt-3 w-56 bg-white/95 dark:bg-[#1E293B] backdrop-blur-xl rounded-2xl border border-slate-200/60 dark:border-[#334155] shadow-2xl py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                    <div className="absolute right-0 mt-3 w-56 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-sm rounded-2xl border border-slate-200/60 dark:border-[#334155] shadow-2xl py-1 z-[1000] animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
                       <div className="px-5 py-3 border-b border-slate-100/50 dark:border-[#334155] bg-slate-50/50 dark:bg-[#111827]/50">
-                        <p className="text-sm font-semibold tracking-tight text-text-primary dark:text-[#F8FAFC] line-clamp-1">{user?.name}</p>
-                        <p className="text-xs text-text-muted dark:text-[#CBD5E1] line-clamp-1 mt-0.5">{user?.email}</p>
+                        <p className="text-sm font-semibold tracking-tight text-text-primary dark:text-[#F8FAFC] truncate">{user?.name}</p>
+                        <p className="text-xs text-text-muted dark:text-[#CBD5E1] truncate mt-0.5">{user?.email}</p>
                       </div>
                       
                       {user?.role === 'student' && (

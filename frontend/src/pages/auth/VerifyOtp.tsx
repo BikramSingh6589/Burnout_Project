@@ -40,15 +40,15 @@ export const VerifyOtp: React.FC = () => {
 
   return (
     <div className="min-h-[75vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden">
-      <div className="max-w-md w-full space-y-8 bg-white/80 backdrop-blur-md p-8 rounded-2xl border border-slate-100 shadow-level2 glass-card">
+      <div className="max-w-md w-full space-y-8 bg-white/80 dark:bg-[#1E293B]/80 backdrop-blur-md p-8 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-level2 glass-card">
         <div className="text-center space-y-2">
           <div className="flex justify-center">
             <div className="p-3 bg-primary/10 text-primary rounded-2xl">
               <ShieldCheck className="h-8 w-8 text-primary" />
             </div>
           </div>
-          <h2 className="text-3xl font-display font-extrabold text-neutral-slate tracking-tight">Email Verification</h2>
-          <p className="text-sm text-neutral-outline">We sent a 6-digit OTP code to verify your account</p>
+          <h2 className="text-3xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC] tracking-tight">Email Verification</h2>
+          <p className="text-sm text-neutral-outline dark:text-[#CBD5E1]">We sent a 6-digit OTP code to verify your account</p>
         </div>
 
         {error && (
@@ -65,7 +65,7 @@ export const VerifyOtp: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-neutral-slate block text-center mb-2" htmlFor="otp-input">
+            <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0] block text-center mb-2" htmlFor="otp-input">
               Enter 6-Digit OTP
             </label>
             <input
@@ -74,7 +74,7 @@ export const VerifyOtp: React.FC = () => {
               maxLength={6}
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-              className="w-full text-center tracking-[0.5em] text-2xl font-mono border border-slate-200 rounded-lg px-3 py-3 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10"
+              className="w-full text-center tracking-[0.5em] text-2xl font-mono border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-3 focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-4 focus:ring-primary/10"
               placeholder="000000"
               required
             />

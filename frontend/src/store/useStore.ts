@@ -127,6 +127,7 @@ interface AppState {
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   deleteNotification: (id: string) => void;
+  deleteAllNotifications: () => void;
   addNotification: (category: Notification['category'], message: string) => void;
 
   // Chat actions
@@ -382,11 +383,15 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     // Default student profile
-    const name = email.split('@')[0];
-    const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
+    const emailPrefix = email.split('@')[0];
+    const nameParts = emailPrefix.split(/[._-]+/).filter(Boolean);
+    const displayName = nameParts
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+      .join(' ');
+    const finalName = displayName.trim() ? displayName : 'Student Singh';
     set({
       user: {
-        name: `${capitalizedName} Singh`,
+        name: finalName,
         email: email,
         phone: '+91 9876543210',
         gender: 'Male',
@@ -681,6 +686,12 @@ export const useStore = create<AppState>((set, get) => ({
   deleteNotification: (id) => {
     set((state) => ({
       notifications: state.notifications.filter((n) => n.id !== id),
+    }));
+  },
+
+  deleteAllNotifications: () => {
+    set(() => ({
+      notifications: [],
     }));
   },
 
