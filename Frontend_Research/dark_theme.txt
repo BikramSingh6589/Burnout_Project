@@ -1,0 +1,657 @@
+Dark_theme ---------------------
+
+
+# Dark Theme Design System Specification
+
+# Academic Burnout Prediction Platform
+
+Version: 1.0
+
+---
+
+# 1. Dark Theme Philosophy
+
+The dark theme should feel:
+
+* Calm
+* Focused
+* Comfortable
+* Professional
+* Wellness-Oriented
+* Eye-Friendly
+
+The goal is to reduce eye strain during long study sessions and late-night usage.
+
+Avoid:
+
+* Pure Black (#000000)
+* Neon Colors
+* High Contrast Everywhere
+* Aggressive Red Alerts
+* Gaming-style UI
+
+---
+
+# 2. Dark Theme Style
+
+Theme Name:
+
+Midnight Wellness
+
+Design Inspiration:
+
+* Linear Dark
+* Notion Dark
+* Raycast
+* Vercel Dark
+* Headspace Night Mode
+
+---
+
+# 3. Dark Theme Color System
+
+## Primary Color
+
+Keep identical to light mode for brand consistency.
+
+Primary 500
+
+#4F46E5
+
+Usage:
+
+* Primary Buttons
+* Active Navigation
+* Charts
+* Progress Indicators
+* Interactive Elements
+
+---
+
+## Secondary Color
+
+#2DD4BF
+
+Usage:
+
+* Analytics
+* Secondary Charts
+* Supporting Highlights
+
+---
+
+## Success Color
+
+#22C55E
+
+Usage:
+
+* Low Risk
+* Positive Trends
+* Success States
+
+---
+
+## Warning Color
+
+#FBBF24
+
+Usage:
+
+* Moderate Risk
+* Warnings
+* Pending Actions
+
+---
+
+## Danger Color
+
+#F87171
+
+Usage:
+
+* High Risk
+* Critical Alerts
+
+---
+
+# 4. Background Colors
+
+## Main Background
+
+#0F172A
+
+Used For:
+
+* Entire Application Background
+
+---
+
+## Secondary Background
+
+#111827
+
+Used For:
+
+* Alternate Sections
+* Sidebar
+
+---
+
+## Surface Color
+
+#1E293B
+
+Used For:
+
+* Cards
+* Forms
+* Panels
+* Modals
+
+---
+
+## Elevated Surface
+
+#334155
+
+Used For:
+
+* Dropdowns
+* Popovers
+* Notification Panels
+
+---
+
+## Border Color
+
+#334155
+
+Used For:
+
+* Card Borders
+* Input Borders
+* Dividers
+
+---
+
+# 5. Text Colors
+
+## Primary Text
+
+#F8FAFC
+
+Usage:
+
+* Headings
+* Important Information
+
+---
+
+## Secondary Text
+
+#CBD5E1
+
+Usage:
+
+* Descriptions
+* Labels
+
+---
+
+## Muted Text
+
+#94A3B8
+
+Usage:
+
+* Placeholder Text
+* Captions
+* Metadata
+
+---
+
+## Disabled Text
+
+#64748B
+
+Usage:
+
+* Disabled Components
+
+---
+
+# 6. Design Tokens
+
+IMPORTANT
+
+Never hardcode colors.
+
+Use CSS Variables only.
+
+---
+
+:root.dark {
+
+--color-primary: #4F46E5;
+
+--color-secondary: #2DD4BF;
+
+--color-success: #22C55E;
+
+--color-warning: #FBBF24;
+
+--color-danger: #F87171;
+
+--color-background: #0F172A;
+
+--color-background-secondary: #111827;
+
+--color-surface: #1E293B;
+
+--color-surface-elevated: #334155;
+
+--color-border: #334155;
+
+--text-primary: #F8FAFC;
+
+--text-secondary: #CBD5E1;
+
+--text-muted: #94A3B8;
+
+--text-disabled: #64748B;
+
+}
+
+Changing:
+
+--color-primary
+
+must update the entire dark theme.
+
+---
+
+# 7. Typography
+
+Primary Font
+
+Inter
+
+Fallback
+
+sans-serif
+
+Google Font
+
+Inter
+
+---
+
+# 8. Border Radius
+
+Small
+
+8px
+
+Medium
+
+12px
+
+Large
+
+16px
+
+Extra Large
+
+24px
+
+Cards
+
+16px
+
+Buttons
+
+12px
+
+Inputs
+
+12px
+
+---
+
+# 9. Shadows
+
+Card Shadow
+
+0px 4px 12px rgba(0,0,0,0.25)
+
+---
+
+Hover Shadow
+
+0px 8px 24px rgba(0,0,0,0.35)
+
+---
+
+Modal Shadow
+
+0px 12px 40px rgba(0,0,0,0.45)
+
+---
+
+# 10. Buttons
+
+## Primary Button
+
+Background
+
+var(--color-primary)
+
+Text
+
+#FFFFFF
+
+Hover
+
+#4338CA
+
+---
+
+## Secondary Button
+
+Background
+
+Transparent
+
+Border
+
+1px solid var(--color-primary)
+
+Text
+
+var(--color-primary)
+
+Hover Background
+
+rgba(79,70,229,0.10)
+
+---
+
+## Ghost Button
+
+Background
+
+Transparent
+
+Text
+
+var(--text-primary)
+
+Hover Background
+
+rgba(255,255,255,0.05)
+
+---
+
+## Danger Button
+
+Background
+
+var(--color-danger)
+
+Text
+
+White
+
+Hover
+
+#EF4444
+
+---
+
+# 11. Dashboard Components
+
+## Sidebar
+
+Background
+
+#111827
+
+Border
+
+#334155
+
+---
+
+## Top Navbar
+
+Background
+
+rgba(15,23,42,0.85)
+
+Backdrop Blur
+
+12px
+
+Height
+
+72px
+
+---
+
+## Cards
+
+Background
+
+#1E293B
+
+Border
+
+#334155
+
+Radius
+
+16px
+
+Padding
+
+24px
+
+---
+
+# 12. Risk Indicators
+
+Low Risk
+
+#22C55E
+
+Background
+
+rgba(34,197,94,0.15)
+
+---
+
+Moderate Risk
+
+#FBBF24
+
+Background
+
+rgba(251,191,36,0.15)
+
+---
+
+High Risk
+
+#F87171
+
+Background
+
+rgba(248,113,113,0.15)
+
+---
+
+# 13. Chart Colors
+
+Burnout Trend
+
+#4F46E5
+
+---
+
+Sleep Trend
+
+#2DD4BF
+
+---
+
+Mood Trend
+
+#22C55E
+
+---
+
+Stress Trend
+
+#F87171
+
+---
+
+Academic Satisfaction
+
+#A78BFA
+
+---
+
+Screen Time
+
+#FBBF24
+
+---
+
+# 14. Input Components
+
+Input Background
+
+#1E293B
+
+Border
+
+#334155
+
+Text
+
+#F8FAFC
+
+Placeholder
+
+#94A3B8
+
+Focus Border
+
+var(--color-primary)
+
+Focus Ring
+
+rgba(79,70,229,0.25)
+
+---
+
+# 15. Notification Colors
+
+Info
+
+#60A5FA
+
+---
+
+Success
+
+#22C55E
+
+---
+
+Warning
+
+#FBBF24
+
+---
+
+Error
+
+#F87171
+
+---
+
+# 16. AI Assistant Widget
+
+Background
+
+#1E293B
+
+Border
+
+#334155
+
+Header
+
+#111827
+
+Message Bubble User
+
+#4F46E5
+
+Message Bubble AI
+
+#334155
+
+---
+
+# 17. Tailwind Theme Configuration
+
+colors:
+
+primary: "var(--color-primary)"
+
+secondary: "var(--color-secondary)"
+
+success: "var(--color-success)"
+
+warning: "var(--color-warning)"
+
+danger: "var(--color-danger)"
+
+background: "var(--color-background)"
+
+surface: "var(--color-surface)"
+
+surfaceElevated: "var(--color-surface-elevated)"
+
+border: "var(--color-border)"
+
+textPrimary: "var(--text-primary)"
+
+textSecondary: "var(--text-secondary)"
+
+textMuted: "var(--text-muted)"
+
+---
+
+# 18. Theme Switching Rules
+
+The application must support:
+
+* Light Theme
+* Dark Theme
+
+Theme switching should occur by toggling:
+
+html.dark
+
+or
+
+data-theme="dark"
+
+No component should require manual color changes.
+
+All components must automatically adapt through CSS variables.
