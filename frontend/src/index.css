@@ -3,7 +3,107 @@
 @tailwind utilities;
 
 @layer base {
-  body {
-    @apply bg-background text-foreground font-sans antialiased;
+  :root {
+    font-size: 16px;
+    --color-primary: #433FE5;
+    --color-secondary: #8127CF;
+    --color-success: #10B981;
+    --color-warning: #FBBF24;
+    --color-danger: #EF4444;
+    --color-background: #FAF8FF;
+    --color-background-secondary: #FBFBFF;
+    --color-surface: #FFFFFF;
+    --color-surface-elevated: #F2F3FF;
+    --color-border: #E2E8F0;
+    --text-primary: #131B2E;
+    --text-secondary: #767587;
+    --text-muted: #94A3B8;
+    --text-disabled: #C7C4D8;
   }
+
+  :root.dark {
+    --color-primary: #4F46E5;
+    --color-secondary: #2DD4BF;
+    --color-success: #22C55E;
+    --color-warning: #FBBF24;
+    --color-danger: #F87171;
+    --color-background: #0F172A;
+    --color-background-secondary: #111827;
+    --color-surface: #1E293B;
+    --color-surface-elevated: #334155;
+    --color-border: #334155;
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    --text-muted: #94A3B8;
+    --text-disabled: #64748B;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--text-primary);
+    @apply font-sans antialiased transition-colors duration-300;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    @apply font-display transition-colors duration-300;
+    line-height: 1.25;
+  }
+}
+
+/* ── Global text-size floor: prevent micro-text ─────────────────────── */
+/* Tailwind's text-xs = 12px → override to 13.5px across the board      */
+/* Tailwind's text-sm = 14px → override to 15px                         */
+/* Tailwind's text-base = 16px stays the same                            */
+
+@layer utilities {
+  .text-xs  { font-size: 0.84375rem; }   /* 13.5px  (was 12px)  */
+  .text-sm  { font-size: 0.9375rem;  }   /* 15px    (was 14px)  */
+  .text-base{ font-size: 1rem;       }   /* 16px    (unchanged) */
+  .text-lg  { font-size: 1.125rem;   }   /* 18px    (unchanged) */
+  .text-xl  { font-size: 1.25rem;    }   /* 20px    (unchanged) */
+  .text-2xl { font-size: 1.5rem;     }   /* 24px    (unchanged) */
+  .text-3xl { font-size: 1.875rem;   }   /* 30px    (unchanged) */
+}
+
+/* Bump arbitrary micro-sizes to a readable minimum */
+[class*="text-[9px]"]  { font-size: 11px !important; }
+[class*="text-[10px]"] { font-size: 12px !important; }
+[class*="text-[11px]"] { font-size: 13px !important; }
+
+/* Custom Design Tokens & Classes */
+
+.glass-panel {
+  backdrop-filter: blur(12px);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  opacity: 0.85;
+}
+
+.glass-nav {
+  backdrop-filter: blur(12px);
+  background-color: var(--color-background);
+  border-bottom: 1px solid var(--color-border);
+  transition: background-color 300ms, border-color 300ms;
+}
+
+.glass-card {
+  backdrop-filter: blur(8px);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  @apply shadow-level2 transition-colors duration-300;
+}
+
+/* Scrollbar customizations */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 dark:bg-slate-700 rounded-full hover:bg-slate-400 dark:hover:bg-slate-600;
 }
