@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { AIWidget } from './components/AIWidget';
@@ -7,16 +7,44 @@ import { Register } from './pages/auth/Register';
 import { Login } from './pages/auth/Login';
 import { VerifyOtp } from './pages/auth/VerifyOtp';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
-import { Assessment } from './pages/Assessment';
-import { Dashboard } from './pages/Dashboard';
-import { HistoryTrends } from './pages/HistoryTrends';
-import { Recommendations } from './pages/Recommendations';
-import { Profile } from './pages/Profile';
-import { Journal } from './pages/Journal';
-import { Notifications } from './pages/Notifications';
 import { AdminLogin } from './pages/admin/AdminLogin';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { useStore } from './store/useStore';
+import { LazyRoute } from './components/skeletons/LazyRoute';
+import {
+  AssessmentSkeleton,
+  DashboardSkeleton,
+  HistoryTrendsSkeleton,
+  RecommendationSkeleton,
+  ProfileSkeleton,
+  JournalSkeleton,
+  NotificationSkeleton,
+  AdminDashboardSkeleton,
+} from './components/skeletons';
+
+const Assessment = lazy(() =>
+  import('./pages/Assessment').then((m) => ({ default: m.Assessment }))
+);
+const Dashboard = lazy(() =>
+  import('./pages/Dashboard').then((m) => ({ default: m.Dashboard }))
+);
+const HistoryTrends = lazy(() =>
+  import('./pages/HistoryTrends').then((m) => ({ default: m.HistoryTrends }))
+);
+const Recommendations = lazy(() =>
+  import('./pages/Recommendations').then((m) => ({ default: m.Recommendations }))
+);
+const Profile = lazy(() =>
+  import('./pages/Profile').then((m) => ({ default: m.Profile }))
+);
+const Journal = lazy(() =>
+  import('./pages/Journal').then((m) => ({ default: m.Journal }))
+);
+const Notifications = lazy(() =>
+  import('./pages/Notifications').then((m) => ({ default: m.Notifications }))
+);
+const AdminDashboard = lazy(() =>
+  import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
+);
 
 // Root redirect: unauthenticated → Register, authenticated → Home
 const RootRedirect: React.FC = () => {
@@ -26,7 +54,7 @@ const RootRedirect: React.FC = () => {
 };
 
 // Route Protection Wrapper for students
-const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children, requireAssessment = false }) => {
+const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children }) => {
   const { isAuthenticated, otpVerified } = useStore();
 
   if (!isAuthenticated) {
@@ -86,7 +114,9 @@ const LayoutWrapper: React.FC = () => {
             path="/assessment"
             element={
               <StudentRoute>
-                <Assessment />
+                <LazyRoute fallback={<AssessmentSkeleton />}>
+                  <Assessment />
+                </LazyRoute>
               </StudentRoute>
             }
           />
@@ -94,7 +124,9 @@ const LayoutWrapper: React.FC = () => {
             path="/assessment/weekly"
             element={
               <StudentRoute>
-                <Assessment />
+                <LazyRoute fallback={<AssessmentSkeleton />}>
+                  <Assessment />
+                </LazyRoute>
               </StudentRoute>
             }
           />
@@ -102,7 +134,9 @@ const LayoutWrapper: React.FC = () => {
             path="/dashboard"
             element={
               <StudentRoute requireAssessment>
-                <Dashboard />
+                <LazyRoute fallback={<DashboardSkeleton />}>
+                  <Dashboard />
+                </LazyRoute>
               </StudentRoute>
             }
           />
@@ -110,7 +144,9 @@ const LayoutWrapper: React.FC = () => {
             path="/dashboard/history"
             element={
               <StudentRoute requireAssessment>
-                <HistoryTrends />
+                <LazyRoute fallback={<HistoryTrendsSkeleton />}>
+                  <HistoryTrends />
+                </LazyRoute>
               </StudentRoute>
             }
           />
@@ -118,7 +154,9 @@ const LayoutWrapper: React.FC = () => {
             path="/dashboard/recommendations"
             element={
               <StudentRoute requireAssessment>
-                <Recommendations />
+                <LazyRoute fallback={<RecommendationSkeleton />}>
+                  <Recommendations />
+                </LazyRoute>
               </StudentRoute>
             }
           />
@@ -126,7 +164,9 @@ const LayoutWrapper: React.FC = () => {
             path="/profile"
             element={
               <StudentRoute requireAssessment>
-                <Profile />
+                <LazyRoute fallback={<ProfileSkeleton />}>
+                  <Profile />
+                </LazyRoute>
               </StudentRoute>
             }
           />
@@ -134,7 +174,9 @@ const LayoutWrapper: React.FC = () => {
             path="/journal"
             element={
               <StudentRoute requireAssessment>
-                <Journal />
+                <LazyRoute fallback={<JournalSkeleton />}>
+                  <Journal />
+                </LazyRoute>
               </StudentRoute>
             }
           />
@@ -142,14 +184,23 @@ const LayoutWrapper: React.FC = () => {
             path="/notifications"
             element={
               <StudentRoute requireAssessment>
-                <Notifications />
+                <LazyRoute fallback={<NotificationSkeleton />}>
+                  <Notifications />
+                </LazyRoute>
               </StudentRoute>
             }
           />
 
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <LazyRoute fallback={<AdminDashboardSkeleton />}>
+                <AdminDashboard />
+              </LazyRoute>
+            }
+          />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/auth/register" replace />} />
@@ -167,4 +218,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-
