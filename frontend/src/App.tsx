@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import React from 'react';
-=======
 import React, { lazy } from 'react';
->>>>>>> testing
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { AIWidget } from './components/AIWidget';
@@ -11,18 +7,6 @@ import { Register } from './pages/auth/Register';
 import { Login } from './pages/auth/Login';
 import { VerifyOtp } from './pages/auth/VerifyOtp';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
-<<<<<<< HEAD
-import { Assessment } from './pages/Assessment';
-import { Dashboard } from './pages/Dashboard';
-import { HistoryTrends } from './pages/HistoryTrends';
-import { Recommendations } from './pages/Recommendations';
-import { Profile } from './pages/Profile';
-import { Journal } from './pages/Journal';
-import { Notifications } from './pages/Notifications';
-import { AdminLogin } from './pages/admin/AdminLogin';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { useStore } from './store/useStore';
-=======
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { useStore } from './store/useStore';
 import { LazyRoute } from './components/skeletons/LazyRoute';
@@ -61,7 +45,6 @@ const Notifications = lazy(() =>
 const AdminDashboard = lazy(() =>
   import('./pages/admin/AdminDashboard').then((m) => ({ default: m.AdminDashboard }))
 );
->>>>>>> testing
 
 // Root redirect: unauthenticated → Register, authenticated → Home
 const RootRedirect: React.FC = () => {
@@ -71,11 +54,7 @@ const RootRedirect: React.FC = () => {
 };
 
 // Route Protection Wrapper for students
-<<<<<<< HEAD
-const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children, requireAssessment = false }) => {
-=======
 const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children }) => {
->>>>>>> testing
   const { isAuthenticated, otpVerified } = useStore();
 
   if (!isAuthenticated) {
@@ -135,13 +114,9 @@ const LayoutWrapper: React.FC = () => {
             path="/assessment"
             element={
               <StudentRoute>
-<<<<<<< HEAD
-                <Assessment />
-=======
                 <LazyRoute fallback={<AssessmentSkeleton />}>
                   <Assessment />
                 </LazyRoute>
->>>>>>> testing
               </StudentRoute>
             }
           />
@@ -149,13 +124,9 @@ const LayoutWrapper: React.FC = () => {
             path="/assessment/weekly"
             element={
               <StudentRoute>
-<<<<<<< HEAD
-                <Assessment />
-=======
                 <LazyRoute fallback={<AssessmentSkeleton />}>
                   <Assessment />
                 </LazyRoute>
->>>>>>> testing
               </StudentRoute>
             }
           />
@@ -163,13 +134,9 @@ const LayoutWrapper: React.FC = () => {
             path="/dashboard"
             element={
               <StudentRoute requireAssessment>
-<<<<<<< HEAD
-                <Dashboard />
-=======
                 <LazyRoute fallback={<DashboardSkeleton />}>
                   <Dashboard />
                 </LazyRoute>
->>>>>>> testing
               </StudentRoute>
             }
           />
@@ -177,13 +144,9 @@ const LayoutWrapper: React.FC = () => {
             path="/dashboard/history"
             element={
               <StudentRoute requireAssessment>
-<<<<<<< HEAD
-                <HistoryTrends />
-=======
                 <LazyRoute fallback={<HistoryTrendsSkeleton />}>
                   <HistoryTrends />
                 </LazyRoute>
->>>>>>> testing
               </StudentRoute>
             }
           />
@@ -191,13 +154,9 @@ const LayoutWrapper: React.FC = () => {
             path="/dashboard/recommendations"
             element={
               <StudentRoute requireAssessment>
-<<<<<<< HEAD
-                <Recommendations />
-=======
                 <LazyRoute fallback={<RecommendationSkeleton />}>
                   <Recommendations />
                 </LazyRoute>
->>>>>>> testing
               </StudentRoute>
             }
           />
@@ -205,13 +164,9 @@ const LayoutWrapper: React.FC = () => {
             path="/profile"
             element={
               <StudentRoute requireAssessment>
-<<<<<<< HEAD
-                <Profile />
-=======
                 <LazyRoute fallback={<ProfileSkeleton />}>
                   <Profile />
                 </LazyRoute>
->>>>>>> testing
               </StudentRoute>
             }
           />
@@ -219,13 +174,9 @@ const LayoutWrapper: React.FC = () => {
             path="/journal"
             element={
               <StudentRoute requireAssessment>
-<<<<<<< HEAD
-                <Journal />
-=======
                 <LazyRoute fallback={<JournalSkeleton />}>
                   <Journal />
                 </LazyRoute>
->>>>>>> testing
               </StudentRoute>
             }
           />
@@ -233,22 +184,15 @@ const LayoutWrapper: React.FC = () => {
             path="/notifications"
             element={
               <StudentRoute requireAssessment>
-<<<<<<< HEAD
-                <Notifications />
-=======
                 <LazyRoute fallback={<NotificationSkeleton />}>
                   <Notifications />
                 </LazyRoute>
->>>>>>> testing
               </StudentRoute>
             }
           />
 
           {/* Admin Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-<<<<<<< HEAD
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-=======
           <Route
             path="/admin/dashboard"
             element={
@@ -257,7 +201,6 @@ const LayoutWrapper: React.FC = () => {
               </LazyRoute>
             }
           />
->>>>>>> testing
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/auth/register" replace />} />
@@ -275,7 +218,3 @@ export default function App() {
     </BrowserRouter>
   );
 }
-<<<<<<< HEAD
-
-=======
->>>>>>> testing
