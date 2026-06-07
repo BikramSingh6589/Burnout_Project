@@ -9,6 +9,7 @@ export const Home: React.FC = () => {
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [formSubmitted, setFormSubmitted] = useState(false);
 
+<<<<<<< HEAD
   const handleCtaClick = () => {
     if (!isAuthenticated) {
       navigate('/auth/register');
@@ -21,6 +22,8 @@ export const Home: React.FC = () => {
     }
   };
 
+=======
+>>>>>>> testing
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactForm.name || !contactForm.email || !contactForm.message) return;
