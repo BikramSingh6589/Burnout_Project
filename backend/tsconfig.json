@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-<<<<<<< Updated upstream
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -16,20 +15,5 @@
     "types": ["node", "express"]
   },
   "include": ["src/**/*.ts"],
-=======
-    "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "outDir": "dist",
-    "rootDir": "src",
-    "resolveJsonModule": true
-  },
-  "include": ["src/**/*"],
->>>>>>> Stashed changes
   "exclude": ["node_modules", "dist"]
 }

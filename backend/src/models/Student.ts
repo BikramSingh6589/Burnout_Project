@@ -101,7 +101,6 @@ const StudentSchema = new Schema<IStudent>(
   },
 );
 
-StudentSchema.index({ email: 1 }, { unique: true });
 StudentSchema.index({ "profile.enrollmentNumber": 1 }, { sparse: true });
 StudentSchema.index({ accountStatus: 1, currentRiskLevel: 1 });
 

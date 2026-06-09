@@ -54,7 +54,6 @@ const AdminSchema = new Schema<IAdmin>(
   },
 );
 
-AdminSchema.index({ email: 1 }, { unique: true });
 AdminSchema.index({ role: 1, accountStatus: 1 });
 
 export const Admin: Model<IAdmin> = model<IAdmin>("Admin", AdminSchema);
