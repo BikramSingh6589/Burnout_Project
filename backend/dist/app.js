@@ -7,6 +7,7 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const error_middleware_1 = require("./middlewares/error.middleware");
 const app = (0, express_1.default)();
 // Security Middlewares
@@ -31,13 +32,14 @@ app.get('/', (req, res) => {
     res.status(200).json(response);
 });
 // Detailed Health Check Route
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
+    const databaseState = mongoose_1.default.connection.readyState === 1 ? 'connected' : 'disconnected';
     const response = {
-        success: true,
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
+        status: databaseState === 'connected' ? 'ok' : 'error',
+        database: databaseState,
     };
-    res.status(200).json(response);
+    const statusCode = databaseState === 'connected' ? 200 : 503;
+    res.status(statusCode).json(response);
 });
 // Global Error Handler Middleware (must be registered last)
 app.use(error_middleware_1.errorMiddleware);

@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
   "name": "backend",
   "version": "1.0.0",
   "description": "Academic Burnout Prediction and Monitoring Platform API",
@@ -29,5 +30,31 @@
     "@types/node": "^22.10.7",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
+=======
+  "name": "burnout-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts",
+    "test:db": "ts-node src/utils/dbTest.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2",
+    "helmet": "^6.0.0",
+    "mongoose": "^7.0.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.12",
+    "@types/express": "^4.17.17",
+    "@types/morgan": "^1.9.4",
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^5.6.0"
+>>>>>>> Stashed changes
   }
 }

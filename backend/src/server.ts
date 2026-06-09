@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 import "dotenv/config";
 import cors from "cors";
 import express, { type NextFunction, type Request, type Response } from "express";
@@ -48,12 +49,26 @@ app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
     success: false,
     message: statusCode >= 500 ? "Internal server error" : error.message,
   });
+=======
+import http from 'http';
+import app from './app';
+import { config } from './config/env';
+import { connectDatabase } from './config/database';
+import { logger } from './utils/logger';
+
+let server: http.Server;
+
+process.on('uncaughtException', (error) => {
+  logger.error('UNCAUGHT EXCEPTION! Shutting down...', error);
+  process.exit(1);
+>>>>>>> Stashed changes
 });
 
 const startServer = async (): Promise<void> => {
   try {
     await connectDatabase();
 
+<<<<<<< Updated upstream
     const server = app.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });
@@ -75,10 +90,43 @@ const startServer = async (): Promise<void> => {
     });
   } catch (error) {
     console.error("Failed to start server", error);
+=======
+    server = app.listen(config.port, () => {
+      logger.success(`Server Running On Port ${config.port}`);
+      logger.info(`Environment: ${config.env}`);
+    });
+  } catch (error) {
+    logger.error('Server startup aborted due to database connection failure.', error instanceof Error ? error.message : error);
+>>>>>>> Stashed changes
     process.exit(1);
   }
 };
 
+<<<<<<< Updated upstream
 void startServer();
 
 export default app;
+=======
+const gracefulShutdown = (): void => {
+  logger.info('Received termination signal. Closing HTTP server...');
+
+  if (server) {
+    server.close(() => {
+      logger.info('HTTP server closed. Exiting process.');
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+};
+
+process.on('unhandledRejection', (reason) => {
+  logger.error('UNHANDLED REJECTION! Initiating graceful shutdown...', reason);
+  gracefulShutdown();
+});
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+startServer();
+>>>>>>> Stashed changes
