@@ -1,0 +1,90 @@
+Here is the clean database structure outlining the MongoDB collections, fields, data types, and references, without any implementation code:
+
+---
+
+### 1. **User Schema** (Student & Admin Accounts)
+Defines account information, authentication role, and latest calculations.
+* **name**: Text
+* **email**: Text *(Unique, lowercase)*
+* **passwordHash**: Text
+* **phone**: Text
+* **gender**: Text *(Male, Female, Non-binary, Other, Prefer not to say)*
+* **age**: Number
+* **role**: Text *(student, admin)*
+* **assessmentCompleted**: Boolean
+* **latestBurnoutScore**: Number *(0 to 100)*
+* **latestRiskLevel**: Text *(Low, Moderate, High)*
+* **timestamps**: Date Created, Date Updated
+
+---
+
+### 2. **Assessment Schema** (Initial & Weekly Records)
+Tracks all parameters submitted in questionnaire forms alongside the resulting scores.
+* **userId**: Reference *(ID linking to the User)*
+* **stressLevel**: Number *(1 to 10)*
+* **motivation**: Number *(1 to 10)*
+* **energy**: Number *(1 to 10)*
+* **academicSatisfaction**: Number *(1 to 10)*
+* **sleepHours**: Number *(Daily average)*
+* **studyHours**: Number *(Daily average)*
+* **screenTime**: Number *(Daily average)*
+* **backlog**: Number *(Pending assignment count)*
+* **procrastination**: Number *(1 to 10)*
+* **burnoutScore**: Number *(0 to 100)*
+* **riskLevel**: Text *(Low, Moderate, High)*
+* **isWeekly**: Boolean *(Differentiates initial from weekly)*
+* **createdAt**: Date
+
+---
+
+### 3. **Journal Schema** (Reflections & Sentiments)
+Stores student private entries and sentiment analysis output.
+* **userId**: Reference *(ID linking to the User)*
+* **entry**: Text *(Raw journal writing)*
+* **sentiment**: Text *(Positive, Neutral, Negative)*
+* **sentimentScore**: Number *(Decimal tracking severity)*
+* **createdAt**: Date
+
+---
+
+### 4. **Recommendation Schema** (AI-Generated Interventions)
+Contains recommendations sent to the user and tracks user ratings and text feedback.
+* **userId**: Reference *(ID linking to the User)*
+* **title**: Text *(e.g., "Earlier Sleep Schedule")*
+* **reason**: Text *(Why this was recommended based on assessment)*
+* **priority**: Text *(High, Medium, Low)*
+* **followedStatus**: Text *(none, followed, partially, not)*
+* **rating**: Number *(User rating: 1 to 5 stars)*
+* **feedbackText**: Text *(User explanatory experience)*
+* **dateGenerated**: Date
+
+---
+
+### 5. **Notification Schema** (In-App & Email alerts)
+Dispatches triggers (deadline warnings, risk warnings, mood trends).
+* **userId**: Reference *(ID linking to the User)*
+* **category**: Text *(Assessment, Risk, Recommendation, Mood, General)*
+* **message**: Text
+* **read**: Boolean *(Read status)*
+* **inApp**: Boolean *(Deliver in App)*
+* **email**: Boolean *(Deliver via Email)*
+* **createdAt**: Date
+
+---
+
+### 6. **Conversation Schema** (AI Assistant Chat Logs)
+Stores dialogues with the Wellness Assistant to support NLP features.
+* **userId**: Reference *(ID linking to the User)*
+* **messages**: Array of messages, where each message contains:
+  * **sender**: Text *(user, ai)*
+  * **text**: Text
+  * **timestamp**: Date
+
+---
+
+### 7. **OTP Schema** (Verification Tokens)
+Security model handling timed codes.
+* **email**: Text
+* **code**: Text
+* **purpose**: Text *(verification, password_reset)*
+* **expiresAt**: Date *(Automatic self-delete on expiration)*
