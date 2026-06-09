@@ -1,6 +1,6 @@
 # Burnout Management Application
 
-A modern web application designed to help users monitor, assess, and manage burnout through assessments, journaling, and personalized recommendations.
+A modern web application designed to help users monitor, assess, and manage burnout through assessments, journaling, and personalized recommendations. 
 
 ## Features
 
@@ -83,6 +83,8 @@ frontend/
 ├── tailwind.config.js
 ├── tsconfig.json
 └── vite.config.ts
+
+Thank You
 ```
 
 ## License
