@@ -1,26 +1,30 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.config = void 0;
-const dotenv_1 = __importDefault(require("dotenv"));
-// Load environment variables from .env file
-dotenv_1.default.config();
-const requiredEnv = ['PORT', 'JWT_SECRET'];
-// Validate that required variables are defined in the environment (even if they are empty strings)
-requiredEnv.forEach((key) => {
-    if (process.env[key] === undefined) {
-        throw new Error(`Missing ${key} in environment variables.`);
-    }
+import dotenv from 'dotenv';
+import path from 'path';
+const envPath = path.resolve(__dirname, '../../.env');
+dotenv.config({ path: envPath });
+const requiredVariables = ['PORT', 'MONGODB_URI', 'JWT_SECRET'];
+const missingVariables = requiredVariables.filter((key) => {
+    const value = process.env[key];
+    return !value || value.trim() === '';
 });
-const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || '';
-if (!mongoUri) {
-    throw new Error('Missing required environment variable: MONGO_URI or MONGODB_URI');
+if (missingVariables.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingVariables.join(', ')}`);
 }
-exports.config = {
-    port: parseInt(process.env.PORT || '5000', 10),
-    mongoUri,
-    jwtSecret: process.env.JWT_SECRET || '',
-    env: process.env.NODE_ENV || 'development',
+const port = Number(process.env.PORT);
+if (Number.isNaN(port) || port <= 0) {
+    throw new Error('Invalid PORT value. PORT must be a positive integer.');
+}
+const emailUser = process.env.EMAIL_USER?.trim();
+const emailPassword = process.env.EMAIL_PASSWORD?.trim();
+if ((emailUser && !emailPassword) || (!emailUser && emailPassword)) {
+    throw new Error('EMAIL_USER and EMAIL_PASSWORD must both be set if either one is provided.');
+}
+export const config = {
+    port,
+    mongoUri: process.env.MONGODB_URI,
+    jwtSecret: process.env.JWT_SECRET,
+    env: (process.env.NODE_ENV || 'development').trim(),
+    emailUser: emailUser || undefined,
+    emailPassword: emailPassword || undefined,
 };
+//# sourceMappingURL=env.js.map

@@ -9,7 +9,7 @@ import { HttpError } from "./controllers/auth.controller.js";
 import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
-const port = Number(process.env.PORT ?? 5000);
+const port = Number(process.env.PORT ?? 5001);
 
 app.use(helmet());
 app.use(

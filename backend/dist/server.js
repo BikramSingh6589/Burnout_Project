@@ -8,7 +8,7 @@ import { connectDatabase } from "./config/database.js";
 import { HttpError } from "./controllers/auth.controller.js";
 import authRoutes from "./routes/auth.routes.js";
 const app = express();
-const port = Number(process.env.PORT ?? 5000);
+const port = Number(process.env.PORT ?? 5001);
 app.use(helmet());
 app.use(cors({
     origin: process.env.CORS_ORIGIN?.split(",").map((origin) => origin.trim()) ?? ["http://localhost:5173"],
@@ -41,7 +41,6 @@ app.use((error, _req, res, _next) => {
 });
 const startServer = async () => {
     try {
-<<<<<<< Updated upstream
         await connectDatabase();
         const server = app.listen(port, () => {
             console.log(`Server running on port ${port}`);
@@ -58,33 +57,6 @@ const startServer = async () => {
         });
         process.on("SIGTERM", () => {
             void shutdown("SIGTERM");
-=======
-        await (0, database_1.connectDatabase)();
-        server = app_1.default.listen(env_1.config.port, () => {
-            logger_1.logger.success(`✓ Server Running on Port ${env_1.config.port}`);
-            logger_1.logger.info(`✓ Environment: ${env_1.config.env}`);
-        });
-    }
-    catch (error) {
-        logger_1.logger.error('Server startup aborted due to database connection failure.', error instanceof Error ? error.message : error);
-        process.exit(1);
-    }
-    // Catch unhandled promise rejections
-    process.on('unhandledRejection', (reason) => {
-        logger_1.logger.error('UNHANDLED REJECTION! Initiating graceful shutdown...', reason);
-        gracefulShutdown();
-    });
-};
-/**
- * Handles graceful shutdown by closing the HTTP server first.
- */
-const gracefulShutdown = () => {
-    logger_1.logger.info('Received termination signal. Closing HTTP server...');
-    if (server) {
-        server.close(() => {
-            logger_1.logger.info('HTTP server closed. Exiting process.');
-            process.exit(0);
->>>>>>> Stashed changes
         });
     }
     catch (error) {
