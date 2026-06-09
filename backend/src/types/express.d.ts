@@ -1,12 +1,9 @@
-import type { ObjectId } from "./common.types.js";
+import type { AuthenticatedUser } from "./auth.types.js";
 
 declare global {
   namespace Express {
     interface Request {
-      user?: {
-        studentId: ObjectId;
-        email: string;
-      };
+      user?: AuthenticatedUser;
     }
   }
 }

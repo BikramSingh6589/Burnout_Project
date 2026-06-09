@@ -1,23 +1,26 @@
-import dotenv from 'dotenv';
-import path from 'path';
-const envPath = path.resolve(__dirname, '../../.env');
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const envPath = path.resolve(currentDir, "../../.env");
 dotenv.config({ path: envPath });
-const requiredVariables = ['PORT', 'MONGODB_URI', 'JWT_SECRET'];
+const requiredVariables = ["PORT", "MONGODB_URI", "JWT_SECRET"];
 const missingVariables = requiredVariables.filter((key) => {
     const value = process.env[key];
-    return !value || value.trim() === '';
+    return !value || value.trim() === "";
 });
 if (missingVariables.length > 0) {
-    throw new Error(`Missing required environment variables: ${missingVariables.join(', ')}`);
+    throw new Error(`Missing required environment variables: ${missingVariables.join(", ")}`);
 }
 const port = Number(process.env.PORT);
 if (Number.isNaN(port) || port <= 0) {
-    throw new Error('Invalid PORT value. PORT must be a positive integer.');
+    throw new Error("Invalid PORT value. PORT must be a positive integer.");
 }
 const emailUser = process.env.EMAIL_USER?.trim();
 const emailPassword = process.env.EMAIL_PASSWORD?.trim();
 if ((emailUser && !emailPassword) || (!emailUser && emailPassword)) {
-    throw new Error('EMAIL_USER and EMAIL_PASSWORD must both be set if either one is provided.');
+    throw new Error("EMAIL_USER and EMAIL_PASSWORD must both be set if either one is provided.");
 }
 const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
@@ -28,7 +31,7 @@ export const config = {
     port,
     mongoUri: process.env.MONGODB_URI,
     jwtSecret: process.env.JWT_SECRET,
-    env: (process.env.NODE_ENV || 'development').trim(),
+    env: (process.env.NODE_ENV || "development").trim(),
     emailUser: emailUser || undefined,
     emailPassword: emailPassword || undefined,
     googleClientId: googleClientId || undefined,

@@ -1,5 +1,6 @@
 import { Schema, model, type Document, type Model } from "mongoose";
-import { AccountStatus, AuthProvider, Gender, RiskLevel } from "../types/common.types.js";
+import { AccountStatus, Gender, RiskLevel } from "../types/common.types.js";
+import type { OtpPurpose } from "../types/auth.types.js";
 
 export interface IStudentProfile {
   department?: string;
@@ -16,14 +17,16 @@ export interface IStudent extends Document {
   phoneNumber?: string;
   gender?: Gender;
   age?: number;
-  password?: string;
-  authProvider: AuthProvider;
-  googleId?: string;
-  profilePicture?: string;
+  password: string;
   profile?: IStudentProfile;
   accountStatus: AccountStatus;
   currentBurnoutScore: number;
   currentRiskLevel: RiskLevel;
+  otpHash?: string;
+  otpExpiresAt?: Date;
+  otpAttempts: number;
+  otpPurpose?: OtpPurpose;
+  emailVerifiedAt?: Date;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -73,33 +76,15 @@ const StudentSchema = new Schema<IStudent>(
     },
     password: {
       type: String,
+      required: true,
       select: false,
       minlength: 8,
-      required: function (this: IStudent) {
-        return this.authProvider !== AuthProvider.Google;
-      },
-    },
-    authProvider: {
-      type: String,
-      enum: Object.values(AuthProvider),
-      default: AuthProvider.Local,
-      index: true,
-    },
-    googleId: {
-      type: String,
-      unique: true,
-      sparse: true,
-      index: true,
-    },
-    profilePicture: {
-      type: String,
-      trim: true,
     },
     profile: StudentProfileSchema,
     accountStatus: {
       type: String,
       enum: Object.values(AccountStatus),
-      default: AccountStatus.Active,
+      default: AccountStatus.PendingVerification,
       index: true,
     },
     currentBurnoutScore: {
@@ -115,6 +100,27 @@ const StudentSchema = new Schema<IStudent>(
       default: RiskLevel.Low,
       index: true,
     },
+    otpHash: {
+      type: String,
+      select: false,
+    },
+    otpExpiresAt: {
+      type: Date,
+      select: false,
+    },
+    otpAttempts: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+      select: false,
+    },
+    otpPurpose: {
+      type: String,
+      enum: ["email_verification", "password_reset"],
+      select: false,
+    },
+    emailVerifiedAt: Date,
     lastLoginAt: Date,
   },
   {

@@ -1,5 +1,5 @@
-import { logger } from '../utils/logger.js';
-import { config } from '../config/env.js';
+import { config } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 export class AppError extends Error {
     statusCode;
     isOperational;
@@ -10,34 +10,38 @@ export class AppError extends Error {
         Error.captureStackTrace(this, this.constructor);
     }
 }
+const isErrorLike = (error) => {
+    return typeof error === "object" && error !== null;
+};
 export const errorMiddleware = (err, _req, res, _next) => {
-    let statusCode = err.statusCode || 500;
-    let message = err.message || 'Internal Server Error';
-    if (err.name === 'ValidationError') {
+    const error = isErrorLike(err) ? err : {};
+    let statusCode = error.statusCode || 500;
+    let message = error.message || "Internal Server Error";
+    if (error.name === "ValidationError") {
         statusCode = 400;
-        message = 'Validation Error';
+        message = "Validation Error";
     }
-    if (err.name === 'CastError') {
+    if (error.name === "CastError") {
         statusCode = 400;
-        message = `Invalid value for path ${err.path}`;
+        message = `Invalid value for path ${error.path ?? "unknown"}`;
     }
-    if (err.code === 11000) {
+    if (error.code === 11000 && error.keyValue) {
         statusCode = 400;
-        const value = Object.keys(err.keyValue).join(', ');
+        const value = Object.keys(error.keyValue).join(", ");
         message = `Duplicate entry for field: ${value}`;
     }
     if (statusCode === 500) {
-        logger.error('Unhandled server error:', err.stack || err);
+        logger.error("Unhandled server error:", error.stack || err);
     }
     else {
         logger.warn(`Operational client error: ${statusCode} - ${message}`);
     }
     const responseBody = {
         success: false,
-        message: config.env === 'production' && statusCode === 500 ? 'Internal Server Error' : message,
+        message: config.env === "production" && statusCode === 500 ? "Internal server error" : message,
     };
-    if (config.env === 'development') {
-        responseBody.stack = err.stack;
+    if (config.env === "development" && error.stack) {
+        responseBody.stack = error.stack;
     }
     return res.status(statusCode).json(responseBody);
 };

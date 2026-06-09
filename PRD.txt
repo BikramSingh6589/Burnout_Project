@@ -407,6 +407,17 @@ Worsening
 ```
 
 ---
+extra add::--One thing I would add beyond your original SRS: ask the LLM to store a burnoutScoreBreakdown (stress contribution, sleep contribution, motivation contribution, etc.). This makes the dashboard and recommendations much easier to build later.
+burnoutScoreBreakdown
+
+Stress Contribution
+Sleep Contribution
+Motivation Contribution
+Energy Contribution
+Backlog Contribution
+...
+
+
 
 # Phase 6: Journal Module
 

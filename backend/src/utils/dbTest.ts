@@ -1,6 +1,6 @@
 import mongoose, { Schema, model } from 'mongoose';
-import { connectDatabase } from '../config/database.js';
-import { logger } from './logger.js';
+import { connectDatabase } from "../config/database.js";
+import { logger } from "./logger.js";
 
 const userSchema = new Schema(
   {

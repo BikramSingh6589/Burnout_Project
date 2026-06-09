@@ -1,25 +1,28 @@
 import { Router } from "express";
 import {
-  authenticateStudent,
   forgotPassword,
   getAuthenticatedStudent,
-  googleSignIn,
   loginStudent,
   registerStudent,
-  resendOtp,
   resetPassword,
   verifyOtp,
 } from "../controllers/auth.controller.js";
+import { authenticate } from "../middlewares/auth.middleware.js";
+import {
+  validateForgotPassword,
+  validateLogin,
+  validateRegister,
+  validateResetPassword,
+  validateVerifyOtp,
+} from "../validators/auth.validation.js";
 
 const router = Router();
 
-router.post("/register", registerStudent);
-router.post("/verify-otp", verifyOtp);
-router.post("/resend-otp", resendOtp);
-router.post("/login", loginStudent);
-router.post("/google", googleSignIn);
-router.post("/forgot-password", forgotPassword);
-router.post("/reset-password", resetPassword);
-router.get("/me", authenticateStudent, getAuthenticatedStudent);
+router.post("/register", validateRegister, registerStudent);
+router.post("/login", validateLogin, loginStudent);
+router.post("/verify-otp", validateVerifyOtp, verifyOtp);
+router.post("/forgot-password", validateForgotPassword, forgotPassword);
+router.post("/reset-password", validateResetPassword, resetPassword);
+router.get("/me", authenticate, getAuthenticatedStudent);
 
 export default router;
