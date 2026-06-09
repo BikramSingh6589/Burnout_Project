@@ -53,7 +53,22 @@ const RootRedirect: React.FC = () => {
   return <Navigate to="/home" replace />;
 };
 
-// Route Protection Wrapper for students
+// OTP page: must be logged in, but OTP must not be verified yet
+const OtpRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, otpVerified } = useStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/auth/register" replace />;
+  }
+
+  if (otpVerified) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Route Protection Wrapper for students (post-OTP routes)
 const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children }) => {
   const { isAuthenticated, otpVerified } = useStore();
 
@@ -105,9 +120,9 @@ const LayoutWrapper: React.FC = () => {
           <Route
             path="/auth/verify-otp"
             element={
-              <StudentRoute>
+              <OtpRoute>
                 <VerifyOtp />
-              </StudentRoute>
+              </OtpRoute>
             }
           />
           <Route
