@@ -1,56 +1,69 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const logger_1 = require("./utils/logger");
-// Catch uncaught exceptions immediately on startup
-process.on('uncaughtException', (error) => {
-    logger_1.logger.error('UNCAUGHT EXCEPTION! Shutting down...', error);
-    process.exit(1);
+import "dotenv/config";
+import cors from "cors";
+import express from "express";
+import helmet from "helmet";
+import morgan from "morgan";
+import mongoose from "mongoose";
+import { connectDatabase } from "./config/database.js";
+import { HttpError } from "./controllers/auth.controller.js";
+import authRoutes from "./routes/auth.routes.js";
+const app = express();
+const port = Number(process.env.PORT ?? 5000);
+app.use(helmet());
+app.use(cors({
+    origin: process.env.CORS_ORIGIN?.split(",").map((origin) => origin.trim()) ?? ["http://localhost:5173"],
+    credentials: true,
+}));
+app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
+app.get("/health", (_req, res) => {
+    res.status(200).json({
+        success: true,
+        status: "healthy",
+        database: mongoose.connection.readyState === 1 ? "connected" : "disconnected",
+        timestamp: new Date().toISOString(),
+    });
 });
-const app_1 = __importDefault(require("./app"));
-const env_1 = require("./config/env");
-const database_1 = require("./config/database");
-let server;
-/**
- * Starts the express server and attempts database connection.
- */
+app.use("/api/auth", authRoutes);
+app.use((_req, _res, next) => {
+    next(new HttpError(404, "Route not found"));
+});
+app.use((error, _req, res, _next) => {
+    const statusCode = error instanceof HttpError ? error.statusCode : 500;
+    if (statusCode >= 500) {
+        console.error(error);
+    }
+    res.status(statusCode).json({
+        success: false,
+        message: statusCode >= 500 ? "Internal server error" : error.message,
+    });
+});
 const startServer = async () => {
     try {
-        // Attempt database connection
-        await (0, database_1.connectDatabase)();
-    }
-    catch (error) {
-        logger_1.logger.warn('✗ Database connection failed. Starting server in degraded state...');
-    }
-    // Create HTTP server and start listening
-    server = app_1.default.listen(env_1.config.port, () => {
-        logger_1.logger.success(`✓ Server Running on Port ${env_1.config.port}`);
-        logger_1.logger.info(`✓ Environment: ${env_1.config.env}`);
-    });
-    // Catch unhandled promise rejections
-    process.on('unhandledRejection', (reason) => {
-        logger_1.logger.error('UNHANDLED REJECTION! Initiating graceful shutdown...', reason);
-        gracefulShutdown();
-    });
-};
-/**
- * Handles graceful shutdown by closing the HTTP server first.
- */
-const gracefulShutdown = () => {
-    logger_1.logger.info('Received termination signal. Closing HTTP server...');
-    if (server) {
-        server.close(() => {
-            logger_1.logger.info('HTTP server closed. Exiting process.');
-            process.exit(0);
+        await connectDatabase();
+        const server = app.listen(port, () => {
+            console.log(`Server running on port ${port}`);
+        });
+        const shutdown = async (signal) => {
+            console.log(`${signal} received. Shutting down gracefully.`);
+            server.close(async () => {
+                await mongoose.disconnect();
+                process.exit(0);
+            });
+        };
+        process.on("SIGINT", () => {
+            void shutdown("SIGINT");
+        });
+        process.on("SIGTERM", () => {
+            void shutdown("SIGTERM");
         });
     }
-    else {
-        process.exit(0);
+    catch (error) {
+        console.error("Failed to start server", error);
+        process.exit(1);
     }
 };
-// Register signals for graceful shutdown
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
-startServer();
+void startServer();
+export default app;
+//# sourceMappingURL=server.js.map
