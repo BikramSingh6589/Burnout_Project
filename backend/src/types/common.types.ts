@@ -2,6 +2,11 @@ import type { Types } from "mongoose";
 
 export type ObjectId = Types.ObjectId;
 
+export enum AuthProvider {
+  Local = "local",
+  Google = "google",
+}
+
 export enum Gender {
   Male = "male",
   Female = "female",

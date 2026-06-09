@@ -19,6 +19,11 @@ const emailPassword = process.env.EMAIL_PASSWORD?.trim();
 if ((emailUser && !emailPassword) || (!emailUser && emailPassword)) {
     throw new Error('EMAIL_USER and EMAIL_PASSWORD must both be set if either one is provided.');
 }
+const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+if ((googleClientId && !googleClientSecret) || (!googleClientId && googleClientSecret)) {
+    throw new Error('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must both be set if either one is provided.');
+}
 export const config = {
     port,
     mongoUri: process.env.MONGODB_URI,
@@ -26,5 +31,7 @@ export const config = {
     env: (process.env.NODE_ENV || 'development').trim(),
     emailUser: emailUser || undefined,
     emailPassword: emailPassword || undefined,
+    googleClientId: googleClientId || undefined,
+    googleClientSecret: googleClientSecret || undefined,
 };
 //# sourceMappingURL=env.js.map

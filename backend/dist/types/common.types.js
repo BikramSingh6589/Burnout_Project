@@ -1,3 +1,8 @@
+export var AuthProvider;
+(function (AuthProvider) {
+    AuthProvider["Local"] = "local";
+    AuthProvider["Google"] = "google";
+})(AuthProvider || (AuthProvider = {}));
 export var Gender;
 (function (Gender) {
     Gender["Male"] = "male";

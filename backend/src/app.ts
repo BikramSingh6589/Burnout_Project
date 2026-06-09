@@ -2,8 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { healthRouter } from './routes/health.routes';
-import { errorMiddleware } from './middlewares/error.middleware';
+import { healthRouter } from './routes/health.routes.js';
+import authRouter from './routes/auth.routes.js';
+import { errorMiddleware } from './middlewares/error.middleware.js';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.get('/', (_req, res) => {
 });
 
 app.use('/health', healthRouter);
+app.use('/api/auth', authRouter);
 app.use(errorMiddleware);
 
 export default app;

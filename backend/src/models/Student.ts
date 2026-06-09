@@ -1,5 +1,5 @@
 import { Schema, model, type Document, type Model } from "mongoose";
-import { AccountStatus, Gender, RiskLevel } from "../types/common.types.js";
+import { AccountStatus, AuthProvider, Gender, RiskLevel } from "../types/common.types.js";
 
 export interface IStudentProfile {
   department?: string;
@@ -16,7 +16,10 @@ export interface IStudent extends Document {
   phoneNumber?: string;
   gender?: Gender;
   age?: number;
-  password: string;
+  password?: string;
+  authProvider: AuthProvider;
+  googleId?: string;
+  profilePicture?: string;
   profile?: IStudentProfile;
   accountStatus: AccountStatus;
   currentBurnoutScore: number;
@@ -70,9 +73,27 @@ const StudentSchema = new Schema<IStudent>(
     },
     password: {
       type: String,
-      required: true,
       select: false,
       minlength: 8,
+      required: function (this: IStudent) {
+        return this.authProvider !== AuthProvider.Google;
+      },
+    },
+    authProvider: {
+      type: String,
+      enum: Object.values(AuthProvider),
+      default: AuthProvider.Local,
+      index: true,
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    profilePicture: {
+      type: String,
+      trim: true,
     },
     profile: StudentProfileSchema,
     accountStatus: {

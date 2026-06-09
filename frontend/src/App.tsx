@@ -7,6 +7,7 @@ import { Register } from './pages/auth/Register';
 import { Login } from './pages/auth/Login';
 import { VerifyOtp } from './pages/auth/VerifyOtp';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { ResetPassword } from './pages/auth/ResetPassword';
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { useStore } from './store/useStore';
 import { LazyRoute } from './components/skeletons/LazyRoute';
@@ -90,7 +91,7 @@ const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: bo
 const LayoutWrapper: React.FC = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
-  const isAuthRoute = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password'].includes(location.pathname);
+  const isAuthRoute = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password', '/auth/reset-password'].includes(location.pathname);
   const hideNavbar = isAdminRoute || isAuthRoute;
   React.useEffect(() => {
     const saved = localStorage.getItem('theme');
@@ -115,6 +116,7 @@ const LayoutWrapper: React.FC = () => {
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
 
           {/* Student Protected Routes */}
           <Route

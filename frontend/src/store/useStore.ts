@@ -1,7 +1,9 @@
 import { create } from 'zustand';
+import { apiRequest } from '../lib/api';
 
 // Types
 export interface User {
+  id?: string;
   name: string;
   email: string;
   phone: string;
@@ -77,6 +79,8 @@ interface AppState {
   isAuthenticated: boolean;
   otpVerified: boolean;
   authError: string | null;
+  authToken: string | null;
+  pendingVerificationEmail: string | null;
 
   // Student Dashboard State
   journalEntries: JournalEntry[];
@@ -93,10 +97,14 @@ interface AppState {
 
   // Actions
   login: (email: string, password: string, forceRole?: 'student' | 'admin') => Promise<boolean>;
+  loginWithGoogle: (idToken: string) => Promise<boolean>;
   register: (userData: Omit<User, 'assessmentCompleted'>, password: string) => Promise<boolean>;
   verifyOtp: (otp: string) => Promise<boolean>;
+  resendOtp: () => Promise<boolean>;
   logout: () => void;
   forgotPassword: (email: string) => Promise<boolean>;
+  resetPassword: (email: string, token: string, password: string) => Promise<boolean>;
+  fetchMe: () => Promise<boolean>;
   
   // Assessments
   submitAssessment: (data: {
@@ -255,6 +263,45 @@ const mockNotifications: Notification[] = [
   }
 ];
 
+interface BackendStudent {
+  id?: string;
+  _id?: string;
+  fullName: string;
+  email: string;
+  phoneNumber?: string;
+  gender?: string;
+  age?: number;
+  accountStatus?: string;
+}
+
+interface AuthResponse {
+  success: boolean;
+  token: string;
+  student: BackendStudent;
+}
+
+interface MeResponse {
+  success: boolean;
+  student: BackendStudent;
+}
+
+const AUTH_TOKEN_KEY = 'burnout_auth_token';
+const PENDING_EMAIL_KEY = 'burnout_pending_verification_email';
+
+const mapStudentToUser = (student: BackendStudent): User => ({
+  id: student.id ?? student._id,
+  name: student.fullName,
+  email: student.email,
+  phone: student.phoneNumber ?? '',
+  gender: student.gender ?? 'Other',
+  age: student.age ?? 0,
+  assessmentCompleted: false,
+  role: 'student',
+});
+
+const getStoredAuthToken = () => localStorage.getItem(AUTH_TOKEN_KEY);
+const getStoredPendingEmail = () => localStorage.getItem(PENDING_EMAIL_KEY);
+
 const mockAdminStudents: AdminStudent[] = [
   {
     id: 's-1',
@@ -334,6 +381,8 @@ export const useStore = create<AppState>((set, get) => ({
   isAuthenticated: false,
   otpVerified: false,
   authError: null,
+  authToken: getStoredAuthToken(),
+  pendingVerificationEmail: getStoredPendingEmail(),
 
   // Student Dashboard State
   journalEntries: mockJournalEntries,
@@ -362,7 +411,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Actions
-  login: async (email, _password, forceRole) => {
+  login: async (email, password, forceRole) => {
     set({ authError: null });
     // Admin override
     if (forceRole === 'admin' || email.includes('admin')) {
@@ -382,64 +431,186 @@ export const useStore = create<AppState>((set, get) => ({
       return true;
     }
 
-    // Default student profile
-    const emailPrefix = email.split('@')[0];
-    const nameParts = emailPrefix.split(/[._-]+/).filter(Boolean);
-    const displayName = nameParts
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-      .join(' ');
-    const finalName = displayName.trim() ? displayName : 'Student Singh';
-    set({
-      user: {
-        name: finalName,
-        email: email,
-        phone: '+91 9876543210',
-        gender: 'Male',
-        age: 21,
-        assessmentCompleted: false, // Mock student starts needing an assessment
-        role: 'student',
-      },
-      isAuthenticated: true,
-      otpVerified: true,
-    });
-    return true;
+    try {
+      const data = await apiRequest<AuthResponse>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      });
+
+      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      localStorage.removeItem(PENDING_EMAIL_KEY);
+      set({
+        user: mapStudentToUser(data.student),
+        authToken: data.token,
+        pendingVerificationEmail: null,
+        isAuthenticated: true,
+        otpVerified: true,
+      });
+      return true;
+    } catch (error) {
+      set({ authError: error instanceof Error ? error.message : 'Login failed' });
+      return false;
+    }
   },
 
-  register: async (userData, _password) => {
-    set({
-      user: {
-        ...userData,
-        assessmentCompleted: false, // Must take assessment
-        role: 'student',
-      },
-      isAuthenticated: true, // Authenticated but needs OTP verification
-      otpVerified: false,
-      authError: null,
-    });
-    return true;
+  loginWithGoogle: async (idToken) => {
+    try {
+      set({ authError: null });
+      const data = await apiRequest<AuthResponse>('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ token: idToken }),
+      });
+
+      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      localStorage.removeItem(PENDING_EMAIL_KEY);
+      set({
+        user: mapStudentToUser(data.student),
+        authToken: data.token,
+        pendingVerificationEmail: null,
+        isAuthenticated: true,
+        otpVerified: true,
+      });
+      return true;
+    } catch (error) {
+      set({
+        authError: error instanceof Error ? error.message : 'Google sign-in failed',
+      });
+      return false;
+    }
+  },
+
+  register: async (userData, password) => {
+    try {
+      set({ authError: null });
+      const data = await apiRequest<AuthResponse>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          fullName: userData.name,
+          email: userData.email,
+          password,
+          phoneNumber: userData.phone,
+          gender: userData.gender.toLowerCase(),
+          age: userData.age,
+        }),
+      });
+
+      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      localStorage.setItem(PENDING_EMAIL_KEY, data.student.email);
+      set({
+        user: mapStudentToUser(data.student),
+        authToken: data.token,
+        pendingVerificationEmail: data.student.email,
+        isAuthenticated: true,
+        otpVerified: false,
+      });
+      return true;
+    } catch (error) {
+      set({ authError: error instanceof Error ? error.message : 'Registration failed' });
+      return false;
+    }
   },
 
   verifyOtp: async (otp) => {
-    if (otp === '123456' || otp.length === 6) {
-      set({ otpVerified: true });
-      return true;
+    const email = get().pendingVerificationEmail ?? get().user?.email;
+    if (!email) {
+      set({ authError: 'No pending email verification found.' });
+      return false;
     }
-    set({ authError: 'Invalid OTP code. Please enter 6 digits.' });
-    return false;
+
+    try {
+      set({ authError: null });
+      await apiRequest<{ success: boolean }>('/auth/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email, otp }),
+      });
+      localStorage.removeItem(PENDING_EMAIL_KEY);
+      set({ otpVerified: true, pendingVerificationEmail: null });
+      return true;
+    } catch (error) {
+      set({ authError: error instanceof Error ? error.message : 'OTP verification failed' });
+      return false;
+    }
+  },
+
+  resendOtp: async () => {
+    const email = get().pendingVerificationEmail ?? get().user?.email;
+    if (!email) {
+      set({ authError: 'No pending email verification found.' });
+      return false;
+    }
+
+    try {
+      set({ authError: null });
+      await apiRequest<{ success: boolean }>('/auth/resend-otp', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      return true;
+    } catch (error) {
+      set({ authError: error instanceof Error ? error.message : 'Unable to resend OTP' });
+      return false;
+    }
   },
 
   logout: () => {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(PENDING_EMAIL_KEY);
     set({
       user: null,
       isAuthenticated: false,
       otpVerified: false,
       authError: null,
+      authToken: null,
+      pendingVerificationEmail: null,
     });
   },
 
   forgotPassword: async (email) => {
-    console.log(`Sending recovery email to: ${email}`);
-    return true;
+    try {
+      set({ authError: null });
+      await apiRequest<{ success: boolean }>('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+      return true;
+    } catch (error) {
+      set({ authError: error instanceof Error ? error.message : 'Password recovery failed' });
+      return false;
+    }
+  },
+
+  resetPassword: async (email, token, password) => {
+    try {
+      set({ authError: null });
+      await apiRequest<{ success: boolean }>('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ email, token, password }),
+      });
+      return true;
+    } catch (error) {
+      set({ authError: error instanceof Error ? error.message : 'Password reset failed' });
+      return false;
+    }
+  },
+
+  fetchMe: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return false;
+
+    try {
+      const data = await apiRequest<MeResponse>('/auth/me', { token });
+      set({
+        user: mapStudentToUser(data.student),
+        authToken: token,
+        isAuthenticated: true,
+        otpVerified: true,
+      });
+      return true;
+    } catch {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      set({ user: null, authToken: null, isAuthenticated: false, otpVerified: false });
+      return false;
+    }
   },
 
   submitAssessment: (data, _isWeekly = false) => {

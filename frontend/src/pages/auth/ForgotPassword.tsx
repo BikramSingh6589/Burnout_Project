@@ -1,21 +1,28 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
-import { Mail, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Mail, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
 
 export const ForgotPassword: React.FC = () => {
   const { forgotPassword } = useStore();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
+    setError(null);
     setLoading(true);
-    await forgotPassword(email);
+    const success = await forgotPassword(email);
     setLoading(false);
-    setSubmitted(true);
+    if (success) {
+      setSubmitted(true);
+    } else {
+      setError(useStore.getState().authError || 'Unable to send reset instructions.');
+    }
   };
 
   return (
@@ -36,6 +43,12 @@ export const ForgotPassword: React.FC = () => {
             <div className="bg-success/10 border border-success/20 text-success p-4 rounded-xl text-center text-xs font-semibold animate-in zoom-in duration-200">
               Recovery link has been sent! Check your inbox for verification instructions.
             </div>
+            <button
+              onClick={() => navigate(`/auth/reset-password?email=${encodeURIComponent(email)}`)}
+              className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs"
+            >
+              Continue to Reset Password
+            </button>
             <Link
               to="/auth/login"
               className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 text-neutral-slate dark:text-[#E2E8F0] hover:bg-slate-50 dark:hover:bg-[#273449] transition-colors text-xs"
@@ -46,6 +59,11 @@ export const ForgotPassword: React.FC = () => {
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-xs font-semibold text-center">
+                {error}
+              </div>
+            )}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-neutral-slate dark:text-[#E2E8F0]" htmlFor="recovery-email">
                 Email Address
@@ -64,10 +82,11 @@ export const ForgotPassword: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs disabled:opacity-50"
+              className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs disabled:opacity-70 disabled:cursor-not-allowed"
             >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               <span>{loading ? 'Sending...' : 'Send Reset Link'}</span>
-              <ArrowRight className="h-4 w-4" />
+              {!loading && <ArrowRight className="h-4 w-4" />}
             </button>
             
             <div className="text-center">
