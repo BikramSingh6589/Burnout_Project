@@ -5,11 +5,12 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 import { Calendar, Filter, Sparkles, TrendingUp } from 'lucide-react';
 
 export const HistoryTrends: React.FC = () => {
-  const { trackerHistory, fetchTrackerHistory } = useStore();
+  const { trackerHistory, fetchTrackerHistory, analyticsSummary, fetchAnalytics } = useStore();
 
   useEffect(() => {
     fetchTrackerHistory();
-  }, [fetchTrackerHistory]);
+    fetchAnalytics();
+  }, [fetchTrackerHistory, fetchAnalytics]);
 
   const [filterDays, setFilterDays] = useState<7 | 30 | 90>(30);
   const [startDate, setStartDate] = useState('');
@@ -36,11 +37,29 @@ export const HistoryTrends: React.FC = () => {
 
   const filteredData = getFilteredData();
 
-  const formattedChartData = filteredData.map(item => ({
-    ...item,
-    dateLabel: new Date(item.date).toLocaleDateString([], { month: 'short', day: 'numeric' }),
-    satisfaction: 10 - item.procrastination, // Mock satisfaction inversion for comparison
-  }));
+  // Build unique labels per data point — if multiple entries share the same date,
+  // include the time so Recharts doesn't collapse them to a single tooltip value.
+  const dateGroups: Record<string, number> = {};
+  filteredData.forEach(item => {
+    const d = item.date;
+    dateGroups[d] = (dateGroups[d] ?? 0) + 1;
+  });
+
+  const formattedChartData = filteredData.map((item, idx) => {
+    const sameDay = dateGroups[item.date] > 1;
+    const dt = new Date(item.timestamp);
+    const dateLabel = sameDay
+      ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) +
+        ' ' +
+        dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return {
+      ...item,
+      idx,
+      dateLabel,
+      satisfaction: 10 - item.procrastination,
+    };
+  });
 
   return (
     <DashboardLayout>
@@ -51,6 +70,38 @@ export const HistoryTrends: React.FC = () => {
           <div>
             <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">History & Wellness Trends</h2>
             <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">Monitor progress trends and behavior correlations</p>
+          </div>
+
+          {/* Backend Analytics Cards */}
+          <div className="flex gap-4">
+            {analyticsSummary?.currentTrend && (
+              <div className="bg-surface dark:bg-[#1E293B] px-4 py-2 rounded-lg border border-border shadow-sm">
+                <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Overall Trend</span>
+                <span className={`font-semibold text-sm ${
+                  analyticsSummary.currentTrend === 'IMPROVING' ? 'text-success' : 
+                  analyticsSummary.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
+                }`}>
+                  {analyticsSummary.currentTrend}
+                </span>
+              </div>
+            )}
+            
+            {analyticsSummary?.baselineComparison && (
+              <div className="bg-surface dark:bg-[#1E293B] px-4 py-2 rounded-lg border border-border shadow-sm">
+                <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Baseline Shift</span>
+                <div className="flex items-center space-x-2">
+                  <span className={`font-semibold text-sm ${
+                    analyticsSummary.baselineComparison.status === 'IMPROVED' ? 'text-success' : 
+                    analyticsSummary.baselineComparison.status === 'WORSENED' ? 'text-error' : 'text-primary'
+                  }`}>
+                    {analyticsSummary.baselineComparison.status}
+                  </span>
+                  <span className="text-xs text-text-secondary">
+                    ({analyticsSummary.baselineComparison.difference > 0 ? '+' : ''}{analyticsSummary.baselineComparison.difference} pts)
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick Filters */}

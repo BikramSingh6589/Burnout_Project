@@ -50,4 +50,5 @@ export interface HistoricalAnalytics {
   assessmentCount: number;
   currentTrend: TrendStatus;
   baselineDifference?: number;
+  baselineComparison?: BaselineComparisonResult;
 }

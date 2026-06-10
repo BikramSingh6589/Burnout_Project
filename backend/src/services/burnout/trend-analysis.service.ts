@@ -3,7 +3,9 @@ import type {
   HistoricalAnalytics,
   TrendStatus,
   TrendSummary,
+  BaselineRecord,
 } from "../../types/burnout.types.js";
+import { compareBaseline } from "./baseline-tracker.service.js";
 
 const SIGNIFICANCE_THRESHOLD = 3;
 
@@ -94,7 +96,7 @@ export const analyzeAssessmentTrends = (history: BurnoutHistoryItem[]): TrendSum
 export const summarizeHistoricalAnalytics = (
   history: BurnoutHistoryItem[],
   currentScore: number,
-  baselineScore?: number,
+  baselineRecord?: BaselineRecord,
 ): HistoricalAnalytics => {
   const sortedHistory = [...history].sort((a, b) => a.completedAt.getTime() - b.completedAt.getTime());
   const assessmentCount = sortedHistory.length;
@@ -111,6 +113,7 @@ export const summarizeHistoricalAnalytics = (
     lowestScore,
     assessmentCount,
     currentTrend,
-    baselineDifference: baselineScore !== undefined ? Math.round(currentScore - baselineScore) : undefined,
+    baselineDifference: baselineRecord !== undefined ? Math.round(currentScore - baselineRecord.baselineScore) : undefined,
+    baselineComparison: baselineRecord !== undefined ? compareBaseline(baselineRecord, currentScore) : undefined,
   };
 };

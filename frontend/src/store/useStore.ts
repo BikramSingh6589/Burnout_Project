@@ -59,12 +59,34 @@ export interface JournalEntry {
 
 export interface TrackerHistory {
   date: string; // YYYY-MM-DD
+  timestamp: number;
   burnoutScore: number;
   sleepHours: number;
   studyHours: number;
   screenTime: number;
   stressLevel: number;
   procrastination: number;
+}
+
+export interface AnalyticsSummary {
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  assessmentCount: number;
+  currentTrend: 'IMPROVING' | 'STABLE' | 'WORSENING';
+  baselineDifference?: number;
+  baselineComparison?: {
+    baselineScore: number;
+    currentScore: number;
+    difference: number;
+    status: 'IMPROVED' | 'STABLE' | 'WORSENED';
+  };
+}
+
+export interface LatestAssessment {
+  burnoutScore: number;
+  riskLevel: 'Low' | 'Moderate' | 'High';
+  date: string;
 }
 
 export interface Recommendation {
@@ -122,6 +144,8 @@ interface AppState {
   // Student Dashboard State
   journalEntries: JournalEntry[];
   trackerHistory: TrackerHistory[];
+  analyticsSummary: AnalyticsSummary | null;
+  latestAssessment: LatestAssessment | null;
   recommendations: Recommendation[];
   notifications: Notification[];
 
@@ -134,10 +158,12 @@ interface AppState {
 
   // Fetch actions
   fetchTrackerHistory: () => Promise<void>;
+  fetchAnalytics: () => Promise<void>;
   fetchJournalEntries: () => Promise<void>;
   fetchRecommendations: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
   fetchAIHistory: () => Promise<void>;
+  fetchAdminSettings: () => Promise<void>;
 
   // Actions
   login: (email: string, password: string, forceRole?: 'student' | 'admin') => Promise<boolean>;
@@ -230,6 +256,11 @@ interface RefreshTokenResponse {
   success: boolean;
   token: string;
   user: BackendStudent;
+}
+
+interface SettingsResponse {
+  success: boolean;
+  data: AdminSettings;
 }
 
 const AUTH_TOKEN_KEY = 'burnout_auth_token';
@@ -360,6 +391,8 @@ export const useStore = create<AppState>((set, get) => ({
   // Student Dashboard State
   journalEntries: [],
   trackerHistory: [],
+  analyticsSummary: null,
+  latestAssessment: null,
   recommendations: [],
   notifications: [],
 
@@ -423,12 +456,38 @@ export const useStore = create<AppState>((set, get) => ({
       }));
 
       const mapped = [...initialHistory, ...weeklyHistory]
-        .sort((a, b) => a.timestamp - b.timestamp)
-        .map(({ timestamp: _timestamp, ...item }) => item);
+        .sort((a, b) => a.timestamp - b.timestamp);
 
       set({ trackerHistory: mapped });
     } catch (err) {
       console.error('[Store] Failed to fetch tracker history:', err);
+    }
+  },
+
+  fetchAnalytics: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const [analyticsResponse, latestResponse] = await Promise.all([
+        apiRequest<{ success: boolean; data: any }>('/analytics/summary', { token }).catch(() => null),
+        apiRequest<{ success: boolean; data: { assessment: any } }>('/assessment/latest', { token }).catch(() => null),
+      ]);
+
+      if (analyticsResponse?.success) {
+        set({ analyticsSummary: analyticsResponse.data });
+      }
+
+      if (latestResponse?.success && latestResponse.data.assessment) {
+        set({
+          latestAssessment: {
+            burnoutScore: latestResponse.data.assessment.burnoutScore,
+            riskLevel: latestResponse.data.assessment.riskLevel,
+            date: latestResponse.data.assessment.completedAt || latestResponse.data.assessment.createdAt,
+          },
+        });
+      }
+    } catch (err) {
+      console.error('[Store] Failed to fetch analytics:', err);
     }
   },
 
@@ -501,6 +560,15 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  fetchAdminSettings: async () => {
+    try {
+      const response = await apiRequest<SettingsResponse>('/settings');
+      set({ adminSettings: response.data });
+    } catch (err) {
+      console.error('[Store] Failed to fetch admin settings:', err);
+    }
+  },
+
   // Actions
   login: async (email, password, forceRole) => {
     set({ authError: null });
@@ -519,6 +587,7 @@ export const useStore = create<AppState>((set, get) => ({
         isAuthenticated: true,
         otpVerified: true,
       });
+      await get().fetchAdminSettings();
       return true;
     }
 
@@ -540,6 +609,7 @@ export const useStore = create<AppState>((set, get) => ({
 
       // Fetch user specific data
       setTimeout(() => {
+        get().fetchAdminSettings();
         get().fetchTrackerHistory();
         get().fetchJournalEntries();
         get().fetchRecommendations();
@@ -573,6 +643,7 @@ export const useStore = create<AppState>((set, get) => ({
       });
 
       setTimeout(() => {
+        get().fetchAdminSettings();
         get().fetchTrackerHistory();
         get().fetchJournalEntries();
         get().fetchRecommendations();
@@ -646,6 +717,7 @@ export const useStore = create<AppState>((set, get) => ({
       });
 
       setTimeout(() => {
+        get().fetchAdminSettings();
         get().fetchTrackerHistory();
         get().fetchJournalEntries();
         get().fetchRecommendations();
@@ -750,6 +822,7 @@ export const useStore = create<AppState>((set, get) => ({
         });
 
         setTimeout(() => {
+          get().fetchAdminSettings();
           get().fetchTrackerHistory();
           get().fetchJournalEntries();
           get().fetchRecommendations();
@@ -769,6 +842,7 @@ export const useStore = create<AppState>((set, get) => ({
       });
 
       setTimeout(() => {
+        get().fetchAdminSettings();
         get().fetchTrackerHistory();
         get().fetchJournalEntries();
         get().fetchRecommendations();
@@ -791,6 +865,7 @@ export const useStore = create<AppState>((set, get) => ({
         });
 
         setTimeout(() => {
+          get().fetchAdminSettings();
           get().fetchTrackerHistory();
           get().fetchJournalEntries();
           get().fetchRecommendations();
@@ -1064,6 +1139,12 @@ export const useStore = create<AppState>((set, get) => ({
         ...settings,
       },
     }));
+    apiRequest<SettingsResponse>('/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    })
+      .then((response) => set({ adminSettings: response.data }))
+      .catch((err) => console.error('[Store] Failed to update admin settings:', err));
   }
 }));
 

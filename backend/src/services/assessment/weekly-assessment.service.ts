@@ -44,11 +44,23 @@ export const submitWeeklyAssessment = async (
   const burnoutScore = calculateWeeklyBurnoutScore(assessment);
   const classification = classifyBurnoutRisk(burnoutScore);
 
+  const burnoutScoreBreakdown = {
+    academicLoad: assessment.academicLoadScore,
+    stress: assessment.stressScore,
+    sleepHours: assessment.sleepHoursAverage,
+    sleepQuality: assessment.sleepQualityScore,
+    mood: assessment.moodScore,
+    motivation: assessment.motivationScore,
+    concentration: assessment.concentrationScore,
+    physicalFatigue: assessment.physicalFatigueScore,
+  };
+
   const assessmentRecord = new WeeklyAssessment({
     student: new Types.ObjectId(userId),
     ...assessment,
     weekStartDate,
     burnoutScore,
+    burnoutScoreBreakdown,
     riskLevel: classification.riskLevel,
     responses: { ...assessment },
     status: AssessmentStatus.Completed,

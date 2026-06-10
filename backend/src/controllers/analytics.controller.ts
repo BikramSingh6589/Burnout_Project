@@ -29,10 +29,18 @@ export const getAnalyticsSummary = async (
       completedAt: item.completedAt ?? item.createdAt,
     }));
 
+    const baselineRecord = student.baselineBurnoutScore !== undefined && student.baselineDate && student.baselineRiskLevel
+      ? {
+          baselineScore: student.baselineBurnoutScore,
+          baselineDate: student.baselineDate,
+          baselineRisk: student.baselineRiskLevel,
+        }
+      : undefined;
+
     const summary = summarizeHistoricalAnalytics(
       historyItems,
       student.currentBurnoutScore ?? 0,
-      student.baselineBurnoutScore
+      baselineRecord
     );
 
     res.status(200).json({

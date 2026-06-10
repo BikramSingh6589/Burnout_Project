@@ -6,14 +6,15 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { Sparkles, Calendar, Moon, Compass, ArrowRight } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications } = useStore();
+  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchTrackerHistory();
     fetchRecommendations();
     fetchNotifications();
-  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications]);
+    fetchAnalytics();
+  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics]);
 
   // Guard checks handled in DashboardLayout, but let's read the latest values
   const latestTracker = trackerHistory.length > 0 ? trackerHistory[trackerHistory.length - 1] : null;
@@ -61,10 +62,19 @@ export const Dashboard: React.FC = () => {
   ];
 
   // Format history for line chart (showing up to last 7 entries)
-  const chartData = trackerHistory.slice(-7).map((h) => ({
-    ...h,
-    dateLabel: new Date(h.date).toLocaleDateString([], { month: 'short', day: 'numeric' }),
-  }));
+  const last7 = trackerHistory.slice(-7);
+  const dashDateGroups: Record<string, number> = {};
+  last7.forEach(h => { dashDateGroups[h.date] = (dashDateGroups[h.date] ?? 0) + 1; });
+  const chartData = last7.map(h => {
+    const sameDay = dashDateGroups[h.date] > 1;
+    const dt = new Date(h.timestamp);
+    return {
+      ...h,
+      dateLabel: sameDay
+        ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : dt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+    };
+  });
 
   return (
     <DashboardLayout>
@@ -139,6 +149,19 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
+          {/* Average Score Card */}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
+            <span className="text-xs text-text-secondary font-semibold tracking-tight">Average Score</span>
+            <div className="py-2">
+              <div className="flex items-baseline space-x-1">
+                <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">
+                  {analyticsSummary ? Math.round(analyticsSummary.averageScore) : '--'}
+                </span>
+              </div>
+              <p className="text-xs text-text-secondary mt-1">Based on {analyticsSummary?.assessmentCount || 0} assessments</p>
+            </div>
+          </div>
+
           {/* Average Sleep Hours Card */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
             <span className="text-xs text-text-secondary font-semibold tracking-tight">Sleep Average</span>
@@ -153,13 +176,15 @@ export const Dashboard: React.FC = () => {
 
           {/* Latest Mood Sentiment Card */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
-            <span className="text-xs text-text-secondary font-semibold tracking-tight">Latest Mood sentiment</span>
+            <span className="text-xs text-text-secondary font-semibold tracking-tight">Latest Risk Level</span>
             <div className="py-2">
               <div className="text-xl font-semibold tracking-tight text-primary  flex items-center space-x-2">
                 <Sparkles className="h-5 w-5 text-secondary dark:text-secondary shrink-0" />
-                <span>Balanced</span>
+                <span>{latestAssessment ? latestAssessment.riskLevel : 'Unknown'}</span>
               </div>
-              <p className="text-xs text-text-secondary mt-2">Extracted from mood journals</p>
+              <p className="text-xs text-text-secondary mt-2">
+                Highest: {analyticsSummary?.highestScore || 0} / Lowest: {analyticsSummary?.lowestScore || 0}
+              </p>
             </div>
           </div>
         </div>

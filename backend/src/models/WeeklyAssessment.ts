@@ -13,6 +13,7 @@ export interface IWeeklyAssessment extends Document {
   concentrationScore: number;
   physicalFatigueScore: number;
   burnoutScore: number;
+  burnoutScoreBreakdown: Record<string, number>;
   riskLevel: RiskLevel;
   responses: Record<string, unknown>;
   status: AssessmentStatus;
@@ -42,6 +43,11 @@ const WeeklyAssessmentSchema = new Schema<IWeeklyAssessment>(
     concentrationScore: { type: Number, required: true, min: 0, max: 100 },
     physicalFatigueScore: { type: Number, required: true, min: 0, max: 100 },
     burnoutScore: { type: Number, required: true, min: 0, max: 100, index: true },
+    burnoutScoreBreakdown: {
+      type: Schema.Types.Mixed,
+      required: true,
+      default: {},
+    },
     riskLevel: {
       type: String,
       enum: Object.values(RiskLevel),

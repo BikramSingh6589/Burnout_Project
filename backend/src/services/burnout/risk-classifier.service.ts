@@ -9,7 +9,7 @@ export interface RiskClassification {
 export const classifyBurnoutRisk = (score: number): RiskClassification => {
   const normalizedScore = Math.min(100, Math.max(0, score));
 
-  if (normalizedScore <= 30) {
+  if (normalizedScore <= 39) {
     return {
       riskLevel: RiskLevel.Low,
       riskDescription: "Student shows low burnout indicators.",
@@ -17,7 +17,7 @@ export const classifyBurnoutRisk = (score: number): RiskClassification => {
     };
   }
 
-  if (normalizedScore <= 60) {
+  if (normalizedScore <= 69) {
     return {
       riskLevel: RiskLevel.Moderate,
       riskDescription: "Student shows moderate burnout indicators.",

@@ -4,11 +4,12 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { Star } from 'lucide-react';
 
 export const Recommendations: React.FC = () => {
-  const { recommendations, submitRecommendationFeedback, fetchRecommendations } = useStore();
+  const { recommendations, submitRecommendationFeedback, fetchRecommendations, latestAssessment, analyticsSummary, fetchAnalytics } = useStore();
 
   useEffect(() => {
     fetchRecommendations();
-  }, [fetchRecommendations]);
+    fetchAnalytics();
+  }, [fetchRecommendations, fetchAnalytics]);
   
   // Keep track of which recommendation card has its feedback form open
   const [activeFeedbackId, setActiveFeedbackId] = useState<string | null>(null);
@@ -44,9 +45,38 @@ export const Recommendations: React.FC = () => {
       <div className="space-y-8 animate-in fade-in duration-300">
         
         {/* Header Block */}
-        <div className="pb-4 border-b border-slate-100 dark:border-[#334155]">
-          <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Personalized Wellness Recommendations</h2>
-          <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">AI-suggested interventions based on your recent burnout score trends</p>
+        <div className="pb-4 border-b border-slate-100 dark:border-[#334155] flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Personalized Wellness Recommendations</h2>
+            <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">
+              AI-suggested interventions based on your recent burnout score trends
+            </p>
+          </div>
+          
+          <div className="flex space-x-4 bg-slate-50 dark:bg-[#1E293B] p-3 rounded-lg border border-slate-100 dark:border-[#334155]">
+            <div>
+              <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Latest Score</span>
+              <span className="text-sm font-semibold text-primary">{latestAssessment ? latestAssessment.burnoutScore : '--'}</span>
+            </div>
+            <div className="border-l border-slate-200 dark:border-[#334155] pl-4">
+              <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Trend</span>
+              <span className={`text-sm font-semibold ${
+                analyticsSummary?.currentTrend === 'IMPROVING' ? 'text-success' : 
+                analyticsSummary?.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
+              }`}>
+                {analyticsSummary?.currentTrend || '--'}
+              </span>
+            </div>
+            <div className="border-l border-slate-200 dark:border-[#334155] pl-4">
+              <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Baseline</span>
+              <span className={`text-sm font-semibold ${
+                analyticsSummary?.baselineComparison?.status === 'IMPROVED' ? 'text-success' : 
+                analyticsSummary?.baselineComparison?.status === 'WORSENED' ? 'text-error' : 'text-primary'
+              }`}>
+                {analyticsSummary?.baselineComparison?.status || '--'}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Success Alert */}
