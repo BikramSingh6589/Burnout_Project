@@ -63,7 +63,7 @@ const WeeklyAssessmentSchema = new Schema<IWeeklyAssessment>(
   { timestamps: true },
 );
 
-WeeklyAssessmentSchema.index({ student: 1, weekStartDate: -1 }, { unique: true });
+WeeklyAssessmentSchema.index({ student: 1, weekStartDate: -1 });
 WeeklyAssessmentSchema.index({ riskLevel: 1, completedAt: -1 });
 
 export const WeeklyAssessment: Model<IWeeklyAssessment> = model<IWeeklyAssessment>(

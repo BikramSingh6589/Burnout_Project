@@ -657,6 +657,23 @@ export const AdminDashboard: React.FC = () => {
                     </select>
                   </div>
 
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300" htmlFor="weekly-assessment-limit">
+                      Weekly Assessments Allowed Per Student
+                    </label>
+                    <input
+                      id="weekly-assessment-limit"
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={adminSettings.maxWeeklyAssessmentsPerStudent}
+                      onChange={(e) => adminUpdateSettings({
+                        maxWeeklyAssessmentsPerStudent: Math.max(1, Number(e.target.value)),
+                      })}
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 placeholder:text-slate-500"
+                    />
+                  </div>
+
                   <button
                     type="submit"
                     className="w-full bg-secondary text-white font-semibold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 hover:bg-secondary/95 transition-all shadow-sm"

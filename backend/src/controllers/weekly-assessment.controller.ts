@@ -16,6 +16,7 @@ export const submitWeeklyAssessment = async (
     const assessment = await weeklyAssessmentService.submitWeeklyAssessment(
       req.user.userId.toString(),
       req.body,
+      Number(req.query.maxWeeklyAssessments),
     );
 
     res.status(201).json({

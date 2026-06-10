@@ -8,6 +8,11 @@ import authRoutes from "./routes/auth.routes.js";
 import assessmentRoutes from "./routes/assessment.routes.js";
 import initialAssessmentRoutes from "./routes/initial-assessment.routes.js";
 import weeklyAssessmentRoutes from "./routes/weekly-assessment.routes.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
+import journalRoutes from "./routes/journal.routes.js";
+import recommendationRoutes from "./routes/recommendation.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
+import aiRoutes from "./routes/ai.routes.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 const app = express();
@@ -38,6 +43,11 @@ app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/assessment", assessmentRoutes);
 app.use("/api/initial-assessment", initialAssessmentRoutes);
 app.use("/api/weekly-assessment", weeklyAssessmentRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/journal", journalRoutes);
+app.use("/api/recommendations", recommendationRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/ai", aiRoutes);
 app.use((_req, res) => {
     res.status(404).json({
         success: false,

@@ -1,11 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, Legend } from 'recharts';
 import { Calendar, Filter, Sparkles, TrendingUp } from 'lucide-react';
 
 export const HistoryTrends: React.FC = () => {
-  const { trackerHistory } = useStore();
+  const { trackerHistory, fetchTrackerHistory } = useStore();
+
+  useEffect(() => {
+    fetchTrackerHistory();
+  }, [fetchTrackerHistory]);
+
   const [filterDays, setFilterDays] = useState<7 | 30 | 90>(30);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');

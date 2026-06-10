@@ -105,6 +105,7 @@ export interface AdminSettings {
   highRiskThreshold: number;
   moderateRiskThreshold: number;
   assessmentIntervalDays: number;
+  maxWeeklyAssessmentsPerStudent: number;
   emailNotificationsEnabled: boolean;
   inAppNotificationsEnabled: boolean;
 }
@@ -131,6 +132,13 @@ interface AppState {
   adminStudents: AdminStudent[];
   adminSettings: AdminSettings;
 
+  // Fetch actions
+  fetchTrackerHistory: () => Promise<void>;
+  fetchJournalEntries: () => Promise<void>;
+  fetchRecommendations: () => Promise<void>;
+  fetchNotifications: () => Promise<void>;
+  fetchAIHistory: () => Promise<void>;
+
   // Actions
   login: (email: string, password: string, forceRole?: 'student' | 'admin') => Promise<boolean>;
   loginWithGoogle: (idToken: string) => Promise<boolean>;
@@ -144,7 +152,7 @@ interface AppState {
   updateProfile: (profile: { name: string; phone: string; age: number; gender: string }) => Promise<boolean>;
   
   // Assessments
-  submitAssessment: (data: AssessmentFormData, isWeekly?: boolean) => Promise<boolean>;
+  submitAssessment: (data: AssessmentFormData, isWeekly?: boolean) => Promise<string | null>;
 
   // Journals
   addJournalEntry: (content: string) => void;
@@ -182,114 +190,6 @@ const getPastDateString = (daysAgo: number) => {
   return date.toISOString().split('T')[0];
 };
 
-const defaultRecommendations: Recommendation[] = [
-  {
-    id: 'rec-1',
-    title: 'Earlier Sleep Schedule',
-    reason: 'Your average sleep of 5.8 hours is contributing to elevated stress levels.',
-    priority: 'High',
-    followedStatus: 'none',
-    rating: 0,
-    feedbackText: '',
-    dateGenerated: getPastDateString(2),
-  },
-  {
-    id: 'rec-2',
-    title: 'Reduce Screen Time before Bed',
-    reason: 'Evening screen use of >4 hours correlates with your reported insomnia and morning fatigue.',
-    priority: 'High',
-    followedStatus: 'none',
-    rating: 0,
-    feedbackText: '',
-    dateGenerated: getPastDateString(2),
-  },
-  {
-    id: 'rec-3',
-    title: 'Take Structured Study Breaks (Pomodoro)',
-    reason: 'Prolonged study sessions without breaks are diminishing your motivation score.',
-    priority: 'Medium',
-    followedStatus: 'none',
-    rating: 0,
-    feedbackText: '',
-    dateGenerated: getPastDateString(2),
-  },
-  {
-    id: 'rec-4',
-    title: 'Break Down Backlog into Micro-Tasks',
-    reason: 'Your assignment backlog of 8 tasks is triggering a procrastination loop.',
-    priority: 'High',
-    followedStatus: 'none',
-    rating: 0,
-    feedbackText: '',
-    dateGenerated: getPastDateString(2),
-  }
-];
-
-const mockTrackerHistory: TrackerHistory[] = [
-  { date: getPastDateString(14), burnoutScore: 35, sleepHours: 7.5, studyHours: 5.0, screenTime: 3.5, stressLevel: 3, procrastination: 4 },
-  { date: getPastDateString(13), burnoutScore: 38, sleepHours: 7.0, studyHours: 5.5, screenTime: 4.0, stressLevel: 4, procrastination: 3 },
-  { date: getPastDateString(12), burnoutScore: 40, sleepHours: 6.8, studyHours: 6.0, screenTime: 4.5, stressLevel: 4, procrastination: 4 },
-  { date: getPastDateString(11), burnoutScore: 42, sleepHours: 6.5, studyHours: 6.5, screenTime: 4.0, stressLevel: 5, procrastination: 5 },
-  { date: getPastDateString(10), burnoutScore: 48, sleepHours: 6.0, studyHours: 7.0, screenTime: 5.0, stressLevel: 6, procrastination: 6 },
-  { date: getPastDateString(9),  burnoutScore: 52, sleepHours: 5.8, studyHours: 7.5, screenTime: 5.5, stressLevel: 7, procrastination: 5 },
-  { date: getPastDateString(8),  burnoutScore: 58, sleepHours: 5.5, studyHours: 8.0, screenTime: 6.0, stressLevel: 7, procrastination: 7 },
-  { date: getPastDateString(7),  burnoutScore: 65, sleepHours: 5.0, studyHours: 8.5, screenTime: 6.5, stressLevel: 8, procrastination: 8 },
-  { date: getPastDateString(6),  burnoutScore: 68, sleepHours: 5.2, studyHours: 9.0, screenTime: 6.0, stressLevel: 8, procrastination: 8 },
-  { date: getPastDateString(5),  burnoutScore: 72, sleepHours: 4.8, studyHours: 9.5, screenTime: 7.0, stressLevel: 9, procrastination: 9 },
-  { date: getPastDateString(4),  burnoutScore: 75, sleepHours: 4.5, studyHours: 10.0, screenTime: 7.5, stressLevel: 9, procrastination: 9 },
-  { date: getPastDateString(3),  burnoutScore: 68, sleepHours: 6.0, studyHours: 6.0, screenTime: 5.0, stressLevel: 7, procrastination: 6 },
-  { date: getPastDateString(2),  burnoutScore: 62, sleepHours: 6.5, studyHours: 5.5, screenTime: 4.5, stressLevel: 6, procrastination: 5 },
-  { date: getPastDateString(1),  burnoutScore: 55, sleepHours: 7.0, studyHours: 5.0, screenTime: 4.0, stressLevel: 5, procrastination: 4 },
-];
-
-const mockJournalEntries: JournalEntry[] = [
-  {
-    id: 'j-1',
-    content: 'Feeling extremely overwhelmed with the upcoming exams. There are so many assignments piled up and I do not know how I will complete them. I slept only 4 hours last night.',
-    sentiment: 'Negative',
-    date: getPastDateString(4),
-    timestamp: Date.now() - 4 * 24 * 60 * 60 * 1000
-  },
-  {
-    id: 'j-2',
-    content: 'Tired but slightly relieved after finishing my math homework. Still dreading the physics laboratory files that are due on Friday.',
-    sentiment: 'Neutral',
-    date: getPastDateString(2),
-    timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000
-  },
-  {
-    id: 'j-3',
-    content: 'Took a study break and went for a run today. Feeling much more refreshed and clear-headed. I think the earlier sleep schedule is starting to help.',
-    sentiment: 'Positive',
-    date: getPastDateString(0),
-    timestamp: Date.now()
-  }
-];
-
-const mockNotifications: Notification[] = [
-  {
-    id: 'n-1',
-    category: 'Assessment',
-    message: 'Your weekly reassessment is due. Please take 2 minutes to update your wellness profile.',
-    read: false,
-    date: getPastDateString(0),
-  },
-  {
-    id: 'n-2',
-    category: 'Risk',
-    message: 'Risk Level Warning: Your burnout score has entered the High Risk zone (75). Consider scheduling a self-care break.',
-    read: false,
-    date: getPastDateString(4),
-  },
-  {
-    id: 'n-3',
-    category: 'Recommendation',
-    message: 'New personalized recommendation added: "Earlier Sleep Schedule".',
-    read: true,
-    date: getPastDateString(2),
-  }
-];
-
 interface BackendStudent {
   id?: string;
   _id?: string;
@@ -321,6 +221,12 @@ interface RegisterResponse {
 }
 
 interface VerifyOtpResponse {
+  success: boolean;
+  token: string;
+  user: BackendStudent;
+}
+
+interface RefreshTokenResponse {
   success: boolean;
   token: string;
   user: BackendStudent;
@@ -440,20 +346,22 @@ const mockAdminStudents: AdminStudent[] = [
   }
 ];
 
+const initialAuthToken = getStoredAuthToken();
+
 export const useStore = create<AppState>((set, get) => ({
   // Auth State
   user: null,
-  isAuthenticated: false,
-  otpVerified: false,
+  isAuthenticated: !!initialAuthToken,
+  otpVerified: !!initialAuthToken,
   authError: null,
-  authToken: getStoredAuthToken(),
+  authToken: initialAuthToken,
   pendingVerificationEmail: getStoredPendingEmail(),
 
   // Student Dashboard State
-  journalEntries: mockJournalEntries,
-  trackerHistory: mockTrackerHistory,
-  recommendations: defaultRecommendations,
-  notifications: mockNotifications,
+  journalEntries: [],
+  trackerHistory: [],
+  recommendations: [],
+  notifications: [],
 
   // Chat Widget State
   chatMessages: [
@@ -471,8 +379,126 @@ export const useStore = create<AppState>((set, get) => ({
     highRiskThreshold: 70,
     moderateRiskThreshold: 40,
     assessmentIntervalDays: 7,
+    maxWeeklyAssessmentsPerStudent: 1,
     emailNotificationsEnabled: true,
     inAppNotificationsEnabled: true,
+  },
+
+  // Fetch actions
+  fetchTrackerHistory: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const [initialResponse, weeklyResponse] = await Promise.all([
+        apiRequest<{
+          success: boolean;
+          data: { history: any[] };
+        }>('/assessment/history', { token }),
+        apiRequest<{
+          success: boolean;
+          data: { history: any[] };
+        }>('/weekly-assessment/history', { token }),
+      ]);
+
+      const initialHistory = initialResponse.data.history.map((h) => ({
+        date: (h.completedAt ?? h.createdAt).split('T')[0],
+        timestamp: new Date(h.completedAt ?? h.createdAt).getTime(),
+        burnoutScore: h.burnoutScore,
+        sleepHours: h.sleepHours ?? 0,
+        studyHours: h.studyHours ?? 0,
+        screenTime: h.screenTime ?? 0,
+        stressLevel: h.stressLevel ?? 0,
+        procrastination: h.procrastination ?? 0,
+      }));
+
+      const weeklyHistory = weeklyResponse.data.history.map((h) => ({
+        date: (h.completedAt ?? h.createdAt).split('T')[0],
+        timestamp: new Date(h.completedAt ?? h.createdAt).getTime(),
+        burnoutScore: h.burnoutScore,
+        sleepHours: h.sleepHoursAverage ?? 0,
+        studyHours: h.academicLoadScore ? Math.round(h.academicLoadScore / 10) : 0,
+        screenTime: 0,
+        stressLevel: h.stressScore ? Math.round(h.stressScore / 10) : 0,
+        procrastination: 0,
+      }));
+
+      const mapped = [...initialHistory, ...weeklyHistory]
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .map(({ timestamp: _timestamp, ...item }) => item);
+
+      set({ trackerHistory: mapped });
+    } catch (err) {
+      console.error('[Store] Failed to fetch tracker history:', err);
+    }
+  },
+
+  fetchJournalEntries: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: any[];
+      }>('/journal', { token });
+      const mapped = response.data.map((j) => {
+        let sentiment: JournalEntry['sentiment'] = 'Neutral';
+        if (j.sentimentScore > 0) sentiment = 'Positive';
+        else if (j.sentimentScore < 0) sentiment = 'Negative';
+
+        return {
+          id: j._id,
+          content: j.notes ?? '',
+          sentiment,
+          date: (j.journaledAt ?? j.createdAt).split('T')[0],
+          timestamp: new Date(j.journaledAt ?? j.createdAt).getTime(),
+        };
+      });
+      set({ journalEntries: mapped });
+    } catch (err) {
+      console.error('[Store] Failed to fetch journal entries:', err);
+    }
+  },
+
+  fetchRecommendations: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: Recommendation[];
+      }>('/recommendations', { token });
+      set({ recommendations: response.data });
+    } catch (err) {
+      console.error('[Store] Failed to fetch recommendations:', err);
+    }
+  },
+
+  fetchNotifications: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: Notification[];
+      }>('/notifications', { token });
+      set({ notifications: response.data });
+    } catch (err) {
+      console.error('[Store] Failed to fetch notifications:', err);
+    }
+  },
+
+  fetchAIHistory: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: any[];
+      }>('/ai/history', { token });
+      set({ chatMessages: response.data });
+    } catch (err) {
+      console.error('[Store] Failed to fetch AI history:', err);
+    }
   },
 
   // Actions
@@ -511,6 +537,16 @@ export const useStore = create<AppState>((set, get) => ({
         isAuthenticated: true,
         otpVerified: true,
       });
+
+      // Fetch user specific data
+      setTimeout(() => {
+        get().fetchTrackerHistory();
+        get().fetchJournalEntries();
+        get().fetchRecommendations();
+        get().fetchNotifications();
+        get().fetchAIHistory();
+      }, 50);
+
       return true;
     } catch (error) {
       set({ authError: error instanceof Error ? error.message : 'Login failed' });
@@ -535,6 +571,15 @@ export const useStore = create<AppState>((set, get) => ({
         isAuthenticated: true,
         otpVerified: true,
       });
+
+      setTimeout(() => {
+        get().fetchTrackerHistory();
+        get().fetchJournalEntries();
+        get().fetchRecommendations();
+        get().fetchNotifications();
+        get().fetchAIHistory();
+      }, 50);
+
       return true;
     } catch (error) {
       set({
@@ -599,6 +644,15 @@ export const useStore = create<AppState>((set, get) => ({
         otpVerified: true,
         pendingVerificationEmail: null,
       });
+
+      setTimeout(() => {
+        get().fetchTrackerHistory();
+        get().fetchJournalEntries();
+        get().fetchRecommendations();
+        get().fetchNotifications();
+        get().fetchAIHistory();
+      }, 50);
+
       return true;
     } catch (error) {
       set({ authError: error instanceof Error ? error.message : 'OTP verification failed' });
@@ -636,6 +690,18 @@ export const useStore = create<AppState>((set, get) => ({
       authError: null,
       authToken: null,
       pendingVerificationEmail: null,
+      journalEntries: [],
+      trackerHistory: [],
+      recommendations: [],
+      notifications: [],
+      chatMessages: [
+        {
+          id: 'm-0',
+          sender: 'ai',
+          text: "Hi there! I'm your Wellness Assistant. I analyze your journal entries and weekly assessments to offer suggestions and monitor burnout. How are you feeling today?",
+          timestamp: Date.now() - 1000 * 60 * 5,
+        }
+      ],
     });
   },
 
@@ -669,9 +735,31 @@ export const useStore = create<AppState>((set, get) => ({
 
   fetchMe: async () => {
     const token = get().authToken ?? getStoredAuthToken();
-    if (!token) return false;
 
     try {
+      if (!token) {
+        const refreshed = await apiRequest<RefreshTokenResponse>('/auth/refresh-token', {
+          method: 'POST',
+        });
+        storeSession(refreshed.token);
+        set({
+          user: mapStudentToUser(refreshed.user),
+          authToken: refreshed.token,
+          isAuthenticated: true,
+          otpVerified: true,
+        });
+
+        setTimeout(() => {
+          get().fetchTrackerHistory();
+          get().fetchJournalEntries();
+          get().fetchRecommendations();
+          get().fetchNotifications();
+          get().fetchAIHistory();
+        }, 50);
+
+        return true;
+      }
+
       const data = await apiRequest<MeResponse>('/auth/me', { token });
       set({
         user: mapStudentToUser(data.user),
@@ -679,11 +767,43 @@ export const useStore = create<AppState>((set, get) => ({
         isAuthenticated: true,
         otpVerified: true,
       });
+
+      setTimeout(() => {
+        get().fetchTrackerHistory();
+        get().fetchJournalEntries();
+        get().fetchRecommendations();
+        get().fetchNotifications();
+        get().fetchAIHistory();
+      }, 50);
+
       return true;
     } catch {
-      clearSession();
-      set({ user: null, authToken: null, isAuthenticated: false, otpVerified: false });
-      return false;
+      try {
+        const refreshed = await apiRequest<RefreshTokenResponse>('/auth/refresh-token', {
+          method: 'POST',
+        });
+        storeSession(refreshed.token);
+        set({
+          user: mapStudentToUser(refreshed.user),
+          authToken: refreshed.token,
+          isAuthenticated: true,
+          otpVerified: true,
+        });
+
+        setTimeout(() => {
+          get().fetchTrackerHistory();
+          get().fetchJournalEntries();
+          get().fetchRecommendations();
+          get().fetchNotifications();
+          get().fetchAIHistory();
+        }, 50);
+
+        return true;
+      } catch {
+        clearSession();
+        set({ user: null, authToken: null, isAuthenticated: false, otpVerified: false });
+        return false;
+      }
     }
   },
 
@@ -718,16 +838,19 @@ export const useStore = create<AppState>((set, get) => ({
   submitAssessment: async (data, isWeekly = false) => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) {
-      return false;
+      return 'You are not logged in. Please log in and try again.';
     }
 
     try {
-      const endpoint = isWeekly ? '/weekly-assessment' : '/assessment';
+      const maxWeeklyAssessments = Math.max(1, get().adminSettings.maxWeeklyAssessmentsPerStudent);
+      const endpoint = isWeekly
+        ? `/weekly-assessment?maxWeeklyAssessments=${maxWeeklyAssessments}`
+        : '/assessment';
       const body = isWeekly
         ? mapToWeeklyAssessmentPayload(data)
         : mapToInitialAssessmentPayload(data);
 
-      const response = await apiRequest<{
+      await apiRequest<{
         success: boolean;
         data: { assessment: { burnoutScore: number } };
       }>(endpoint, {
@@ -735,19 +858,6 @@ export const useStore = create<AppState>((set, get) => ({
         token,
         body: JSON.stringify(body),
       });
-
-      const computedScore = response.data.assessment.burnoutScore;
-      const todayStr = new Date().toISOString().split('T')[0];
-
-      const newTracker: TrackerHistory = {
-        date: todayStr,
-        burnoutScore: computedScore,
-        sleepHours: data.sleepHours,
-        studyHours: data.studyHours,
-        screenTime: data.screenTime,
-        stressLevel: data.stressLevel,
-        procrastination: data.procrastination,
-      };
 
       const currentUser = get().user;
       if (currentUser && !isWeekly) {
@@ -759,274 +869,163 @@ export const useStore = create<AppState>((set, get) => ({
         });
       }
 
-      const newRecommendations: Recommendation[] = [];
-      if (data.sleepHours < 6.5) {
-        newRecommendations.push({
-          id: `rec-${Date.now()}-1`,
-          title: 'Earlier Sleep Schedule',
-          reason: `Your sleep of ${data.sleepHours} hours is below the recommended 7-8 hours.`,
-          priority: 'High',
-          followedStatus: 'none',
-          rating: 0,
-          feedbackText: '',
-          dateGenerated: todayStr,
-        });
-      }
-      if (data.screenTime > 6) {
-        newRecommendations.push({
-          id: `rec-${Date.now()}-2`,
-          title: 'Reduce Screen Time before Bed',
-          reason: `Your daily screen time is ${data.screenTime} hours. Aim to disconnect 1 hour before bedtime.`,
-          priority: 'Medium',
-          followedStatus: 'none',
-          rating: 0,
-          feedbackText: '',
-          dateGenerated: todayStr,
-        });
-      }
-      if (data.assignmentBacklog > 5) {
-        newRecommendations.push({
-          id: `rec-${Date.now()}-3`,
-          title: 'Break Down Backlog into Micro-Tasks',
-          reason: `Your assignment backlog has reached ${data.assignmentBacklog} items, causing overload.`,
-          priority: 'High',
-          followedStatus: 'none',
-          rating: 0,
-          feedbackText: '',
-          dateGenerated: todayStr,
-        });
-      }
-      if (data.stressLevel > 7) {
-        newRecommendations.push({
-          id: `rec-${Date.now()}-4`,
-          title: 'Daily 10-Minute Guided Mindfulness',
-          reason: 'Your stress level is highly elevated. Incorporate brief breathing sessions.',
-          priority: 'High',
-          followedStatus: 'none',
-          rating: 0,
-          feedbackText: '',
-          dateGenerated: todayStr,
-        });
-      }
-      if (newRecommendations.length === 0) {
-        newRecommendations.push({
-          id: `rec-${Date.now()}-5`,
-          title: 'Maintain Study-Life Balance',
-          reason: 'Your scores are healthy. Keep taking regular study breaks to sustain this.',
-          priority: 'Low',
-          followedStatus: 'none',
-          rating: 0,
-          feedbackText: '',
-          dateGenerated: todayStr,
-        });
-      }
+      await get().fetchTrackerHistory();
+      await get().fetchRecommendations();
+      await get().fetchNotifications();
 
-      if (computedScore >= 70) {
-        const scoreRisk = computedScore >= 70 ? 'High' : computedScore >= 40 ? 'Moderate' : 'Low';
-        get().addNotification('Risk', `High Burnout Warning: Your score is ${computedScore} (${scoreRisk} Risk). Action suggested.`);
-      }
-
-      set((state) => ({
-        trackerHistory: [...state.trackerHistory, newTracker],
-        recommendations: [...newRecommendations, ...state.recommendations].slice(0, 8),
-      }));
-
-      return true;
+      return null; // null = success
     } catch (error) {
       console.error('[Assessment] Submit failed:', error);
-      return false;
+      // Return the real backend message so the UI can show it
+      if (error instanceof Error) return error.message;
+      return 'Failed to save assessment. Please check your connection and try again.';
     }
   },
 
-  addJournalEntry: (content) => {
-    // Layer 4: Feature Extraction Engine & Sentiment Analysis Simulation
-    // Analyze keywords for mock sentiment
-    const contentLower = content.toLowerCase();
-    
-    let sentiment: JournalEntry['sentiment'] = 'Neutral';
-    let negativePoints = 0;
-    let positivePoints = 0;
-
-    const negativeKeywords = ['tired', 'stressed', 'exhausted', 'overwhelmed', 'sad', 'angry', 'fail', 'bad', 'hard', 'stuck', 'sleepy', 'insomnia', 'procrastinating', 'backlog'];
-    const positiveKeywords = ['happy', 'productive', 'good', 'refreshed', 'exercise', 'relax', 'fun', 'completed', 'progress', 'sleep well', 'motivated', 'excited'];
-
-    negativeKeywords.forEach(word => {
-      if (contentLower.includes(word)) negativePoints++;
-    });
-
-    positiveKeywords.forEach(word => {
-      if (contentLower.includes(word)) positivePoints++;
-    });
-
-    if (negativePoints > positivePoints) {
-      sentiment = 'Negative';
-    } else if (positivePoints > negativePoints) {
-      sentiment = 'Positive';
-    }
-
-    const newEntry: JournalEntry = {
-      id: `j-${Date.now()}`,
-      content,
-      sentiment,
-      date: new Date().toISOString().split('T')[0],
-      timestamp: Date.now(),
-    };
-
-    // Layer 4: Extract features and simulate influence on burnout score
-    // (e.g. adjust the last burnout score slightly based on the entry's sentiment)
-    set((state) => {
-      const updatedHistory = [...state.trackerHistory];
-      if (updatedHistory.length > 0) {
-        const lastIndex = updatedHistory.length - 1;
-        const lastItem = updatedHistory[lastIndex];
-        let scoreAdjustment = 0;
-        
-        if (sentiment === 'Negative') scoreAdjustment = 3;
-        if (sentiment === 'Positive') scoreAdjustment = -3;
-        
-        updatedHistory[lastIndex] = {
-          ...lastItem,
-          burnoutScore: Math.min(100, Math.max(0, lastItem.burnoutScore + scoreAdjustment)),
-        };
-      }
-
-      // Add a notification about sentiment analysis output
-      const sentimentAlertMsg = `Sentiment analyzed: "${sentiment}". Emotional markers recorded.`;
-      
-      return {
-        journalEntries: [newEntry, ...state.journalEntries],
-        trackerHistory: updatedHistory,
-        notifications: [
-          {
-            id: `n-${Date.now()}`,
-            category: 'Mood',
-            message: sentimentAlertMsg,
-            read: false,
-            date: new Date().toISOString().split('T')[0],
-          },
-          ...state.notifications
-        ],
-      };
-    });
-  },
-
-  deleteJournalEntry: (id) => {
-    set((state) => ({
-      journalEntries: state.journalEntries.filter(entry => entry.id !== id),
-    }));
-  },
-
-  submitRecommendationFeedback: (id, followedStatus, rating, feedbackText) => {
-    set((state) => {
-      const updatedRecommendations = state.recommendations.map((rec) => {
-        if (rec.id === id) {
-          return {
-            ...rec,
-            followedStatus,
-            rating,
-            feedbackText,
-          };
-        }
-        return rec;
+  addJournalEntry: async (content) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest('/journal', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ content }),
       });
-
-      // Layer 5 Simulation: Create a notification acknowledging feedback
-      const rec = state.recommendations.find(r => r.id === id);
-      const recTitle = rec ? rec.title : 'Recommendation';
-
-      return {
-        recommendations: updatedRecommendations,
-        notifications: [
-          {
-            id: `n-${Date.now()}`,
-            category: 'Recommendation',
-            message: `Feedback recorded for "${recTitle}". AI is adapting models to your habits.`,
-            read: false,
-            date: new Date().toISOString().split('T')[0],
-          },
-          ...state.notifications
-        ]
-      };
-    });
+      await get().fetchJournalEntries();
+      await get().fetchNotifications();
+      await get().fetchTrackerHistory();
+    } catch (err) {
+      console.error('[Store] Failed to add journal entry:', err);
+    }
   },
 
-  markNotificationRead: (id) => {
-    set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n.id === id ? { ...n, read: true } : n
-      ),
-    }));
+  deleteJournalEntry: async (id) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest(`/journal/${id}`, {
+        method: 'DELETE',
+        token,
+      });
+      await get().fetchJournalEntries();
+    } catch (err) {
+      console.error('[Store] Failed to delete journal entry:', err);
+    }
   },
 
-  markAllNotificationsRead: () => {
-    set((state) => ({
-      notifications: state.notifications.map((n) => ({ ...n, read: true })),
-    }));
+  submitRecommendationFeedback: async (id, followedStatus, rating, feedbackText) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest(`/recommendations/${id}/feedback`, {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ status: followedStatus, rating, feedbackText }),
+      });
+      await get().fetchRecommendations();
+      await get().fetchNotifications();
+    } catch (err) {
+      console.error('[Store] Failed to submit recommendation feedback:', err);
+    }
   },
 
-  deleteNotification: (id) => {
-    set((state) => ({
-      notifications: state.notifications.filter((n) => n.id !== id),
-    }));
+  markNotificationRead: async (id) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest(`/notifications/${id}/read`, {
+        method: 'PATCH',
+        token,
+      });
+      await get().fetchNotifications();
+    } catch (err) {
+      console.error('[Store] Failed to mark notification read:', err);
+    }
   },
 
-  deleteAllNotifications: () => {
-    set(() => ({
-      notifications: [],
-    }));
+  markAllNotificationsRead: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest('/notifications/read-all', {
+        method: 'POST',
+        token,
+      });
+      await get().fetchNotifications();
+    } catch (err) {
+      console.error('[Store] Failed to mark all notifications read:', err);
+    }
   },
 
-  addNotification: (category, message) => {
-    const newNotif: Notification = {
-      id: `n-${Date.now()}`,
-      category,
-      message,
-      read: false,
-      date: new Date().toISOString().split('T')[0],
-    };
-    set((state) => ({
-      notifications: [newNotif, ...state.notifications],
-    }));
+  deleteNotification: async (id) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest(`/notifications/${id}`, {
+        method: 'DELETE',
+        token,
+      });
+      await get().fetchNotifications();
+    } catch (err) {
+      console.error('[Store] Failed to delete notification:', err);
+    }
   },
 
-  sendChatMessage: (text) => {
+  deleteAllNotifications: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest('/notifications', {
+        method: 'DELETE',
+        token,
+      });
+      await get().fetchNotifications();
+    } catch (err) {
+      console.error('[Store] Failed to delete all notifications:', err);
+    }
+  },
+
+  addNotification: () => {}, // No-op, managed by backend
+
+  sendChatMessage: async (text) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+
+    // Optimistically add user message
     const userMsg = {
       id: `m-usr-${Date.now()}`,
       sender: 'user' as const,
       text,
       timestamp: Date.now(),
     };
-
     set((state) => ({
       chatMessages: [...state.chatMessages, userMsg],
     }));
 
-    // AI Response Simulation
-    setTimeout(() => {
-      const userText = text.toLowerCase();
-      let aiResponseText = "I see. Let's talk more about that. Sharing your feelings in your mood journal is also a great way to monitor your progress.";
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: {
+          userMessage: any;
+          aiMessage: any;
+        };
+      }>('/ai/chat', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ message: text }),
+      });
 
-      if (userText.includes('sleep') || userText.includes('insomnia') || userText.includes('tired')) {
-        aiResponseText = "Sleep disruption is a primary indicator of burnout. I highly recommend establishing a screen-free window 1 hour before sleeping and aiming for a consistent 7+ hours of sleep. Would you like me to log this sleep alert in your analytics?";
-      } else if (userText.includes('exam') || userText.includes('study') || userText.includes('stress') || userText.includes('overwhelmed')) {
-        aiResponseText = "Academic pressure can quickly cause burnout. I suggest scheduling 10-minute micro-breaks for every 50 minutes of studying, and focusing on breaking your backlog down into small daily steps.";
-      } else if (userText.includes('motivated') || userText.includes('procrastinate') || userText.includes('lazy')) {
-        aiResponseText = "Motivation drops can be due to continuous stress. Try using the Pomodoro technique to complete just one simple, 15-minute task. It helps lower the entry barrier.";
-      } else if (userText.includes('hello') || userText.includes('hi')) {
-        aiResponseText = "Hello! I'm here to support your student wellness journey. Feel free to talk to me about your academic workload, sleep habits, or mood.";
-      }
-
-      const aiMsg = {
-        id: `m-ai-${Date.now()}`,
-        sender: 'ai' as const,
-        text: aiResponseText,
-        timestamp: Date.now(),
-      };
-
+      // Update state with AI response
       set((state) => ({
-        chatMessages: [...state.chatMessages, aiMsg],
+        chatMessages: [
+          ...state.chatMessages.filter((m) => m.id !== userMsg.id),
+          response.data.userMessage,
+          response.data.aiMessage,
+        ],
       }));
-    }, 1000);
+    } catch (err) {
+      console.error('[Store] Failed to send chat message:', err);
+    }
   },
 
   // Admin Actions

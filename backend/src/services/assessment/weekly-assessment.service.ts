@@ -12,6 +12,7 @@ import type { IWeeklyAssessment } from "../../models/WeeklyAssessment.js";
 export const submitWeeklyAssessment = async (
   userId: string,
   assessment: WeeklyAssessmentRequestBody,
+  maxWeeklyAssessments = 1,
 ): Promise<IWeeklyAssessment> => {
   if (!Types.ObjectId.isValid(userId)) {
     throw new AppError("Invalid user identifier", 400);
@@ -24,8 +25,11 @@ export const submitWeeklyAssessment = async (
   }
 
   const weekStartDate = getWeekStartDate();
+  const maxAssessmentsForWeek = Number.isFinite(maxWeeklyAssessments)
+    ? Math.max(1, Math.floor(maxWeeklyAssessments))
+    : 1;
 
-  const existingAssessment = await WeeklyAssessment.findOne({
+  const existingAssessmentCount = await WeeklyAssessment.countDocuments({
     student: new Types.ObjectId(userId),
     weekStartDate: {
       $gte: weekStartDate,
@@ -33,7 +37,7 @@ export const submitWeeklyAssessment = async (
     },
   });
 
-  if (existingAssessment) {
+  if (existingAssessmentCount >= maxAssessmentsForWeek) {
     throw new AppError("Weekly assessment already submitted for this week", 400);
   }
 
@@ -81,7 +85,7 @@ export const getWeeklyAssessmentHistory = async (userId: string): Promise<IWeekl
     throw new AppError("Invalid user identifier", 400);
   }
 
-  return WeeklyAssessment.find({ student: new Types.ObjectId(userId) }).sort({ weekStartDate: -1 });
+  return WeeklyAssessment.find({ student: new Types.ObjectId(userId) }).sort({ weekStartDate: -1, completedAt: -1, createdAt: -1 });
 };
 
 export const getLatestWeeklyAssessment = async (userId: string): Promise<IWeeklyAssessment | null> => {
@@ -89,7 +93,7 @@ export const getLatestWeeklyAssessment = async (userId: string): Promise<IWeekly
     throw new AppError("Invalid user identifier", 400);
   }
 
-  return WeeklyAssessment.findOne({ student: new Types.ObjectId(userId) }).sort({ weekStartDate: -1 });
+  return WeeklyAssessment.findOne({ student: new Types.ObjectId(userId) }).sort({ weekStartDate: -1, completedAt: -1, createdAt: -1 });
 };
 
 const getWeekStartDate = (): Date => {

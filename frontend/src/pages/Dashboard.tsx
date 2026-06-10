@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
@@ -6,8 +6,14 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { Sparkles, Calendar, Moon, Compass, ArrowRight } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { user, trackerHistory, recommendations } = useStore();
+  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications } = useStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchTrackerHistory();
+    fetchRecommendations();
+    fetchNotifications();
+  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications]);
 
   // Guard checks handled in DashboardLayout, but let's read the latest values
   const latestTracker = trackerHistory.length > 0 ? trackerHistory[trackerHistory.length - 1] : null;

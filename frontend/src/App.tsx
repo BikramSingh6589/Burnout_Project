@@ -70,8 +70,8 @@ const OtpRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 // Route Protection Wrapper for students (post-OTP routes)
-const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children }) => {
-  const { isAuthenticated, otpVerified } = useStore();
+const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children, requireAssessment = false }) => {
+  const { isAuthenticated, otpVerified, user } = useStore();
 
   if (!isAuthenticated) {
     return <Navigate to="/auth/register" replace />;
@@ -81,8 +81,9 @@ const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: bo
     return <Navigate to="/auth/verify-otp" replace />;
   }
 
-  // We no longer redirect here for requireAssessment.
-  // The Dashboard itself will handle the locked state.
+  if (requireAssessment && user && !user.assessmentCompleted) {
+    return <Navigate to="/assessment?from=dashboard" replace />;
+  }
 
   return <>{children}</>;
 };

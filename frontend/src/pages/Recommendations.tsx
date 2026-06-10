@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { Star } from 'lucide-react';
 
 export const Recommendations: React.FC = () => {
-  const { recommendations, submitRecommendationFeedback } = useStore();
+  const { recommendations, submitRecommendationFeedback, fetchRecommendations } = useStore();
+
+  useEffect(() => {
+    fetchRecommendations();
+  }, [fetchRecommendations]);
   
   // Keep track of which recommendation card has its feedback form open
   const [activeFeedbackId, setActiveFeedbackId] = useState<string | null>(null);

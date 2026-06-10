@@ -8,6 +8,7 @@ export const Assessment: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isWeekly = location.pathname.includes('weekly');
+  const showDashboardRedirectMessage = !isWeekly && new URLSearchParams(location.search).get('from') === 'dashboard';
 
   // Guard: Must be logged in
   if (!isAuthenticated) {
@@ -45,11 +46,11 @@ export const Assessment: React.FC = () => {
     e.preventDefault();
     setSubmitError(null);
     setSubmitting(true);
-    const success = await submitAssessment(formData, isWeekly);
+    const errorMsg = await submitAssessment(formData, isWeekly);
     setSubmitting(false);
 
-    if (!success) {
-      setSubmitError('Failed to save assessment. Please check your connection and try again.');
+    if (errorMsg !== null) {
+      setSubmitError(errorMsg);
       return;
     }
 
@@ -64,6 +65,11 @@ export const Assessment: React.FC = () => {
     <div className="max-w-2xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       {/* Card Wrapper */}
       <div className="bg-surface rounded-2xl border border-border shadow-level2 p-8">
+        {showDashboardRedirectMessage && step < 3 && (
+          <div className="mb-6 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-xs font-semibold text-primary">
+            Before accessing your dashboard, please complete the initial assessment so we can generate your baseline burnout score.
+          </div>
+        )}
         
         {/* Step 1 & 2 Headers */}
         {step < 3 && (
@@ -273,8 +279,17 @@ export const Assessment: React.FC = () => {
               </div>
 
               {submitError && (
-                <div className="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-xs font-semibold text-center">
-                  {submitError}
+                <div className="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-xs font-semibold text-center space-y-2">
+                  <p>{submitError}</p>
+                  {submitError.toLowerCase().includes('already submitted') && (
+                    <button
+                      type="button"
+                      onClick={handleViewDashboard}
+                      className="underline text-primary font-bold"
+                    >
+                      Go to Dashboard →
+                    </button>
+                  )}
                 </div>
               )}
 
