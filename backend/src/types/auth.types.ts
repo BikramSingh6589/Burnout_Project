@@ -67,4 +67,5 @@ export interface PublicUserProfile {
   age?: number;
   gender?: Gender;
   accountStatus: string;
+  profileCompleted?: boolean;
 }

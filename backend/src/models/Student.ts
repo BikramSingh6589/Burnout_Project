@@ -18,10 +18,12 @@ export interface IStudent extends Document {
   gender?: Gender;
   age?: number;
   password: string;
+  profileCompleted?: boolean;
   profile?: IStudentProfile;
   accountStatus: AccountStatus;
   currentBurnoutScore: number;
   currentRiskLevel: RiskLevel;
+  assessmentCompleted: boolean;
   otpHash?: string;
   otpExpiresAt?: Date;
   otpAttempts: number;
@@ -98,6 +100,16 @@ const StudentSchema = new Schema<IStudent>(
       type: String,
       enum: Object.values(RiskLevel),
       default: RiskLevel.Low,
+      index: true,
+    },
+    assessmentCompleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    profileCompleted: {
+      type: Boolean,
+      default: false,
       index: true,
     },
     otpHash: {

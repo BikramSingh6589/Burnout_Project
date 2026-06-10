@@ -38,6 +38,7 @@ const toPublicUserProfile = (student: IStudent): PublicUserProfile => ({
   age: student.age,
   gender: student.gender,
   accountStatus: student.accountStatus,
+  profileCompleted: !!student.profileCompleted,
 });
 
 export const register = async (payload: RegisterRequestBody): Promise<{ message: string }> => {
@@ -55,6 +56,7 @@ export const register = async (payload: RegisterRequestBody): Promise<{ message:
     age: payload.age,
     gender: payload.gender,
     accountStatus: AccountStatus.PendingVerification,
+    profileCompleted: !!(payload.age && payload.gender),
   });
 
   const otp = generateOTP();
@@ -76,6 +78,7 @@ export const verifyRegistrationOtp = async (payload: VerifyOtpRequestBody): Prom
   student.accountStatus = AccountStatus.Active;
   student.emailVerifiedAt = new Date();
   await clearOTP(student);
+  student.profileCompleted = !!(student.age && student.gender);
 
   const token = generateToken(student._id.toString(), student.email, "student");
   const refreshToken = generateRefreshToken(student._id.toString(), student.email, "student");
@@ -145,6 +148,7 @@ export const loginWithGoogle = async (payload: GoogleLoginRequestBody): Promise<
       password: hashedPassword,
       accountStatus: AccountStatus.Active,
       emailVerifiedAt: new Date(),
+      profileCompleted: false,
     });
   } else if (student.accountStatus !== AccountStatus.Active) {
     student.accountStatus = AccountStatus.Active;
@@ -229,6 +233,7 @@ export const updateProfile = async (userId: string, payload: UpdateProfileReques
   student.phoneNumber = payload.phoneNumber;
   student.age = payload.age;
   student.gender = payload.gender;
+  student.profileCompleted = !!(student.age && student.gender);
   await student.save();
 
   return toPublicUserProfile(student);
