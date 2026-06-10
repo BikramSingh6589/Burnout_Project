@@ -44,7 +44,8 @@ export const Login: React.FC = () => {
     setGoogleLoading(false);
 
     if (success) {
-      navigate('/');
+      const user = useStore.getState().user;
+      navigate(!user?.age || !user?.gender ? '/profile' : '/');
     } else {
       setError(useStore.getState().authError || 'Google sign-in failed');
     }

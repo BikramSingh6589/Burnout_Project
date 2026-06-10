@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, KeyRound, Loader2 } from 'lucide-react';
 import { useStore } from '../../store/useStore';
+import { getPasswordRequirementError } from '@/lib/passwordValidation';
 
 export const ResetPassword: React.FC = () => {
   const { resetPassword } = useStore();
@@ -30,8 +31,9 @@ export const ResetPassword: React.FC = () => {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+    const passwordError = getPasswordRequirementError(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 

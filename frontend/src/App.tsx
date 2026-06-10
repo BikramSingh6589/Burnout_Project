@@ -54,11 +54,11 @@ const RootRedirect: React.FC = () => {
   return <Navigate to="/home" replace />;
 };
 
-// OTP page: must be logged in, but OTP must not be verified yet
+// OTP page: available after registration while email verification is pending
 const OtpRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, otpVerified } = useStore();
+  const { isAuthenticated, otpVerified, pendingVerificationEmail } = useStore();
 
-  if (!isAuthenticated) {
+  if (!pendingVerificationEmail && !isAuthenticated) {
     return <Navigate to="/auth/register" replace />;
   }
 
@@ -90,6 +90,7 @@ const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: bo
 // Route wrapper to handle Navbar visibility (hide Navbar for admin dashboard pages)
 const LayoutWrapper: React.FC = () => {
   const location = useLocation();
+  const { fetchMe } = useStore();
   const isAdminRoute = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
   const isAuthRoute = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password', '/auth/reset-password'].includes(location.pathname);
   const hideNavbar = isAdminRoute || isAuthRoute;
@@ -103,6 +104,9 @@ const LayoutWrapper: React.FC = () => {
       localStorage.setItem('theme', 'light');
     }
   }, []);
+  React.useEffect(() => {
+    fetchMe();
+  }, [fetchMe]);
   return (
     <div className="min-h-screen flex flex-col">
       {!hideNavbar && <Navbar />}

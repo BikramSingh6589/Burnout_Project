@@ -1,16 +1,21 @@
 import bcrypt from "bcrypt";
+import crypto from "node:crypto";
 import { Student, type IStudent } from "../../models/Student.js";
 import { AccountStatus } from "../../types/common.types.js";
 import type {
   ForgotPasswordRequestBody,
+  GoogleLoginRequestBody,
   LoginRequestBody,
   PublicUserProfile,
   RegisterRequestBody,
+  ResendOtpRequestBody,
   ResetPasswordRequestBody,
+  UpdateProfileRequestBody,
   VerifyOtpRequestBody,
 } from "../../types/auth.types.js";
 import { clearOTP, generateOTP, saveOTP, sendOTPEmail, verifyOTP } from "./otp.service.js";
 import { generateToken } from "./token.service.js";
+import { verifyGoogleIdToken } from "../../utils/googleAuth.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
 const PASSWORD_SELECT_FIELDS = "+password +otpHash +otpExpiresAt +otpAttempts +otpPurpose";
@@ -59,7 +64,7 @@ export const register = async (payload: RegisterRequestBody): Promise<{ message:
   return { message: "OTP sent successfully" };
 };
 
-export const verifyRegistrationOtp = async (payload: VerifyOtpRequestBody): Promise<{ token: string }> => {
+export const verifyRegistrationOtp = async (payload: VerifyOtpRequestBody): Promise<{ token: string; user: PublicUserProfile }> => {
   const student = await Student.findOne({ email: payload.email }).select(OTP_SELECT_FIELDS);
 
   if (!student) {
@@ -74,7 +79,25 @@ export const verifyRegistrationOtp = async (payload: VerifyOtpRequestBody): Prom
 
   const token = generateToken(student._id.toString(), student.email, "student");
 
-  return { token };
+  return { token, user: toPublicUserProfile(student) };
+};
+
+export const resendRegistrationOtp = async (payload: ResendOtpRequestBody): Promise<{ message: string }> => {
+  const student = await Student.findOne({ email: payload.email }).select(OTP_SELECT_FIELDS);
+
+  if (!student) {
+    throw new AuthError("User not found", 404);
+  }
+
+  if (student.accountStatus === AccountStatus.Active) {
+    throw new AuthError("Email is already verified", 409);
+  }
+
+  const otp = generateOTP();
+  await saveOTP(student, otp, "email_verification");
+  await sendOTPEmail(student.email, otp, "email_verification");
+
+  return { message: "OTP sent successfully" };
 };
 
 export const login = async (payload: LoginRequestBody): Promise<{ token: string; user: PublicUserProfile }> => {
@@ -92,6 +115,37 @@ export const login = async (payload: LoginRequestBody): Promise<{ token: string;
 
   if (student.accountStatus !== AccountStatus.Active) {
     throw new AuthError("Please verify your email before logging in", 403);
+  }
+
+  student.lastLoginAt = new Date();
+  await student.save();
+
+  const token = generateToken(student._id.toString(), student.email, "student");
+
+  return {
+    token,
+    user: toPublicUserProfile(student),
+  };
+};
+
+export const loginWithGoogle = async (payload: GoogleLoginRequestBody): Promise<{ token: string; user: PublicUserProfile }> => {
+  const googleProfile = await verifyGoogleIdToken(payload.token);
+  let student = await Student.findOne({ email: googleProfile.email });
+
+  if (!student) {
+    const randomPassword = crypto.randomBytes(32).toString("hex");
+    const hashedPassword = await bcrypt.hash(randomPassword, PASSWORD_SALT_ROUNDS);
+
+    student = await Student.create({
+      fullName: googleProfile.fullName,
+      email: googleProfile.email,
+      password: hashedPassword,
+      accountStatus: AccountStatus.Active,
+      emailVerifiedAt: new Date(),
+    });
+  } else if (student.accountStatus !== AccountStatus.Active) {
+    student.accountStatus = AccountStatus.Active;
+    student.emailVerifiedAt = student.emailVerifiedAt ?? new Date();
   }
 
   student.lastLoginAt = new Date();
@@ -140,6 +194,22 @@ export const getProfile = async (userId: string): Promise<PublicUserProfile> => 
   if (!student) {
     throw new AuthError("User not found", 404);
   }
+
+  return toPublicUserProfile(student);
+};
+
+export const updateProfile = async (userId: string, payload: UpdateProfileRequestBody): Promise<PublicUserProfile> => {
+  const student = await Student.findById(userId);
+
+  if (!student) {
+    throw new AuthError("User not found", 404);
+  }
+
+  student.fullName = payload.name;
+  student.phoneNumber = payload.phoneNumber;
+  student.age = payload.age;
+  student.gender = payload.gender;
+  await student.save();
 
   return toPublicUserProfile(student);
 };

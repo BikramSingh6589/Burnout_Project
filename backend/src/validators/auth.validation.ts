@@ -3,9 +3,12 @@ import { z } from "zod";
 import { Gender } from "../types/common.types.js";
 import type {
   ForgotPasswordRequestBody,
+  GoogleLoginRequestBody,
   LoginRequestBody,
   RegisterRequestBody,
+  ResendOtpRequestBody,
   ResetPasswordRequestBody,
+  UpdateProfileRequestBody,
   VerifyOtpRequestBody,
 } from "../types/auth.types.js";
 
@@ -20,12 +23,12 @@ export class ValidationError extends Error {
 const passwordSchema = z
   .string()
   .trim()
-  .min(8, "Password does not meet security requirements")
-  .max(128, "Password does not meet security requirements")
-  .regex(/[A-Z]/, "Password does not meet security requirements")
-  .regex(/[a-z]/, "Password does not meet security requirements")
-  .regex(/\d/, "Password does not meet security requirements")
-  .regex(/[^A-Za-z0-9]/, "Password does not meet security requirements");
+  .min(8, "Password must be at least 8 characters long")
+  .max(128, "Password must be 128 characters or fewer")
+  .regex(/[A-Z]/, "Password must contain at least 1 capital letter")
+  .regex(/[a-z]/, "Password must contain at least 1 lowercase letter")
+  .regex(/\d/, "Password must contain at least 1 number")
+  .regex(/[^A-Za-z0-9]/, "Password must contain at least 1 special character");
 
 const emailSchema = z.string().trim().toLowerCase().email("Valid email is required");
 const otpSchema = z.string().trim().regex(/^\d{6}$/, "OTP must be exactly 6 digits");
@@ -48,6 +51,10 @@ const loginSchema = z.object({
   password: z.string().trim().min(1, "Invalid email or password"),
 });
 
+const googleLoginSchema = z.object({
+  token: z.string().trim().min(1, "Google token is required"),
+});
+
 const verifyOtpSchema = z.object({
   email: emailSchema,
   otp: otpSchema,
@@ -57,10 +64,21 @@ const forgotPasswordSchema = z.object({
   email: emailSchema,
 });
 
+const resendOtpSchema = z.object({
+  email: emailSchema,
+});
+
 const resetPasswordSchema = z.object({
   email: emailSchema,
   otp: otpSchema,
   newPassword: passwordSchema,
+});
+
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, "Name must be between 2 and 50 characters").max(50, "Name must be between 2 and 50 characters"),
+  phoneNumber: z.string().trim().optional(),
+  age: z.coerce.number().int("Age must be between 16 and 100").min(16, "Age must be between 16 and 100").max(100, "Age must be between 16 and 100"),
+  gender: genderSchema,
 });
 
 type RequestValidator<TBody> = z.ZodType<TBody>;
@@ -85,6 +103,9 @@ const validate =
 
 export const validateRegister = validate<RegisterRequestBody>(registerSchema);
 export const validateLogin = validate<LoginRequestBody>(loginSchema);
+export const validateGoogleLogin = validate<GoogleLoginRequestBody>(googleLoginSchema);
 export const validateVerifyOtp = validate<VerifyOtpRequestBody>(verifyOtpSchema);
 export const validateForgotPassword = validate<ForgotPasswordRequestBody>(forgotPasswordSchema);
+export const validateResendOtp = validate<ResendOtpRequestBody>(resendOtpSchema);
 export const validateResetPassword = validate<ResetPasswordRequestBody>(resetPasswordSchema);
+export const validateUpdateProfile = validate<UpdateProfileRequestBody>(updateProfileSchema);

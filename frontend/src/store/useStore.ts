@@ -105,6 +105,7 @@ interface AppState {
   forgotPassword: (email: string) => Promise<boolean>;
   resetPassword: (email: string, token: string, password: string) => Promise<boolean>;
   fetchMe: () => Promise<boolean>;
+  updateProfile: (profile: { name: string; phone: string; age: number; gender: string }) => Promise<boolean>;
   
   // Assessments
   submitAssessment: (data: {
@@ -266,7 +267,8 @@ const mockNotifications: Notification[] = [
 interface BackendStudent {
   id?: string;
   _id?: string;
-  fullName: string;
+  name?: string;
+  fullName?: string;
   email: string;
   phoneNumber?: string;
   gender?: string;
@@ -277,20 +279,33 @@ interface BackendStudent {
 interface AuthResponse {
   success: boolean;
   token: string;
-  student: BackendStudent;
+  user: BackendStudent;
 }
 
 interface MeResponse {
   success: boolean;
-  student: BackendStudent;
+  user: BackendStudent;
+}
+
+interface RegisterResponse {
+  success: boolean;
+  message: string;
+}
+
+interface VerifyOtpResponse {
+  success: boolean;
+  token: string;
+  user: BackendStudent;
 }
 
 const AUTH_TOKEN_KEY = 'burnout_auth_token';
+const AUTH_EXPIRES_AT_KEY = 'burnout_auth_expires_at';
 const PENDING_EMAIL_KEY = 'burnout_pending_verification_email';
+const SESSION_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
 
 const mapStudentToUser = (student: BackendStudent): User => ({
   id: student.id ?? student._id,
-  name: student.fullName,
+  name: student.name ?? student.fullName ?? '',
   email: student.email,
   phone: student.phoneNumber ?? '',
   gender: student.gender ?? 'Other',
@@ -299,7 +314,28 @@ const mapStudentToUser = (student: BackendStudent): User => ({
   role: 'student',
 });
 
-const getStoredAuthToken = () => localStorage.getItem(AUTH_TOKEN_KEY);
+const storeSession = (token: string) => {
+  localStorage.setItem(AUTH_TOKEN_KEY, token);
+  localStorage.setItem(AUTH_EXPIRES_AT_KEY, String(Date.now() + SESSION_DURATION_MS));
+};
+
+const clearSession = () => {
+  clearSession();
+  localStorage.removeItem(AUTH_EXPIRES_AT_KEY);
+};
+
+const getStoredAuthToken = () => {
+  const token = localStorage.getItem(AUTH_TOKEN_KEY);
+  const expiresAt = Number(localStorage.getItem(AUTH_EXPIRES_AT_KEY));
+
+  if (!token) return null;
+  if (!expiresAt || expiresAt <= Date.now()) {
+    clearSession();
+    return null;
+  }
+
+  return token;
+};
 const getStoredPendingEmail = () => localStorage.getItem(PENDING_EMAIL_KEY);
 
 const mockAdminStudents: AdminStudent[] = [
@@ -437,10 +473,10 @@ export const useStore = create<AppState>((set, get) => ({
         body: JSON.stringify({ email, password }),
       });
 
-      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      storeSession(data.token);
       localStorage.removeItem(PENDING_EMAIL_KEY);
       set({
-        user: mapStudentToUser(data.student),
+        user: mapStudentToUser(data.user),
         authToken: data.token,
         pendingVerificationEmail: null,
         isAuthenticated: true,
@@ -461,10 +497,10 @@ export const useStore = create<AppState>((set, get) => ({
         body: JSON.stringify({ token: idToken }),
       });
 
-      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
+      storeSession(data.token);
       localStorage.removeItem(PENDING_EMAIL_KEY);
       set({
-        user: mapStudentToUser(data.student),
+        user: mapStudentToUser(data.user),
         authToken: data.token,
         pendingVerificationEmail: null,
         isAuthenticated: true,
@@ -482,25 +518,27 @@ export const useStore = create<AppState>((set, get) => ({
   register: async (userData, password) => {
     try {
       set({ authError: null });
-      const data = await apiRequest<AuthResponse>('/auth/register', {
+      await apiRequest<RegisterResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify({
-          fullName: userData.name,
+          name: userData.name,
           email: userData.email,
           password,
-          phoneNumber: userData.phone,
           gender: userData.gender.toLowerCase(),
           age: userData.age,
         }),
       });
 
-      localStorage.setItem(AUTH_TOKEN_KEY, data.token);
-      localStorage.setItem(PENDING_EMAIL_KEY, data.student.email);
+      clearSession();
+      localStorage.setItem(PENDING_EMAIL_KEY, userData.email);
       set({
-        user: mapStudentToUser(data.student),
-        authToken: data.token,
-        pendingVerificationEmail: data.student.email,
-        isAuthenticated: true,
+        user: {
+          ...userData,
+          assessmentCompleted: false,
+        },
+        authToken: null,
+        pendingVerificationEmail: userData.email,
+        isAuthenticated: false,
         otpVerified: false,
       });
       return true;
@@ -519,12 +557,19 @@ export const useStore = create<AppState>((set, get) => ({
 
     try {
       set({ authError: null });
-      await apiRequest<{ success: boolean }>('/auth/verify-otp', {
+      const data = await apiRequest<VerifyOtpResponse>('/auth/verify-otp', {
         method: 'POST',
         body: JSON.stringify({ email, otp }),
       });
+      storeSession(data.token);
       localStorage.removeItem(PENDING_EMAIL_KEY);
-      set({ otpVerified: true, pendingVerificationEmail: null });
+      set({
+        user: mapStudentToUser(data.user),
+        authToken: data.token,
+        isAuthenticated: true,
+        otpVerified: true,
+        pendingVerificationEmail: null,
+      });
       return true;
     } catch (error) {
       set({ authError: error instanceof Error ? error.message : 'OTP verification failed' });
@@ -553,7 +598,7 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   logout: () => {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+    clearSession();
     localStorage.removeItem(PENDING_EMAIL_KEY);
     set({
       user: null,
@@ -584,7 +629,7 @@ export const useStore = create<AppState>((set, get) => ({
       set({ authError: null });
       await apiRequest<{ success: boolean }>('/auth/reset-password', {
         method: 'POST',
-        body: JSON.stringify({ email, token, password }),
+        body: JSON.stringify({ email, otp: token, newPassword: password }),
       });
       return true;
     } catch (error) {
@@ -600,15 +645,43 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const data = await apiRequest<MeResponse>('/auth/me', { token });
       set({
-        user: mapStudentToUser(data.student),
+        user: mapStudentToUser(data.user),
         authToken: token,
         isAuthenticated: true,
         otpVerified: true,
       });
       return true;
     } catch {
-      localStorage.removeItem(AUTH_TOKEN_KEY);
+      clearSession();
       set({ user: null, authToken: null, isAuthenticated: false, otpVerified: false });
+      return false;
+    }
+  },
+
+  updateProfile: async (profile) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) {
+      set({ authError: 'Please login again to update your profile.' });
+      return false;
+    }
+
+    try {
+      set({ authError: null });
+      const data = await apiRequest<MeResponse>('/auth/me', {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify({
+          name: profile.name,
+          phoneNumber: profile.phone,
+          age: profile.age,
+          gender: profile.gender.toLowerCase(),
+        }),
+      });
+
+      set({ user: mapStudentToUser(data.user) });
+      return true;
+    } catch (error) {
+      set({ authError: error instanceof Error ? error.message : 'Profile update failed' });
       return false;
     }
   },
@@ -957,4 +1030,5 @@ export const useStore = create<AppState>((set, get) => ({
     }));
   }
 }));
+
 

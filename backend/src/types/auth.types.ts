@@ -18,6 +18,10 @@ export interface LoginRequestBody {
   password: string;
 }
 
+export interface GoogleLoginRequestBody {
+  token: string;
+}
+
 export interface VerifyOtpRequestBody {
   email: string;
   otp: string;
@@ -27,10 +31,21 @@ export interface ForgotPasswordRequestBody {
   email: string;
 }
 
+export interface ResendOtpRequestBody {
+  email: string;
+}
+
 export interface ResetPasswordRequestBody {
   email: string;
   otp: string;
   newPassword: string;
+}
+
+export interface UpdateProfileRequestBody {
+  name: string;
+  phoneNumber?: string;
+  age: number;
+  gender: Gender;
 }
 
 export interface JwtTokenPayload {

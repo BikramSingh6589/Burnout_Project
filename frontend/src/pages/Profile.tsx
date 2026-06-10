@@ -4,7 +4,7 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { Save, ShieldAlert, Check } from 'lucide-react';
 
 export const Profile: React.FC = () => {
-  const { user, adminSettings, adminUpdateSettings } = useStore();
+  const { user, adminSettings, adminUpdateSettings, updateProfile } = useStore();
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
@@ -27,13 +27,19 @@ export const Profile: React.FC = () => {
   const [passSuccess, setPassSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleProfileSave = (e: React.FormEvent) => {
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveSuccess(false);
     setError(null);
 
     if (!formData.name || !formData.phone || !formData.email || !formData.age) {
       setError('Please fill in all profile fields.');
+      return;
+    }
+
+    const success = await updateProfile(formData);
+    if (!success) {
+      setError(useStore.getState().authError || 'Profile update failed.');
       return;
     }
 

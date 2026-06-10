@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import { Activity, ArrowRight, Loader2 } from 'lucide-react';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+import { getPasswordRequirementError } from '@/lib/passwordValidation';
 
 export const Register: React.FC = () => {
   const { register, loginWithGoogle } = useStore();
@@ -38,8 +39,9 @@ export const Register: React.FC = () => {
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long.');
+    const passwordError = getPasswordRequirementError(formData.password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -77,7 +79,8 @@ export const Register: React.FC = () => {
     setGoogleLoading(false);
 
     if (success) {
-      navigate('/');
+      const user = useStore.getState().user;
+      navigate(!user?.age || !user?.gender ? '/profile' : '/');
     } else {
       setError(useStore.getState().authError || 'Google sign-in failed');
     }

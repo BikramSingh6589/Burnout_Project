@@ -3,7 +3,7 @@ import { Types } from "mongoose";
 import { config } from "../../config/env.js";
 import type { AuthenticatedUser, AuthRole, JwtTokenPayload } from "../../types/auth.types.js";
 
-const TOKEN_EXPIRY: SignOptions["expiresIn"] = "7d";
+const TOKEN_EXPIRY: SignOptions["expiresIn"] = "2d";
 
 export const generateToken = (userId: Types.ObjectId | string, email: string, role: AuthRole): string => {
   const payload: JwtTokenPayload = {
