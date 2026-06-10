@@ -1,0 +1,12 @@
+import type { Request, Response, NextFunction } from "express";
+import type { ForgotPasswordRequestBody, GoogleLoginRequestBody, LoginRequestBody, RegisterRequestBody, ResendOtpRequestBody, ResetPasswordRequestBody, UpdateProfileRequestBody, VerifyOtpRequestBody } from "../types/auth.types.js";
+export declare const registerStudent: (req: Request<Record<string, never>, unknown, RegisterRequestBody>, res: Response, next: NextFunction) => Promise<void>;
+export declare const verifyOtp: (req: Request<Record<string, never>, unknown, VerifyOtpRequestBody>, res: Response, next: NextFunction) => Promise<void>;
+export declare const resendOtp: (req: Request<Record<string, never>, unknown, ResendOtpRequestBody>, res: Response, next: NextFunction) => Promise<void>;
+export declare const loginStudent: (req: Request<Record<string, never>, unknown, LoginRequestBody>, res: Response, next: NextFunction) => Promise<void>;
+export declare const googleLoginStudent: (req: Request<Record<string, never>, unknown, GoogleLoginRequestBody>, res: Response, next: NextFunction) => Promise<void>;
+export declare const refreshToken: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const forgotPassword: (req: Request<Record<string, never>, unknown, ForgotPasswordRequestBody>, res: Response, next: NextFunction) => Promise<void>;
+export declare const resetPassword: (req: Request<Record<string, never>, unknown, ResetPasswordRequestBody>, res: Response, next: NextFunction) => Promise<void>;
+export declare const getAuthenticatedStudent: (req: Request, res: Response, next: NextFunction) => Promise<void>;
+export declare const updateAuthenticatedStudent: (req: Request<Record<string, never>, unknown, UpdateProfileRequestBody>, res: Response, next: NextFunction) => Promise<void>;
