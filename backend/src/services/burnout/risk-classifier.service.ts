@@ -3,6 +3,7 @@ import { RiskLevel } from "../../types/common.types.js";
 export interface RiskClassification {
   riskLevel: RiskLevel;
   riskDescription: string;
+  riskColor: string;
 }
 
 export const classifyBurnoutRisk = (score: number): RiskClassification => {
@@ -12,6 +13,7 @@ export const classifyBurnoutRisk = (score: number): RiskClassification => {
     return {
       riskLevel: RiskLevel.Low,
       riskDescription: "Student shows low burnout indicators.",
+      riskColor: "green",
     };
   }
 
@@ -19,18 +21,13 @@ export const classifyBurnoutRisk = (score: number): RiskClassification => {
     return {
       riskLevel: RiskLevel.Moderate,
       riskDescription: "Student shows moderate burnout indicators.",
-    };
-  }
-
-  if (normalizedScore <= 80) {
-    return {
-      riskLevel: RiskLevel.High,
-      riskDescription: "Student shows significant burnout indicators.",
+      riskColor: "yellow",
     };
   }
 
   return {
-    riskLevel: RiskLevel.Critical,
-    riskDescription: "Student shows critical burnout indicators.",
+    riskLevel: RiskLevel.High,
+    riskDescription: "Student shows significant burnout indicators.",
+    riskColor: "red",
   };
 };

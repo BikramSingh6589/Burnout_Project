@@ -4,6 +4,7 @@ import { Student } from "../../models/Student.js";
 import { AppError } from "../../middlewares/error.middleware.js";
 import { calculateBurnoutScore } from "../burnout/burnout-score.service.js";
 import { classifyBurnoutRisk } from "../burnout/risk-classifier.service.js";
+import { initializeBaseline } from "../burnout/baseline-tracker.service.js";
 import type { AssessmentRequestBody } from "../../types/assessment.types.js";
 import { AssessmentStatus } from "../../types/common.types.js";
 import type { IAssessment } from "../../models/Assessment.js";
@@ -19,13 +20,14 @@ export const submitAssessment = async (userId: string, assessment: AssessmentReq
     throw new AppError("User profile not found", 404);
   }
 
-  const burnoutScore = calculateBurnoutScore(assessment);
+  const { burnoutScore, burnoutScoreBreakdown } = calculateBurnoutScore(assessment);
   const classification = classifyBurnoutRisk(burnoutScore);
 
   const assessmentRecord = new Assessment({
     student: new Types.ObjectId(userId),
     ...assessment,
     burnoutScore,
+    burnoutScoreBreakdown,
     riskLevel: classification.riskLevel,
     riskDescription: classification.riskDescription,
     responses: { ...assessment },
@@ -45,6 +47,10 @@ export const submitAssessment = async (userId: string, assessment: AssessmentReq
       },
       { new: true },
     );
+
+    if (updatedStudent) {
+      await initializeBaseline(userId, burnoutScore, classification.riskLevel, createdAssessment.completedAt ?? new Date());
+    }
 
     if (!updatedStudent) {
       throw new AppError("User not found", 404);

@@ -1,5 +1,6 @@
 import type { ObjectId } from "./common.types.js";
 import { AssessmentStatus, RiskLevel } from "./common.types.js";
+import type { BurnoutScoreBreakdown } from "./burnout.types.js";
 
 export interface AssessmentRequestBody {
   stressLevel: number;
@@ -21,6 +22,7 @@ export interface BurnoutClassification {
 export interface AssessmentRepositoryData extends AssessmentRequestBody {
   student: ObjectId;
   burnoutScore: number;
+  burnoutScoreBreakdown: BurnoutScoreBreakdown;
   riskLevel: RiskLevel;
   riskDescription: string;
   responses: AssessmentRequestBody;
@@ -41,6 +43,7 @@ export interface AssessmentResponse {
   sleepHours: number;
   screenTime: number;
   burnoutScore: number;
+  burnoutScoreBreakdown: BurnoutScoreBreakdown;
   riskLevel: RiskLevel;
   riskDescription: string;
   responses: AssessmentRequestBody;

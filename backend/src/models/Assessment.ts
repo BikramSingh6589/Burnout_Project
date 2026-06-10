@@ -13,6 +13,7 @@ export interface IAssessment extends Document {
   sleepHours: number;
   screenTime: number;
   burnoutScore: number;
+  burnoutScoreBreakdown: Record<string, number>;
   riskLevel: RiskLevel;
   riskDescription: string;
   responses: Record<string, number>;
@@ -40,6 +41,11 @@ const AssessmentSchema = new Schema<IAssessment>(
     sleepHours: { type: Number, required: true, min: 0, max: 24 },
     screenTime: { type: Number, required: true, min: 0, max: 24 },
     burnoutScore: { type: Number, required: true, min: 0, max: 100, index: true },
+    burnoutScoreBreakdown: {
+      type: Schema.Types.Mixed,
+      required: true,
+      default: {},
+    },
     riskLevel: {
       type: String,
       enum: Object.values(RiskLevel),

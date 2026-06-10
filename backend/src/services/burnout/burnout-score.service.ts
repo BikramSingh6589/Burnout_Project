@@ -1,41 +1,81 @@
-import type { AssessmentRequestBody } from "../../types/assessment.types.js";
+import type {
+  AssessmentRequestBody,
+  InitialAssessmentRequestBody,
+  WeeklyAssessmentRequestBody,
+} from "../../types/assessment.types.js";
+import type { BurnoutScoreBreakdown, BurnoutScoreResult } from "../../types/burnout.types.js";
 
 const MAX_SCORE = 100;
 const MIN_SCORE = 0;
 
-export const calculateBurnoutScore = (assessment: AssessmentRequestBody): number => {
-  const {
-    stressLevel,
-    academicSatisfaction,
-    studyHours,
-    backlog,
-    procrastination,
-    motivation,
-    energy,
-    sleepHours,
-    screenTime,
-  } = assessment;
+const clamp = (value: number): number => Math.min(MAX_SCORE, Math.max(MIN_SCORE, value));
 
-  const sleepScale = Math.min(10, (sleepHours / 8) * 10);
-  const studyScale = Math.min(10, (studyHours / 12) * 10);
-  const screenScale = Math.min(10, (screenTime / 12) * 10);
-  const invertedSleep = 10 - sleepScale;
-  const invertedMotivation = 10 - motivation;
-  const invertedEnergy = 10 - energy;
-  const invertedAcademicSatisfaction = 10 - academicSatisfaction;
+const round = (value: number): number => Math.round(value);
+
+export const calculateBurnoutScore = (assessment: AssessmentRequestBody): BurnoutScoreResult => {
+  const breakdown: BurnoutScoreBreakdown = {
+    stress: round((assessment.stressLevel / 10) * 28),
+    sleep: round((Math.max(0, 8 - assessment.sleepHours) / 8) * 22),
+    motivation: round(((10 - assessment.motivation) / 10) * 16),
+    energy: round(((10 - assessment.energy) / 10) * 14),
+    backlog: round((assessment.backlog / 10) * 7),
+    procrastination: round((assessment.procrastination / 10) * 6),
+    screenTime: round(Math.min(1, assessment.screenTime / 24) * 4),
+    academicSatisfaction: round(((10 - assessment.academicSatisfaction) / 10) * 2),
+    studyHours: round((Math.max(0, 12 - assessment.studyHours) / 12) * 1),
+  };
+
+  const burnoutScore = clamp(
+    breakdown.stress +
+      breakdown.sleep +
+      breakdown.motivation +
+      breakdown.energy +
+      breakdown.backlog +
+      breakdown.procrastination +
+      breakdown.screenTime +
+      breakdown.academicSatisfaction +
+      breakdown.studyHours,
+  );
+
+  return {
+    burnoutScore,
+    burnoutScoreBreakdown: breakdown,
+  };
+};
+
+export const calculateWeeklyBurnoutScore = (assessment: WeeklyAssessmentRequestBody): number => {
+  const sleepPenalty = Math.max(0, 8 - assessment.sleepHoursAverage) * 5;
+  const invertedSleepQuality = Math.max(0, 100 - assessment.sleepQualityScore);
+  const invertedMood = Math.max(0, 100 - assessment.moodScore);
+  const invertedMotivation = Math.max(0, 100 - assessment.motivationScore);
+  const invertedConcentration = Math.max(0, 100 - assessment.concentrationScore);
 
   const weightedTotal =
-    stressLevel * 16 +
-    invertedSleep * 16 +
-    invertedMotivation * 16 +
-    invertedEnergy * 16 +
-    backlog * 10 +
-    procrastination * 10 +
-    screenScale * 8 +
-    invertedAcademicSatisfaction * 6 +
-    studyScale * 8;
+    assessment.academicLoadScore * 0.15 +
+    assessment.stressScore * 0.2 +
+    sleepPenalty * 0.15 +
+    invertedSleepQuality * 0.1 +
+    invertedMood * 0.15 +
+    invertedMotivation * 0.15 +
+    invertedConcentration * 0.05 +
+    assessment.physicalFatigueScore * 0.05;
 
-  const score = Math.round(weightedTotal / 10);
+  return clamp(Math.round(weightedTotal));
+};
 
-  return Math.min(MAX_SCORE, Math.max(MIN_SCORE, score));
+export const calculateInitialBurnoutScore = (assessment: InitialAssessmentRequestBody): number => {
+  const invertedEfficacy = Math.max(0, 100 - assessment.efficacyScore);
+  const invertedSocialSupport = Math.max(0, 100 - assessment.socialSupportScore);
+  const invertedSleepQuality = Math.max(0, 100 - assessment.sleepQualityScore);
+
+  const weightedTotal =
+    assessment.academicPressureScore * 0.2 +
+    assessment.emotionalExhaustionScore * 0.25 +
+    assessment.cynicismScore * 0.15 +
+    invertedEfficacy * 0.15 +
+    invertedSocialSupport * 0.1 +
+    assessment.financialStressScore * 0.1 +
+    invertedSleepQuality * 0.05;
+
+  return clamp(Math.round(weightedTotal));
 };

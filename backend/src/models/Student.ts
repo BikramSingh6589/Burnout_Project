@@ -23,6 +23,9 @@ export interface IStudent extends Document {
   accountStatus: AccountStatus;
   currentBurnoutScore: number;
   currentRiskLevel: RiskLevel;
+  baselineBurnoutScore?: number;
+  baselineDate?: Date;
+  baselineRiskLevel?: RiskLevel;
   assessmentCompleted: boolean;
   otpHash?: string;
   otpExpiresAt?: Date;
@@ -100,6 +103,18 @@ const StudentSchema = new Schema<IStudent>(
       type: String,
       enum: Object.values(RiskLevel),
       default: RiskLevel.Low,
+      index: true,
+    },
+    baselineBurnoutScore: {
+      type: Number,
+      min: 0,
+      max: 100,
+      index: true,
+    },
+    baselineDate: Date,
+    baselineRiskLevel: {
+      type: String,
+      enum: Object.values(RiskLevel),
       index: true,
     },
     assessmentCompleted: {
