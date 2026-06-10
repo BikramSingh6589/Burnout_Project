@@ -31,6 +31,7 @@ export const config = {
     port,
     mongoUri: process.env.MONGODB_URI,
     jwtSecret: process.env.JWT_SECRET,
+    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET?.trim() || process.env.JWT_SECRET,
     env: (process.env.NODE_ENV || "development").trim(),
     emailUser: emailUser || undefined,
     emailPassword: emailPassword || undefined,

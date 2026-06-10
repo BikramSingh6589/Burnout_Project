@@ -17,6 +17,7 @@ export const apiRequest = async <T>(path: string, options: ApiOptions = {}): Pro
   const { token, headers, ...requestOptions } = options;
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'include',
     ...requestOptions,
     headers: {
       'Content-Type': 'application/json',

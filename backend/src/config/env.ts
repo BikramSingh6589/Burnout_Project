@@ -14,6 +14,7 @@ export interface EnvConfig {
   port: number;
   mongoUri: string;
   jwtSecret: string;
+  jwtRefreshSecret: string;
   env: NodeEnv;
   emailUser?: string;
   emailPassword?: string;
@@ -55,6 +56,7 @@ export const config: EnvConfig = {
   port,
   mongoUri: process.env.MONGODB_URI as string,
   jwtSecret: process.env.JWT_SECRET as string,
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET?.trim() || (process.env.JWT_SECRET as string),
   env: (process.env.NODE_ENV || "development").trim() as NodeEnv,
   emailUser: emailUser || undefined,
   emailPassword: emailPassword || undefined,

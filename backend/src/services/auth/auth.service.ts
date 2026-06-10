@@ -14,7 +14,7 @@ import type {
   VerifyOtpRequestBody,
 } from "../../types/auth.types.js";
 import { clearOTP, generateOTP, saveOTP, sendOTPEmail, verifyOTP } from "./otp.service.js";
-import { generateToken } from "./token.service.js";
+import { generateRefreshToken, generateToken, verifyRefreshToken } from "./token.service.js";
 import { verifyGoogleIdToken } from "../../utils/googleAuth.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
@@ -64,7 +64,7 @@ export const register = async (payload: RegisterRequestBody): Promise<{ message:
   return { message: "OTP sent successfully" };
 };
 
-export const verifyRegistrationOtp = async (payload: VerifyOtpRequestBody): Promise<{ token: string; user: PublicUserProfile }> => {
+export const verifyRegistrationOtp = async (payload: VerifyOtpRequestBody): Promise<{ token: string; refreshToken: string; user: PublicUserProfile }> => {
   const student = await Student.findOne({ email: payload.email }).select(OTP_SELECT_FIELDS);
 
   if (!student) {
@@ -78,8 +78,9 @@ export const verifyRegistrationOtp = async (payload: VerifyOtpRequestBody): Prom
   await clearOTP(student);
 
   const token = generateToken(student._id.toString(), student.email, "student");
+  const refreshToken = generateRefreshToken(student._id.toString(), student.email, "student");
 
-  return { token, user: toPublicUserProfile(student) };
+  return { token, refreshToken, user: toPublicUserProfile(student) };
 };
 
 export const resendRegistrationOtp = async (payload: ResendOtpRequestBody): Promise<{ message: string }> => {
@@ -100,7 +101,7 @@ export const resendRegistrationOtp = async (payload: ResendOtpRequestBody): Prom
   return { message: "OTP sent successfully" };
 };
 
-export const login = async (payload: LoginRequestBody): Promise<{ token: string; user: PublicUserProfile }> => {
+export const login = async (payload: LoginRequestBody): Promise<{ token: string; refreshToken: string; user: PublicUserProfile }> => {
   const student = await Student.findOne({ email: payload.email }).select(PASSWORD_SELECT_FIELDS);
 
   if (!student) {
@@ -121,14 +122,16 @@ export const login = async (payload: LoginRequestBody): Promise<{ token: string;
   await student.save();
 
   const token = generateToken(student._id.toString(), student.email, "student");
+  const refreshToken = generateRefreshToken(student._id.toString(), student.email, "student");
 
   return {
     token,
+    refreshToken,
     user: toPublicUserProfile(student),
   };
 };
 
-export const loginWithGoogle = async (payload: GoogleLoginRequestBody): Promise<{ token: string; user: PublicUserProfile }> => {
+export const loginWithGoogle = async (payload: GoogleLoginRequestBody): Promise<{ token: string; refreshToken: string; user: PublicUserProfile }> => {
   const googleProfile = await verifyGoogleIdToken(payload.token);
   let student = await Student.findOne({ email: googleProfile.email });
 
@@ -152,9 +155,26 @@ export const loginWithGoogle = async (payload: GoogleLoginRequestBody): Promise<
   await student.save();
 
   const token = generateToken(student._id.toString(), student.email, "student");
+  const refreshToken = generateRefreshToken(student._id.toString(), student.email, "student");
 
   return {
     token,
+    refreshToken,
+    user: toPublicUserProfile(student),
+  };
+};
+
+export const refreshSession = async (refreshToken: string): Promise<{ token: string; refreshToken: string; user: PublicUserProfile }> => {
+  const payload = verifyRefreshToken(refreshToken);
+  const student = await Student.findById(payload.userId);
+
+  if (!student || student.accountStatus !== AccountStatus.Active) {
+    throw new AuthError("Unauthorized access", 401);
+  }
+
+  return {
+    token: generateToken(student._id.toString(), student.email, "student"),
+    refreshToken: generateRefreshToken(student._id.toString(), student.email, "student"),
     user: toPublicUserProfile(student),
   };
 };

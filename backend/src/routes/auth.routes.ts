@@ -4,6 +4,7 @@ import {
   getAuthenticatedStudent,
   googleLoginStudent,
   loginStudent,
+  refreshToken,
   registerStudent,
   resendOtp,
   resetPassword,
@@ -27,6 +28,7 @@ const router = Router();
 router.post("/register", validateRegister, registerStudent);
 router.post("/login", validateLogin, loginStudent);
 router.post("/google", validateGoogleLogin, googleLoginStudent);
+router.post("/refresh-token", refreshToken);
 router.post("/verify-otp", validateVerifyOtp, verifyOtp);
 router.post("/resend-otp", validateResendOtp, resendOtp);
 router.post("/forgot-password", validateForgotPassword, forgotPassword);
