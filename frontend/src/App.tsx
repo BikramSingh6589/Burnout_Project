@@ -192,6 +192,16 @@ const LayoutWrapper: React.FC = () => {
             }
           />
           <Route
+            path="/complete-profile"
+            element={
+              <StudentRoute>
+                <LazyRoute fallback={<ProfileSkeleton />}>
+                  <Profile />
+                </LazyRoute>
+              </StudentRoute>
+            }
+          />
+          <Route
             path="/journal"
             element={
               <StudentRoute requireAssessment>

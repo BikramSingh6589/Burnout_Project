@@ -9,6 +9,7 @@ export interface User {
   phone: string;
   gender: string;
   age: number;
+  profileCompleted?: boolean;
   assessmentCompleted: boolean;
   role: 'student' | 'admin' | null;
 }
@@ -310,6 +311,7 @@ const mapStudentToUser = (student: BackendStudent): User => ({
   phone: student.phoneNumber ?? '',
   gender: student.gender ?? 'Other',
   age: student.age ?? 0,
+  profileCompleted: !!(student as any).profileCompleted,
   assessmentCompleted: false,
   role: 'student',
 });

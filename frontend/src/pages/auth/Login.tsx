@@ -45,7 +45,7 @@ export const Login: React.FC = () => {
 
     if (success) {
       const user = useStore.getState().user;
-      navigate(!user?.age || !user?.gender ? '/profile' : '/');
+      navigate(user?.profileCompleted === false ? '/complete-profile' : '/');
     } else {
       setError(useStore.getState().authError || 'Google sign-in failed');
     }
