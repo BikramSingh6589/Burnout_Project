@@ -10,22 +10,28 @@ export class AssessmentValidationError extends Error {
   }
 }
 
-const numberField = (fieldName: string) =>
+const scaleField = (fieldName: string) =>
   z
     .number()
     .min(0, { message: `${fieldName} must be between 0 and 10` })
     .max(10, { message: `${fieldName} must be between 0 and 10` });
 
+const hoursField = (fieldName: string) =>
+  z
+    .number()
+    .min(0, { message: `${fieldName} must be between 0 and 24` })
+    .max(24, { message: `${fieldName} must be between 0 and 24` });
+
 const assessmentSchema = z.object({
-  stressLevel: numberField("stressLevel"),
-  academicSatisfaction: numberField("academicSatisfaction"),
-  studyHours: numberField("studyHours"),
-  backlog: numberField("backlog"),
-  procrastination: numberField("procrastination"),
-  motivation: numberField("motivation"),
-  energy: numberField("energy"),
-  sleepHours: numberField("sleepHours"),
-  screenTime: numberField("screenTime"),
+  stressLevel: scaleField("stressLevel"),
+  academicSatisfaction: scaleField("academicSatisfaction"),
+  studyHours: hoursField("studyHours"),
+  backlog: scaleField("backlog"),
+  procrastination: scaleField("procrastination"),
+  motivation: scaleField("motivation"),
+  energy: scaleField("energy"),
+  sleepHours: hoursField("sleepHours"),
+  screenTime: hoursField("screenTime"),
 });
 
 type RequestValidator<TBody> = z.ZodType<TBody>;

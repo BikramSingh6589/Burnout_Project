@@ -16,6 +16,8 @@ export const Assessment: React.FC = () => {
 
   // Local state for wizard steps: 1 = Academic, 2 = Personal, 3 = Success
   const [step, setStep] = useState(1);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     // Step 1: Academic
@@ -39,10 +41,19 @@ export const Assessment: React.FC = () => {
     setStep(1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    submitAssessment(formData, isWeekly);
-    setStep(3); // Success Screen
+    setSubmitError(null);
+    setSubmitting(true);
+    const success = await submitAssessment(formData, isWeekly);
+    setSubmitting(false);
+
+    if (!success) {
+      setSubmitError('Failed to save assessment. Please check your connection and try again.');
+      return;
+    }
+
+    setStep(3);
   };
 
   const handleViewDashboard = () => {
@@ -261,6 +272,12 @@ export const Assessment: React.FC = () => {
                 </div>
               </div>
 
+              {submitError && (
+                <div className="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-xs font-semibold text-center">
+                  {submitError}
+                </div>
+              )}
+
               <div className="flex justify-between pt-4">
                 <button
                   type="button"
@@ -273,9 +290,10 @@ export const Assessment: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="bg-primary text-white font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 text-xs"
+                  disabled={submitting}
+                  className="bg-primary text-white font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 text-xs disabled:opacity-60"
                 >
-                  <span>Submit Assessment</span>
+                  <span>{submitting ? 'Saving...' : 'Submit Assessment'}</span>
                   <CheckCircle2 className="h-4 w-4" />
                 </button>
               </div>

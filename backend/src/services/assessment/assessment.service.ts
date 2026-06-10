@@ -19,10 +19,6 @@ export const submitAssessment = async (userId: string, assessment: AssessmentReq
     throw new AppError("User profile not found", 404);
   }
 
-  if (!student.profileCompleted) {
-    throw new AppError("User profile not completed", 403);
-  }
-
   const burnoutScore = calculateBurnoutScore(assessment);
   const classification = classifyBurnoutRisk(burnoutScore);
 

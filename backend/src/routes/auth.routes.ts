@@ -4,6 +4,7 @@ import {
   getAuthenticatedStudent,
   googleLoginStudent,
   loginStudent,
+  logoutStudent,
   refreshToken,
   registerStudent,
   resendOtp,
@@ -33,6 +34,7 @@ router.post("/verify-otp", validateVerifyOtp, verifyOtp);
 router.post("/resend-otp", validateResendOtp, resendOtp);
 router.post("/forgot-password", validateForgotPassword, forgotPassword);
 router.post("/reset-password", validateResetPassword, resetPassword);
+router.post("/logout", authenticate, logoutStudent);
 router.get("/me", authenticate, getAuthenticatedStudent);
 router.patch("/me", authenticate, validateUpdateProfile, updateAuthenticatedStudent);
 

@@ -49,3 +49,83 @@ export interface AssessmentResponse {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface InitialAssessmentRequestBody {
+  academicPressureScore: number;
+  sleepQualityScore: number;
+  emotionalExhaustionScore: number;
+  cynicismScore: number;
+  efficacyScore: number;
+  socialSupportScore: number;
+  financialStressScore: number;
+}
+
+export interface InitialAssessmentRepositoryData extends InitialAssessmentRequestBody {
+  student: ObjectId;
+  baselineBurnoutScore: number;
+  baselineRiskLevel: RiskLevel;
+  responses: InitialAssessmentRequestBody;
+  status: AssessmentStatus;
+  completedAt: Date;
+}
+
+export interface InitialAssessmentResponse {
+  id: string;
+  student: string;
+  academicPressureScore: number;
+  sleepQualityScore: number;
+  emotionalExhaustionScore: number;
+  cynicismScore: number;
+  efficacyScore: number;
+  socialSupportScore: number;
+  financialStressScore: number;
+  baselineBurnoutScore: number;
+  baselineRiskLevel: RiskLevel;
+  responses: InitialAssessmentRequestBody;
+  status: AssessmentStatus;
+  completedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface WeeklyAssessmentRequestBody {
+  academicLoadScore: number;
+  stressScore: number;
+  sleepHoursAverage: number;
+  sleepQualityScore: number;
+  moodScore: number;
+  motivationScore: number;
+  concentrationScore: number;
+  physicalFatigueScore: number;
+}
+
+export interface WeeklyAssessmentRepositoryData extends WeeklyAssessmentRequestBody {
+  student: ObjectId;
+  weekStartDate: Date;
+  burnoutScore: number;
+  riskLevel: RiskLevel;
+  responses: WeeklyAssessmentRequestBody;
+  status: AssessmentStatus;
+  completedAt: Date;
+}
+
+export interface WeeklyAssessmentResponse {
+  id: string;
+  student: string;
+  weekStartDate: Date;
+  academicLoadScore: number;
+  stressScore: number;
+  sleepHoursAverage: number;
+  sleepQualityScore: number;
+  moodScore: number;
+  motivationScore: number;
+  concentrationScore: number;
+  physicalFatigueScore: number;
+  burnoutScore: number;
+  riskLevel: RiskLevel;
+  responses: WeeklyAssessmentRequestBody;
+  status: AssessmentStatus;
+  completedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}

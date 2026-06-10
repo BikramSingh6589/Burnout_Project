@@ -1,6 +1,41 @@
 import { create } from 'zustand';
 import { apiRequest } from '../lib/api';
 
+type AssessmentFormData = {
+  stressLevel: number;
+  academicSatisfaction: number;
+  studyHours: number;
+  assignmentBacklog: number;
+  procrastination: number;
+  motivationLevel: number;
+  energyLevel: number;
+  sleepHours: number;
+  screenTime: number;
+};
+
+const mapToInitialAssessmentPayload = (data: AssessmentFormData) => ({
+  stressLevel: data.stressLevel,
+  academicSatisfaction: data.academicSatisfaction,
+  studyHours: data.studyHours,
+  backlog: Math.min(10, data.assignmentBacklog),
+  procrastination: data.procrastination,
+  motivation: data.motivationLevel,
+  energy: data.energyLevel,
+  sleepHours: data.sleepHours,
+  screenTime: data.screenTime,
+});
+
+const mapToWeeklyAssessmentPayload = (data: AssessmentFormData) => ({
+  academicLoadScore: data.stressLevel * 10,
+  stressScore: data.stressLevel * 10,
+  sleepHoursAverage: data.sleepHours,
+  sleepQualityScore: Math.min(100, Math.round((data.sleepHours / 8) * 100)),
+  moodScore: data.energyLevel * 10,
+  motivationScore: data.motivationLevel * 10,
+  concentrationScore: data.academicSatisfaction * 10,
+  physicalFatigueScore: (10 - data.energyLevel) * 10,
+});
+
 // Types
 export interface User {
   id?: string;
@@ -109,17 +144,7 @@ interface AppState {
   updateProfile: (profile: { name: string; phone: string; age: number; gender: string }) => Promise<boolean>;
   
   // Assessments
-  submitAssessment: (data: {
-    stressLevel: number;
-    academicSatisfaction: number;
-    studyHours: number;
-    assignmentBacklog: number;
-    procrastination: number;
-    motivationLevel: number;
-    energyLevel: number;
-    sleepHours: number;
-    screenTime: number;
-  }, isWeekly?: boolean) => void;
+  submitAssessment: (data: AssessmentFormData, isWeekly?: boolean) => Promise<boolean>;
 
   // Journals
   addJournalEntry: (content: string) => void;
@@ -275,6 +300,8 @@ interface BackendStudent {
   gender?: string;
   age?: number;
   accountStatus?: string;
+  profileCompleted?: boolean;
+  assessmentCompleted?: boolean;
 }
 
 interface AuthResponse {
@@ -311,8 +338,8 @@ const mapStudentToUser = (student: BackendStudent): User => ({
   phone: student.phoneNumber ?? '',
   gender: student.gender ?? 'Other',
   age: student.age ?? 0,
-  profileCompleted: !!(student as any).profileCompleted,
-  assessmentCompleted: false,
+  profileCompleted: !!student.profileCompleted,
+  assessmentCompleted: !!student.assessmentCompleted,
   role: 'student',
 });
 
@@ -322,7 +349,7 @@ const storeSession = (token: string) => {
 };
 
 const clearSession = () => {
-  clearSession();
+  localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(AUTH_EXPIRES_AT_KEY);
 };
 
@@ -688,119 +715,127 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  submitAssessment: (data, _isWeekly = false) => {
-    // Layer 1 Rule-Based Scoring Formula
-    // Base score components
-    const stressFactor = data.stressLevel * 4; // max 40
-    const motivationFactor = (10 - data.motivationLevel) * 2.5; // max 25
-    const energyFactor = (10 - data.energyLevel) * 1.5; // max 15
-    const satisfactionFactor = (10 - data.academicSatisfaction) * 1.0; // max 10
-    const sleepFactor = Math.max(0, 8 - data.sleepHours) * 3; // sleep penalty, max 15-20
-    const backlogFactor = data.assignmentBacklog * 2; // backlog penalty
-    const procrastinationFactor = data.procrastination * 1.0; // max 10
-    
-    let computedScore = stressFactor + motivationFactor + energyFactor + satisfactionFactor + sleepFactor + backlogFactor + procrastinationFactor;
-    
-    // Clamp between 0 and 100
-    computedScore = Math.min(100, Math.max(0, Math.round(computedScore)));
-
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    // Create tracker entry
-    const newTracker: TrackerHistory = {
-      date: todayStr,
-      burnoutScore: computedScore,
-      sleepHours: data.sleepHours,
-      studyHours: data.studyHours,
-      screenTime: data.screenTime,
-      stressLevel: data.stressLevel,
-      procrastination: data.procrastination,
-    };
-
-    // Update user context and history
-    const currentUser = get().user;
-    if (currentUser) {
-      set({
-        user: {
-          ...currentUser,
-          assessmentCompleted: true,
-        },
-      });
+  submitAssessment: async (data, isWeekly = false) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) {
+      return false;
     }
 
-    // Dynamic recommendations based on score and factors
-    const newRecommendations: Recommendation[] = [];
-    if (data.sleepHours < 6.5) {
-      newRecommendations.push({
-        id: `rec-${Date.now()}-1`,
-        title: 'Earlier Sleep Schedule',
-        reason: `Your sleep of ${data.sleepHours} hours is below the recommended 7-8 hours.`,
-        priority: 'High',
-        followedStatus: 'none',
-        rating: 0,
-        feedbackText: '',
-        dateGenerated: todayStr,
-      });
-    }
-    if (data.screenTime > 6) {
-      newRecommendations.push({
-        id: `rec-${Date.now()}-2`,
-        title: 'Reduce Screen Time before Bed',
-        reason: `Your daily screen time is ${data.screenTime} hours. Aim to disconnect 1 hour before bedtime.`,
-        priority: 'Medium',
-        followedStatus: 'none',
-        rating: 0,
-        feedbackText: '',
-        dateGenerated: todayStr,
-      });
-    }
-    if (data.assignmentBacklog > 5) {
-      newRecommendations.push({
-        id: `rec-${Date.now()}-3`,
-        title: 'Break Down Backlog into Micro-Tasks',
-        reason: `Your assignment backlog has reached ${data.assignmentBacklog} items, causing overload.`,
-        priority: 'High',
-        followedStatus: 'none',
-        rating: 0,
-        feedbackText: '',
-        dateGenerated: todayStr,
-      });
-    }
-    if (data.stressLevel > 7) {
-      newRecommendations.push({
-        id: `rec-${Date.now()}-4`,
-        title: 'Daily 10-Minute Guided Mindfulness',
-        reason: 'Your stress level is highly elevated. Incorporate brief breathing sessions.',
-        priority: 'High',
-        followedStatus: 'none',
-        rating: 0,
-        feedbackText: '',
-        dateGenerated: todayStr,
-      });
-    }
-    if (newRecommendations.length === 0) {
-      newRecommendations.push({
-        id: `rec-${Date.now()}-5`,
-        title: 'Maintain Study-Life Balance',
-        reason: 'Your scores are healthy. Keep taking regular study breaks to sustain this.',
-        priority: 'Low',
-        followedStatus: 'none',
-        rating: 0,
-        feedbackText: '',
-        dateGenerated: todayStr,
-      });
-    }
+    try {
+      const endpoint = isWeekly ? '/weekly-assessment' : '/assessment';
+      const body = isWeekly
+        ? mapToWeeklyAssessmentPayload(data)
+        : mapToInitialAssessmentPayload(data);
 
-    // Trigger Notification on high stress / high score
-    const scoreRisk = computedScore >= 70 ? 'High' : computedScore >= 40 ? 'Moderate' : 'Low';
-    if (computedScore >= 70) {
-      get().addNotification('Risk', `High Burnout Warning: Your score is ${computedScore} (${scoreRisk} Risk). Action suggested.`);
-    }
+      const response = await apiRequest<{
+        success: boolean;
+        data: { assessment: { burnoutScore: number } };
+      }>(endpoint, {
+        method: 'POST',
+        token,
+        body: JSON.stringify(body),
+      });
 
-    set((state) => ({
-      trackerHistory: [...state.trackerHistory, newTracker],
-      recommendations: [...newRecommendations, ...state.recommendations].slice(0, 8),
-    }));
+      const computedScore = response.data.assessment.burnoutScore;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const newTracker: TrackerHistory = {
+        date: todayStr,
+        burnoutScore: computedScore,
+        sleepHours: data.sleepHours,
+        studyHours: data.studyHours,
+        screenTime: data.screenTime,
+        stressLevel: data.stressLevel,
+        procrastination: data.procrastination,
+      };
+
+      const currentUser = get().user;
+      if (currentUser && !isWeekly) {
+        set({
+          user: {
+            ...currentUser,
+            assessmentCompleted: true,
+          },
+        });
+      }
+
+      const newRecommendations: Recommendation[] = [];
+      if (data.sleepHours < 6.5) {
+        newRecommendations.push({
+          id: `rec-${Date.now()}-1`,
+          title: 'Earlier Sleep Schedule',
+          reason: `Your sleep of ${data.sleepHours} hours is below the recommended 7-8 hours.`,
+          priority: 'High',
+          followedStatus: 'none',
+          rating: 0,
+          feedbackText: '',
+          dateGenerated: todayStr,
+        });
+      }
+      if (data.screenTime > 6) {
+        newRecommendations.push({
+          id: `rec-${Date.now()}-2`,
+          title: 'Reduce Screen Time before Bed',
+          reason: `Your daily screen time is ${data.screenTime} hours. Aim to disconnect 1 hour before bedtime.`,
+          priority: 'Medium',
+          followedStatus: 'none',
+          rating: 0,
+          feedbackText: '',
+          dateGenerated: todayStr,
+        });
+      }
+      if (data.assignmentBacklog > 5) {
+        newRecommendations.push({
+          id: `rec-${Date.now()}-3`,
+          title: 'Break Down Backlog into Micro-Tasks',
+          reason: `Your assignment backlog has reached ${data.assignmentBacklog} items, causing overload.`,
+          priority: 'High',
+          followedStatus: 'none',
+          rating: 0,
+          feedbackText: '',
+          dateGenerated: todayStr,
+        });
+      }
+      if (data.stressLevel > 7) {
+        newRecommendations.push({
+          id: `rec-${Date.now()}-4`,
+          title: 'Daily 10-Minute Guided Mindfulness',
+          reason: 'Your stress level is highly elevated. Incorporate brief breathing sessions.',
+          priority: 'High',
+          followedStatus: 'none',
+          rating: 0,
+          feedbackText: '',
+          dateGenerated: todayStr,
+        });
+      }
+      if (newRecommendations.length === 0) {
+        newRecommendations.push({
+          id: `rec-${Date.now()}-5`,
+          title: 'Maintain Study-Life Balance',
+          reason: 'Your scores are healthy. Keep taking regular study breaks to sustain this.',
+          priority: 'Low',
+          followedStatus: 'none',
+          rating: 0,
+          feedbackText: '',
+          dateGenerated: todayStr,
+        });
+      }
+
+      if (computedScore >= 70) {
+        const scoreRisk = computedScore >= 70 ? 'High' : computedScore >= 40 ? 'Moderate' : 'Low';
+        get().addNotification('Risk', `High Burnout Warning: Your score is ${computedScore} (${scoreRisk} Risk). Action suggested.`);
+      }
+
+      set((state) => ({
+        trackerHistory: [...state.trackerHistory, newTracker],
+        recommendations: [...newRecommendations, ...state.recommendations].slice(0, 8),
+      }));
+
+      return true;
+    } catch (error) {
+      console.error('[Assessment] Submit failed:', error);
+      return false;
+    }
   },
 
   addJournalEntry: (content) => {

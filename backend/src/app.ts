@@ -6,6 +6,8 @@ import helmet from "helmet";
 import morgan from "morgan";
 import authRoutes from "./routes/auth.routes.js";
 import assessmentRoutes from "./routes/assessment.routes.js";
+import initialAssessmentRoutes from "./routes/initial-assessment.routes.js";
+import weeklyAssessmentRoutes from "./routes/weekly-assessment.routes.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
@@ -40,6 +42,8 @@ app.get("/", (_req, res) => {
 app.use("/health", healthRouter);
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/assessment", assessmentRoutes);
+app.use("/api/initial-assessment", initialAssessmentRoutes);
+app.use("/api/weekly-assessment", weeklyAssessmentRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({

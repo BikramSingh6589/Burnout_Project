@@ -68,4 +68,5 @@ export interface PublicUserProfile {
   gender?: Gender;
   accountStatus: string;
   profileCompleted?: boolean;
+  assessmentCompleted?: boolean;
 }

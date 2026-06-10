@@ -219,3 +219,20 @@ export const updateAuthenticatedStudent = async (
     next(error);
   }
 };
+
+export const logoutStudent = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: config.env === "production",
+      sameSite: config.env === "production" ? "none" : "lax",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};

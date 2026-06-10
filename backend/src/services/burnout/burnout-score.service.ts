@@ -16,7 +16,10 @@ export const calculateBurnoutScore = (assessment: AssessmentRequestBody): number
     screenTime,
   } = assessment;
 
-  const invertedSleep = 10 - sleepHours;
+  const sleepScale = Math.min(10, (sleepHours / 8) * 10);
+  const studyScale = Math.min(10, (studyHours / 12) * 10);
+  const screenScale = Math.min(10, (screenTime / 12) * 10);
+  const invertedSleep = 10 - sleepScale;
   const invertedMotivation = 10 - motivation;
   const invertedEnergy = 10 - energy;
   const invertedAcademicSatisfaction = 10 - academicSatisfaction;
@@ -28,9 +31,9 @@ export const calculateBurnoutScore = (assessment: AssessmentRequestBody): number
     invertedEnergy * 16 +
     backlog * 10 +
     procrastination * 10 +
-    screenTime * 8 +
+    screenScale * 8 +
     invertedAcademicSatisfaction * 6 +
-    studyHours * 8;
+    studyScale * 8;
 
   const score = Math.round(weightedTotal / 10);
 
