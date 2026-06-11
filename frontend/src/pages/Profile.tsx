@@ -4,21 +4,9 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { Save, ShieldAlert, Check } from 'lucide-react';
 
 export const Profile: React.FC = () => {
-<<<<<<< HEAD
   const { user, adminSettings, adminUpdateSettings } = useStore();
   
   const [formData, setFormData] = useState({
-=======
-  const { user, adminSettings, adminUpdateSettings, updateProfile } = useStore();
-  
-  const [formData, setFormData] = useState<{
-    name: string;
-    phone: string;
-    email: string;
-    gender: string;
-    age: number | '';
-  }>({
->>>>>>> testing
     name: user?.name || '',
     phone: user?.phone || '',
     email: user?.email || '',
@@ -39,11 +27,7 @@ export const Profile: React.FC = () => {
   const [passSuccess, setPassSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-<<<<<<< HEAD
   const handleProfileSave = (e: React.FormEvent) => {
-=======
-  const handleProfileSave = async (e: React.FormEvent) => {
->>>>>>> testing
     e.preventDefault();
     setSaveSuccess(false);
     setError(null);
@@ -53,20 +37,6 @@ export const Profile: React.FC = () => {
       return;
     }
 
-<<<<<<< HEAD
-=======
-    // Convert age to number for submission
-    const submissionData = {
-      ...formData,
-      age: typeof formData.age === 'string' && formData.age === '' ? 0 : Number(formData.age),
-    };
-    const success = await updateProfile(submissionData);
-    if (!success) {
-      setError(useStore.getState().authError || 'Profile update failed.');
-      return;
-    }
-
->>>>>>> testing
     adminUpdateSettings({
       emailNotificationsEnabled: emailNotif,
       inAppNotificationsEnabled: inAppNotif,
@@ -183,13 +153,8 @@ export const Profile: React.FC = () => {
                     <input
                       id="profile-age"
                       type="number"
-<<<<<<< HEAD
                       value={formData.age}
                       onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
-=======
-                      value={formData.age || ''}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value === '' ? '' : Number(e.target.value) })}
->>>>>>> testing
                       className={inputCls}
                     />
                   </div>

@@ -1,19 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
-<<<<<<< HEAD
 import { Activity, ArrowRight } from 'lucide-react';
 
 export const Register: React.FC = () => {
   const { register, login } = useStore();
-=======
-import { Activity, ArrowRight, Loader2 } from 'lucide-react';
-import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
-import { getPasswordRequirementError } from '@/lib/passwordValidation';
-
-export const Register: React.FC = () => {
-  const { register, loginWithGoogle } = useStore();
->>>>>>> testing
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -27,18 +18,9 @@ export const Register: React.FC = () => {
   });
 
   const [error, setError] = useState<string | null>(null);
-<<<<<<< HEAD
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-=======
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loading) return;
->>>>>>> testing
     setError(null);
 
     // Validation
@@ -52,14 +34,8 @@ export const Register: React.FC = () => {
       return;
     }
 
-<<<<<<< HEAD
     if (formData.password.length < 6) {
       setError('Password must be at least 6 characters long.');
-=======
-    const passwordError = getPasswordRequirementError(formData.password);
-    if (passwordError) {
-      setError(passwordError);
->>>>>>> testing
       return;
     }
 
@@ -70,10 +46,6 @@ export const Register: React.FC = () => {
     }
 
     // Call Register Action
-<<<<<<< HEAD
-=======
-    setLoading(true);
->>>>>>> testing
     const success = await register({
       name: formData.name,
       email: formData.email,
@@ -82,15 +54,10 @@ export const Register: React.FC = () => {
       age: ageNum,
       role: 'student',
     }, formData.password);
-<<<<<<< HEAD
-=======
-    setLoading(false);
->>>>>>> testing
 
     if (success) {
       navigate('/auth/verify-otp');
     } else {
-<<<<<<< HEAD
       setError('Registration failed. Please check your network.');
     }
   };
@@ -100,26 +67,6 @@ export const Register: React.FC = () => {
     login('user.google@university.edu', 'google_token', 'student').then(() => {
       navigate('/');
     });
-=======
-      setError(useStore.getState().authError || 'Registration failed. Please check your backend connection.');
-    }
-  };
-
-  const handleGoogleSignup = async (idToken: string) => {
-    if (loading || googleLoading) return;
-    setError(null);
-    setGoogleLoading(true);
-
-    const success = await loginWithGoogle(idToken);
-    setGoogleLoading(false);
-
-    if (success) {
-      const user = useStore.getState().user;
-      navigate(user?.profileCompleted === false ? '/complete-profile' : '/');
-    } else {
-      setError(useStore.getState().authError || 'Google sign-in failed');
-    }
->>>>>>> testing
   };
 
   return (
@@ -156,11 +103,7 @@ export const Register: React.FC = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
-<<<<<<< HEAD
                 placeholder="Bikram Singh"
-=======
-                placeholder="Enter Your Name"
->>>>>>> testing
               />
             </div>
             <div className="space-y-1.5">
@@ -172,11 +115,7 @@ export const Register: React.FC = () => {
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
-<<<<<<< HEAD
                 placeholder="+91 98765 43210"
-=======
-                placeholder="Enter Your Phone Number"
->>>>>>> testing
               />
             </div>
           </div>
@@ -190,11 +129,7 @@ export const Register: React.FC = () => {
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
-<<<<<<< HEAD
               placeholder="biko@university.edu"
-=======
-              placeholder="Enter Your Email Address"
->>>>>>> testing
             />
           </div>
 
@@ -207,10 +142,6 @@ export const Register: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
               >
-<<<<<<< HEAD
-=======
-                <option value="">Select Gender</option>
->>>>>>> testing
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Other">Other</option>
@@ -225,11 +156,7 @@ export const Register: React.FC = () => {
                 value={formData.age}
                 onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                 className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
-<<<<<<< HEAD
                 placeholder="21"
-=======
-                placeholder="Enter Your Age"
->>>>>>> testing
               />
             </div>
           </div>
@@ -263,18 +190,10 @@ export const Register: React.FC = () => {
 
           <button
             type="submit"
-<<<<<<< HEAD
             className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs"
           >
             <span>Create Account</span>
             <ArrowRight className="h-4 w-4" />
-=======
-            disabled={loading}
-            className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            <span>{loading ? 'Creating Account...' : 'Create Account'}</span>
->>>>>>> testing
           </button>
         </form>
 
@@ -287,7 +206,6 @@ export const Register: React.FC = () => {
           </div>
         </div>
 
-<<<<<<< HEAD
         <button
           onClick={handleGoogleSignup}
           className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 text-neutral-slate dark:text-[#E2E8F0] hover:bg-slate-50 dark:hover:bg-[#273449] transition-colors text-xs"
@@ -300,15 +218,6 @@ export const Register: React.FC = () => {
           </svg>
           <span>Continue with Google</span>
         </button>
-=======
-        <GoogleSignInButton
-          onSuccess={handleGoogleSignup}
-          onError={setError}
-          disabled={loading}
-          loading={googleLoading}
-          label="Continue with Google"
-        />
->>>>>>> testing
 
         <p className="text-center text-xs text-neutral-outline mt-6">
           Already have an account?{' '}

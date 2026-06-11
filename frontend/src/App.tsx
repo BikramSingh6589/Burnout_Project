@@ -7,10 +7,6 @@ import { Register } from './pages/auth/Register';
 import { Login } from './pages/auth/Login';
 import { VerifyOtp } from './pages/auth/VerifyOtp';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
-<<<<<<< HEAD
-=======
-import { ResetPassword } from './pages/auth/ResetPassword';
->>>>>>> testing
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { useStore } from './store/useStore';
 import { LazyRoute } from './components/skeletons/LazyRoute';
@@ -43,12 +39,6 @@ const Profile = lazy(() =>
 const Journal = lazy(() =>
   import('./pages/Journal').then((m) => ({ default: m.Journal }))
 );
-<<<<<<< HEAD
-=======
-const JournalAI = lazy(() =>
-  import('./pages/JournalAI').then((m) => ({ default: m.JournalAI }))
-);
->>>>>>> testing
 const Notifications = lazy(() =>
   import('./pages/Notifications').then((m) => ({ default: m.Notifications }))
 );
@@ -63,30 +53,9 @@ const RootRedirect: React.FC = () => {
   return <Navigate to="/home" replace />;
 };
 
-<<<<<<< HEAD
 // Route Protection Wrapper for students
 const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children }) => {
   const { isAuthenticated, otpVerified } = useStore();
-=======
-// OTP page: available after registration while email verification is pending
-const OtpRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, otpVerified, pendingVerificationEmail } = useStore();
-
-  if (!pendingVerificationEmail && !isAuthenticated) {
-    return <Navigate to="/auth/register" replace />;
-  }
-
-  if (otpVerified) {
-    return <Navigate to="/home" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-// Route Protection Wrapper for students (post-OTP routes)
-const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: boolean }> = ({ children, requireAssessment = false }) => {
-  const { isAuthenticated, otpVerified, user } = useStore();
->>>>>>> testing
 
   if (!isAuthenticated) {
     return <Navigate to="/auth/register" replace />;
@@ -96,14 +65,8 @@ const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: bo
     return <Navigate to="/auth/verify-otp" replace />;
   }
 
-<<<<<<< HEAD
   // We no longer redirect here for requireAssessment.
   // The Dashboard itself will handle the locked state.
-=======
-  if (requireAssessment && user && !user.assessmentCompleted) {
-    return <Navigate to="/assessment?from=dashboard" replace />;
-  }
->>>>>>> testing
 
   return <>{children}</>;
 };
@@ -111,14 +74,8 @@ const StudentRoute: React.FC<{ children: React.ReactNode; requireAssessment?: bo
 // Route wrapper to handle Navbar visibility (hide Navbar for admin dashboard pages)
 const LayoutWrapper: React.FC = () => {
   const location = useLocation();
-<<<<<<< HEAD
   const isAdminRoute = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
   const isAuthRoute = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password'].includes(location.pathname);
-=======
-  const { fetchMe } = useStore();
-  const isAdminRoute = location.pathname.startsWith('/admin') && location.pathname !== '/admin/login';
-  const isAuthRoute = ['/auth/login', '/auth/register', '/auth/verify-otp', '/auth/forgot-password', '/auth/reset-password'].includes(location.pathname);
->>>>>>> testing
   const hideNavbar = isAdminRoute || isAuthRoute;
   React.useEffect(() => {
     const saved = localStorage.getItem('theme');
@@ -130,12 +87,6 @@ const LayoutWrapper: React.FC = () => {
       localStorage.setItem('theme', 'light');
     }
   }, []);
-<<<<<<< HEAD
-=======
-  React.useEffect(() => {
-    fetchMe();
-  }, [fetchMe]);
->>>>>>> testing
   return (
     <div className="min-h-screen flex flex-col">
       {!hideNavbar && <Navbar />}
@@ -149,24 +100,14 @@ const LayoutWrapper: React.FC = () => {
           <Route path="/auth/login" element={<Login />} />
           <Route path="/auth/register" element={<Register />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-<<<<<<< HEAD
-=======
-          <Route path="/auth/reset-password" element={<ResetPassword />} />
->>>>>>> testing
 
           {/* Student Protected Routes */}
           <Route
             path="/auth/verify-otp"
             element={
-<<<<<<< HEAD
               <StudentRoute>
                 <VerifyOtp />
               </StudentRoute>
-=======
-              <OtpRoute>
-                <VerifyOtp />
-              </OtpRoute>
->>>>>>> testing
             }
           />
           <Route
@@ -230,19 +171,6 @@ const LayoutWrapper: React.FC = () => {
             }
           />
           <Route
-<<<<<<< HEAD
-=======
-            path="/complete-profile"
-            element={
-              <StudentRoute>
-                <LazyRoute fallback={<ProfileSkeleton />}>
-                  <Profile />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
->>>>>>> testing
             path="/journal"
             element={
               <StudentRoute requireAssessment>
@@ -253,19 +181,6 @@ const LayoutWrapper: React.FC = () => {
             }
           />
           <Route
-<<<<<<< HEAD
-=======
-            path="/journal-ai"
-            element={
-              <StudentRoute requireAssessment>
-                <LazyRoute fallback={<JournalSkeleton />}>
-                  <JournalAI />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
->>>>>>> testing
             path="/notifications"
             element={
               <StudentRoute requireAssessment>

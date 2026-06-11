@@ -26,11 +26,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   }
 
   const isDashboardRoute = ['/dashboard', '/dashboard/history', '/dashboard/recommendations'].some(route => location.pathname === route);
-<<<<<<< HEAD
   const isLocked = isDashboardRoute && !user?.assessmentCompleted;
-=======
-  const isLocked = isDashboardRoute && user && !user.assessmentCompleted;
->>>>>>> testing
 
   const sidebarItems = [
     {
