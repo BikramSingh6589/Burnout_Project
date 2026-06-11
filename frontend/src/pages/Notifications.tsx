@@ -1,21 +1,9 @@
-<<<<<<< HEAD
 import React, { useState } from 'react';
-=======
-import React, { useState, useEffect } from 'react';
->>>>>>> testing
 import { useStore } from '../store/useStore';
 import { Bell, Check, Trash2, Calendar, ShieldAlert, Sparkles, Clipboard } from 'lucide-react';
 
 export const Notifications: React.FC = () => {
-<<<<<<< HEAD
   const { notifications, markNotificationRead, markAllNotificationsRead, deleteNotification } = useStore();
-=======
-  const { notifications, markNotificationRead, markAllNotificationsRead, deleteNotification, fetchNotifications } = useStore();
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
->>>>>>> testing
   const [activeTab, setActiveTab] = useState<string>('All');
 
   const filteredNotifications = activeTab === 'All'
