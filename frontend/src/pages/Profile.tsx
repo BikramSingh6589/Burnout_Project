@@ -4,9 +4,15 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { Save, ShieldAlert, Check } from 'lucide-react';
 
 export const Profile: React.FC = () => {
-  const { user, adminSettings, adminUpdateSettings } = useStore();
+  const { user, adminSettings, adminUpdateSettings, updateProfile } = useStore();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    gender: string;
+    age: number | '';
+  }>({
     name: user?.name || '',
     phone: user?.phone || '',
     email: user?.email || '',
@@ -27,13 +33,24 @@ export const Profile: React.FC = () => {
   const [passSuccess, setPassSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleProfileSave = (e: React.FormEvent) => {
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveSuccess(false);
     setError(null);
 
     if (!formData.name || !formData.phone || !formData.email || !formData.age) {
       setError('Please fill in all profile fields.');
+      return;
+    }
+
+    // Convert age to number for submission
+    const submissionData = {
+      ...formData,
+      age: typeof formData.age === 'string' && formData.age === '' ? 0 : Number(formData.age),
+    };
+    const success = await updateProfile(submissionData);
+    if (!success) {
+      setError(useStore.getState().authError || 'Profile update failed.');
       return;
     }
 
@@ -153,8 +170,8 @@ export const Profile: React.FC = () => {
                     <input
                       id="profile-age"
                       type="number"
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
+                      value={formData.age || ''}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value === '' ? '' : Number(e.target.value) })}
                       className={inputCls}
                     />
                   </div>

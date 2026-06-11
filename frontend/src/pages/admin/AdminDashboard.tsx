@@ -1,15 +1,8 @@
-<<<<<<< HEAD
-import React, { useState } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { useStore } from '../../store/useStore';
-import { ShieldCheck, Users, AlertTriangle, FileText, Send, Settings, LogOut, Search, Plus, Trash2, ShieldAlert, Moon, Sun } from 'lucide-react';
-=======
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
 import type { PendingAiRecommendation } from '../../store/useStore';
 import { ShieldCheck, Users, AlertTriangle, FileText, Send, Settings, LogOut, Search, Plus, Trash2, ShieldAlert, Moon, Sun, Brain, CheckCircle2, XCircle, Pencil, Clock, RefreshCw } from 'lucide-react';
->>>>>>> testing
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -22,9 +15,6 @@ export const AdminDashboard: React.FC = () => {
     recommendations,
     adminCreateRecommendation,
     adminDeleteRecommendation,
-<<<<<<< HEAD
-    adminSendNotification
-=======
     adminSendNotification,
     pendingAiRecommendations,
     pendingAiLoading,
@@ -32,7 +22,6 @@ export const AdminDashboard: React.FC = () => {
     approveAiRecommendation,
     editApproveAiRecommendation,
     rejectAiRecommendation,
->>>>>>> testing
   } = useStore();
 
   const navigate = useNavigate();
@@ -43,11 +32,7 @@ export const AdminDashboard: React.FC = () => {
   }
 
   // Active sub-section state
-<<<<<<< HEAD
-  const [activeSection, setActiveSection] = useState<'overview' | 'students' | 'high-risk' | 'recommendations' | 'notifications' | 'settings'>('overview');
-=======
   const [activeSection, setActiveSection] = useState<'overview' | 'students' | 'high-risk' | 'recommendations' | 'notifications' | 'settings' | 'ai-queue'>('overview');
->>>>>>> testing
 
   // Internal component states
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,8 +43,6 @@ export const AdminDashboard: React.FC = () => {
   const [settingsSuccess, setSettingsSuccess] = useState(false);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
 
-<<<<<<< HEAD
-=======
   // AI Review Queue state
   const [queueActionId, setQueueActionId] = useState<string | null>(null);
   const [editingRec, setEditingRec] = useState<PendingAiRecommendation | null>(null);
@@ -67,7 +50,6 @@ export const AdminDashboard: React.FC = () => {
   const [queueError, setQueueError] = useState<string | null>(null);
   const [queueSuccess, setQueueSuccess] = useState<string | null>(null);
 
->>>>>>> testing
   const toggleTheme = () => {
     const root = document.documentElement;
     if (isDark) {
@@ -81,8 +63,6 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
-<<<<<<< HEAD
-=======
   // Fetch pending AI recommendations when tab is opened
   useEffect(() => {
     if (activeSection === 'ai-queue') {
@@ -138,7 +118,6 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
->>>>>>> testing
 
   // Calculations
   const totalStudentsCount = adminStudents.length;
@@ -255,8 +234,6 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
-<<<<<<< HEAD
-=======
             onClick={() => { setActiveSection('ai-queue'); }}
             className={`w-full flex justify-start items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 relative ${
               activeSection === 'ai-queue'
@@ -274,7 +251,6 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
->>>>>>> testing
             onClick={() => setActiveSection('notifications')}
             className={`w-full flex justify-start items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
               activeSection === 'notifications'
@@ -767,8 +743,6 @@ export const AdminDashboard: React.FC = () => {
                     </select>
                   </div>
 
-<<<<<<< HEAD
-=======
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300" htmlFor="weekly-assessment-limit">
                       Weekly Assessments Allowed Per Student
@@ -786,7 +760,6 @@ export const AdminDashboard: React.FC = () => {
                     />
                   </div>
 
->>>>>>> testing
                   <button
                     type="submit"
                     className="w-full bg-secondary text-white font-semibold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 hover:bg-secondary/95 transition-all shadow-sm"
@@ -798,8 +771,6 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
-<<<<<<< HEAD
-=======
           {/* Section: AI Review Queue */}
           {activeSection === 'ai-queue' && (
             <div className="space-y-6 animate-in fade-in duration-200">
@@ -980,7 +951,6 @@ export const AdminDashboard: React.FC = () => {
             </div>
           )}
 
->>>>>>> testing
         </div>
       </main>
     </div>

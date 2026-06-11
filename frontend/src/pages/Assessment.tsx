@@ -8,6 +8,7 @@ export const Assessment: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isWeekly = location.pathname.includes('weekly');
+  const showDashboardRedirectMessage = !isWeekly && new URLSearchParams(location.search).get('from') === 'dashboard';
 
   // Guard: Must be logged in
   if (!isAuthenticated) {
@@ -16,8 +17,22 @@ export const Assessment: React.FC = () => {
 
   // Local state for wizard steps: 1 = Academic, 2 = Personal, 3 = Success
   const [step, setStep] = useState(1);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    // Step 1: Academic
+    stressLevel: number;
+    academicSatisfaction: number;
+    studyHours: number | '';
+    assignmentBacklog: number | '';
+    procrastination: number;
+    // Step 2: Personal
+    motivationLevel: number;
+    energyLevel: number;
+    sleepHours: number | '';
+    screenTime: number | '';
+  }>({
     // Step 1: Academic
     stressLevel: 5,
     academicSatisfaction: 7,
@@ -31,6 +46,8 @@ export const Assessment: React.FC = () => {
     screenTime: 4,
   });
 
+
+
   const handleNext = () => {
     setStep(2);
   };
@@ -39,10 +56,27 @@ export const Assessment: React.FC = () => {
     setStep(1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    submitAssessment(formData, isWeekly);
-    setStep(3); // Success Screen
+    setSubmitError(null);
+    setSubmitting(true);
+    // Convert any empty strings to 0 for submission
+    const submissionData = {
+      ...formData,
+      studyHours: formData.studyHours === '' ? 0 : formData.studyHours,
+      assignmentBacklog: formData.assignmentBacklog === '' ? 0 : formData.assignmentBacklog,
+      sleepHours: formData.sleepHours === '' ? 0 : formData.sleepHours,
+      screenTime: formData.screenTime === '' ? 0 : formData.screenTime,
+    };
+    const errorMsg = await submitAssessment(submissionData, isWeekly);
+    setSubmitting(false);
+
+    if (errorMsg !== null) {
+      setSubmitError(errorMsg);
+      return;
+    }
+
+    setStep(3);
   };
 
   const handleViewDashboard = () => {
@@ -53,6 +87,11 @@ export const Assessment: React.FC = () => {
     <div className="max-w-2xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       {/* Card Wrapper */}
       <div className="bg-surface rounded-2xl border border-border shadow-level2 p-8">
+        {showDashboardRedirectMessage && step < 3 && (
+          <div className="mb-6 rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-xs font-semibold text-error">
+            Before accessing your dashboard, please complete the initial assessment so we can generate your baseline burnout score.
+          </div>
+        )}
         
         {/* Step 1 & 2 Headers */}
         {step < 3 && (
@@ -155,8 +194,8 @@ export const Assessment: React.FC = () => {
                     type="number"
                     min="0"
                     max="24"
-                    value={formData.studyHours}
-                    onChange={(e) => setFormData({ ...formData, studyHours: Math.min(24, Math.max(0, Number(e.target.value))) })}
+                    value={formData.studyHours || ''}
+                    onChange={(e) => setFormData({ ...formData, studyHours: e.target.value === '' ? '' : Math.min(24, Math.max(0, Number(e.target.value))) })}
                     className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
@@ -169,8 +208,8 @@ export const Assessment: React.FC = () => {
                     type="number"
                     min="0"
                     max="50"
-                    value={formData.assignmentBacklog}
-                    onChange={(e) => setFormData({ ...formData, assignmentBacklog: Math.max(0, Number(e.target.value)) })}
+                    value={formData.assignmentBacklog || ''}
+                    onChange={(e) => setFormData({ ...formData, assignmentBacklog: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })}
                     className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
@@ -239,8 +278,8 @@ export const Assessment: React.FC = () => {
                     min="0"
                     max="24"
                     step="0.5"
-                    value={formData.sleepHours}
-                    onChange={(e) => setFormData({ ...formData, sleepHours: Math.min(24, Math.max(0, Number(e.target.value))) })}
+                    value={formData.sleepHours || ''}
+                    onChange={(e) => setFormData({ ...formData, sleepHours: e.target.value === '' ? '' : Math.min(24, Math.max(0, Number(e.target.value))) })}
                     className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
@@ -254,12 +293,27 @@ export const Assessment: React.FC = () => {
                     min="0"
                     max="24"
                     step="0.5"
-                    value={formData.screenTime}
-                    onChange={(e) => setFormData({ ...formData, screenTime: Math.min(24, Math.max(0, Number(e.target.value))) })}
+                    value={formData.screenTime || ''}
+                    onChange={(e) => setFormData({ ...formData, screenTime: e.target.value === '' ? '' : Math.min(24, Math.max(0, Number(e.target.value))) })}
                     className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
               </div>
+
+              {submitError && (
+                <div className="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-xs font-semibold text-center space-y-2">
+                  <p>{submitError}</p>
+                  {submitError.toLowerCase().includes('already submitted') && (
+                    <button
+                      type="button"
+                      onClick={handleViewDashboard}
+                      className="underline text-primary font-bold"
+                    >
+                      Go to Dashboard →
+                    </button>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-between pt-4">
                 <button
@@ -273,9 +327,10 @@ export const Assessment: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="bg-primary text-white font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 text-xs"
+                  disabled={submitting}
+                  className="bg-primary text-white font-semibold px-5 py-2.5 rounded-lg flex items-center space-x-2 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary/30 text-xs disabled:opacity-60"
                 >
-                  <span>Submit Assessment</span>
+                  <span>{submitting ? 'Saving...' : 'Submit Assessment'}</span>
                   <CheckCircle2 className="h-4 w-4" />
                 </button>
               </div>

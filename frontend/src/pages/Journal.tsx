@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { Sparkles, Trash2, Calendar, Smile, AlertCircle } from 'lucide-react';
 
 export const Journal: React.FC = () => {
-  const { journalEntries, addJournalEntry, deleteJournalEntry } = useStore();
+  const { journalEntries, addJournalEntry, deleteJournalEntry, fetchJournalEntries } = useStore();
+
+  useEffect(() => {
+    fetchJournalEntries();
+  }, [fetchJournalEntries]);
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
 

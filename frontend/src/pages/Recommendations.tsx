@@ -1,10 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
-import { Star } from 'lucide-react';
+import { Filter, History, Star, Brain } from 'lucide-react';
+
+type PriorityFilter = 'all' | 'High' | 'Medium' | 'Low';
+type CategoryFilter = 'all' | NonNullable<ReturnType<typeof useStore.getState>['recommendations'][number]['category']>;
+type DateFilter = 'all' | '7d' | '30d';
+
+const categoryLabels: Record<Exclude<CategoryFilter, 'all'>, string> = {
+  sleep: 'Sleep',
+  stress: 'Stress',
+  motivation: 'Motivation',
+  study: 'Study',
+  'screen-time': 'Screen Time',
+  'mental-health': 'Mental Health',
+  general: 'General',
+};
 
 export const Recommendations: React.FC = () => {
-  const { recommendations, submitRecommendationFeedback } = useStore();
+  const {
+    recommendations,
+    recommendationHistory,
+    submitRecommendationFeedback,
+    fetchRecommendations,
+    fetchRecommendationHistory,
+    latestAssessment,
+    analyticsSummary,
+    fetchAnalytics,
+  } = useStore();
+
+  useEffect(() => {
+    fetchRecommendations();
+    fetchRecommendationHistory();
+    fetchAnalytics();
+  }, [fetchRecommendations, fetchRecommendationHistory, fetchAnalytics]);
   
   // Keep track of which recommendation card has its feedback form open
   const [activeFeedbackId, setActiveFeedbackId] = useState<string | null>(null);
@@ -15,6 +44,26 @@ export const Recommendations: React.FC = () => {
   const [hoverRating, setHoverRating] = useState<number | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [submitSuccessId, setSubmitSuccessId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'active' | 'history'>('active');
+  const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+
+  const sourceRecommendations = viewMode === 'active' ? recommendations : recommendationHistory;
+  const visibleRecommendations = sourceRecommendations.filter((rec) => {
+    if (priorityFilter !== 'all' && rec.priority !== priorityFilter) return false;
+    if (categoryFilter !== 'all' && rec.category !== categoryFilter) return false;
+    if (dateFilter !== 'all') {
+      const generatedAt = new Date(rec.createdAt ?? rec.dateGenerated).getTime();
+      const days = dateFilter === '7d' ? 7 : 30;
+      if (!Number.isFinite(generatedAt) || Date.now() - generatedAt > days * 24 * 60 * 60 * 1000) return false;
+    }
+    return true;
+  });
+
+  const categoryOptions = Array.from(
+    new Set(sourceRecommendations.map((rec) => rec.category).filter(Boolean)),
+  ) as Exclude<CategoryFilter, 'all'>[];
 
   const handleOpenForm = (id: string, currentStatus: any, currentRating: number, currentText: string) => {
     setActiveFeedbackId(id);
@@ -40,9 +89,38 @@ export const Recommendations: React.FC = () => {
       <div className="space-y-8 animate-in fade-in duration-300">
         
         {/* Header Block */}
-        <div className="pb-4 border-b border-slate-100 dark:border-[#334155]">
-          <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Personalized Wellness Recommendations</h2>
-          <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">AI-suggested interventions based on your recent burnout score trends</p>
+        <div className="pb-4 border-b border-slate-100 dark:border-[#334155] flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Personalized Wellness Recommendations</h2>
+            <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">
+              AI-suggested interventions based on your recent burnout score trends
+            </p>
+          </div>
+          
+          <div className="flex flex-wrap gap-3 bg-slate-50 dark:bg-[#1E293B] p-3 rounded-lg border border-slate-100 dark:border-[#334155]">
+            <div>
+              <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Latest Score</span>
+              <span className="text-sm font-semibold text-primary">{latestAssessment ? latestAssessment.burnoutScore : '--'}</span>
+            </div>
+            <div className="border-l border-slate-200 dark:border-[#334155] pl-4">
+              <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Trend</span>
+              <span className={`text-sm font-semibold ${
+                analyticsSummary?.currentTrend === 'IMPROVING' ? 'text-success' : 
+                analyticsSummary?.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
+              }`}>
+                {analyticsSummary?.currentTrend || '--'}
+              </span>
+            </div>
+            <div className="border-l border-slate-200 dark:border-[#334155] pl-4">
+              <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Baseline</span>
+              <span className={`text-sm font-semibold ${
+                analyticsSummary?.baselineComparison?.status === 'IMPROVED' ? 'text-success' : 
+                analyticsSummary?.baselineComparison?.status === 'WORSENED' ? 'text-error' : 'text-primary'
+              }`}>
+                {analyticsSummary?.baselineComparison?.status || '--'}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Success Alert */}
@@ -52,14 +130,85 @@ export const Recommendations: React.FC = () => {
           </div>
         )}
 
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex rounded-lg border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#1E293B] p-1">
+            <button
+              type="button"
+              onClick={() => setViewMode('active')}
+              className={`px-4 py-2 rounded-md text-xs font-semibold transition-colors ${
+                viewMode === 'active'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-neutral-slate dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449]'
+              }`}
+            >
+              Active
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('history')}
+              className={`px-4 py-2 rounded-md text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+                viewMode === 'history'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-neutral-slate dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449]'
+              }`}
+            >
+              <History className="h-3.5 w-3.5" />
+              History
+            </button>
+          </div>
+          <span className="text-xs text-neutral-outline dark:text-[#CBD5E1]">
+            {visibleRecommendations.length} {viewMode === 'active' ? 'active' : 'historical'} interventions
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 bg-white dark:bg-[#1E293B] border border-slate-100 dark:border-[#334155] rounded-xl p-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-neutral-outline dark:text-[#CBD5E1]">
+            <Filter className="h-3.5 w-3.5" />
+            <span>Filters</span>
+          </div>
+          <select
+            value={priorityFilter}
+            onChange={(event) => setPriorityFilter(event.target.value as PriorityFilter)}
+            className="bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-[#334155] rounded-lg px-3 py-2 text-xs text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary"
+          >
+            <option value="all">All priorities</option>
+            <option value="High">High priority</option>
+            <option value="Medium">Medium priority</option>
+            <option value="Low">Low priority</option>
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value as CategoryFilter)}
+            className="bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-[#334155] rounded-lg px-3 py-2 text-xs text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary"
+          >
+            <option value="all">All categories</option>
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>{categoryLabels[category]}</option>
+            ))}
+          </select>
+          <select
+            value={dateFilter}
+            onChange={(event) => setDateFilter(event.target.value as DateFilter)}
+            className="bg-slate-50 dark:bg-[#111827] border border-slate-200 dark:border-[#334155] rounded-lg px-3 py-2 text-xs text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary"
+          >
+            <option value="all">All dates</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+          </select>
+        </div>
+
         {/* Recommendation Cards List */}
         <div className="space-y-6">
-          {recommendations.length === 0 ? (
+          {visibleRecommendations.length === 0 ? (
             <div className="text-center py-12 text-xs text-neutral-outline">
-              No active recommendations. Complete your assessments to trigger new suggestions.
+              {sourceRecommendations.length === 0
+                ? viewMode === 'active'
+                  ? 'No active recommendations. Complete your assessments to trigger new suggestions.'
+                  : 'No recommendation history yet. Past assessment recommendations will appear here.'
+                : 'No recommendations match the selected filters.'}
             </div>
           ) : (
-            recommendations.map((rec) => {
+            visibleRecommendations.map((rec) => {
               const isFormOpen = activeFeedbackId === rec.id;
               const hasFeedback = rec.followedStatus !== 'none';
               
@@ -81,6 +230,11 @@ export const Recommendations: React.FC = () => {
                         }`}>
                           {rec.priority} Priority
                         </span>
+                        {rec.source === 'AI' && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700">
+                            <Brain className="h-2.5 w-2.5" /> AI
+                          </span>
+                        )}
                         <span className="text-[9px] text-neutral-outline dark:text-[#CBD5E1]">{rec.dateGenerated}</span>
                       </div>
                       <h3 className="font-bold text-sm text-neutral-slate dark:text-[#F8FAFC]">{rec.title}</h3>

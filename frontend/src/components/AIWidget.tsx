@@ -3,10 +3,16 @@ import { useStore } from '../store/useStore';
 import { MessageSquare, X, Send, Bot } from 'lucide-react';
 
 export const AIWidget: React.FC = () => {
-  const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory } = useStore();
+  const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory } = useStore();
   const [isOpen, setIsOpen] = useState(false);
   const [inputMsg, setInputMsg] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && isAuthenticated) {
+      fetchAIHistory();
+    }
+  }, [isOpen, isAuthenticated, fetchAIHistory]);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
