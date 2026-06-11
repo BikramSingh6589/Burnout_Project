@@ -5,6 +5,7 @@ import { AppError } from "../../middlewares/error.middleware.js";
 import { classifyBurnoutRisk } from "../burnout/risk-classifier.service.js";
 import { calculateWeeklyBurnoutScore } from "../burnout/burnout-score.service.js";
 import { initializeBaseline } from "../burnout/baseline-tracker.service.js";
+import { generateAndStoreRecommendations, mapWeeklyAssessmentToRecommendationSnapshot } from "../recommendation/recommendation.service.js";
 import type { WeeklyAssessmentRequestBody } from "../../types/assessment.types.js";
 import { AssessmentStatus } from "../../types/common.types.js";
 import type { IWeeklyAssessment } from "../../models/WeeklyAssessment.js";
@@ -84,6 +85,16 @@ export const submitWeeklyAssessment = async (
     }
 
     await initializeBaseline(userId, burnoutScore, classification.riskLevel, createdAssessment.completedAt ?? new Date());
+
+    try {
+      await generateAndStoreRecommendations(
+        userId,
+        createdAssessment._id.toString(),
+        mapWeeklyAssessmentToRecommendationSnapshot(assessment),
+      );
+    } catch (error) {
+      console.error("[Recommendation] Failed to generate weekly recommendations:", error);
+    }
   } catch (error) {
     await WeeklyAssessment.findByIdAndDelete(createdAssessment._id).catch(() => null);
     throw error;

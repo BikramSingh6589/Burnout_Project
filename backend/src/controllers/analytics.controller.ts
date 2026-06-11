@@ -3,6 +3,23 @@ import { getAssessmentHistory } from "../services/assessment/assessment.service.
 import { summarizeHistoricalAnalytics } from "../services/burnout/trend-analysis.service.js";
 import { Student } from "../models/Student.js";
 import type { BurnoutHistoryItem } from "../types/burnout.types.js";
+import { getDashboardRecommendations } from "../services/recommendation/recommendation.service.js";
+import type { RecommendationWithFeedback } from "../services/recommendation/recommendation.types.js";
+
+const formatRecommendationResponse = (recommendation: RecommendationWithFeedback) => ({
+  id: recommendation.id,
+  assessmentId: recommendation.assessmentId,
+  category: recommendation.category,
+  priority: recommendation.priority.charAt(0).toUpperCase() + recommendation.priority.slice(1),
+  title: recommendation.title,
+  reason: recommendation.message,
+  message: recommendation.message,
+  followedStatus: recommendation.followedStatus,
+  rating: recommendation.rating,
+  feedbackText: recommendation.feedbackText,
+  dateGenerated: recommendation.dateGenerated,
+  createdAt: recommendation.createdAt,
+});
 
 export const getAnalyticsSummary = async (
   req: Request,
@@ -43,9 +60,14 @@ export const getAnalyticsSummary = async (
       baselineRecord
     );
 
+    const recommendations = await getDashboardRecommendations(userId).catch(() => []);
+
     res.status(200).json({
       success: true,
-      data: summary,
+      data: {
+        ...summary,
+        recommendations: recommendations.map(formatRecommendationResponse),
+      },
     });
   } catch (error) {
     next(error);

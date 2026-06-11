@@ -91,6 +91,7 @@ export interface AnalyticsSummary {
   lowestScore: number;
   assessmentCount: number;
   currentTrend: 'IMPROVING' | 'STABLE' | 'WORSENING';
+  recommendations?: Recommendation[];
   baselineDifference?: number;
   baselineComparison?: {
     baselineScore: number;
@@ -108,13 +109,31 @@ export interface LatestAssessment {
 
 export interface Recommendation {
   id: string;
+  assessmentId?: string;
+  category?: 'sleep' | 'stress' | 'motivation' | 'study' | 'screen-time' | 'mental-health' | 'general';
   title: string;
   reason: string;
   priority: 'High' | 'Medium' | 'Low';
+  source?: 'AI' | 'rules';
   followedStatus: 'none' | 'followed' | 'partially' | 'not';
   rating: number; // 0 to 5
   feedbackText: string;
   dateGenerated: string;
+  createdAt?: string;
+}
+
+export interface PendingAiRecommendation {
+  id: string;
+  userId: string;
+  assessmentId: string;
+  studentName: string;
+  studentEmail: string;
+  category: string;
+  priority: string;
+  title: string;
+  message: string;
+  source: 'AI' | 'rules';
+  createdAt: string;
 }
 
 export interface Notification {
@@ -166,6 +185,7 @@ interface AppState {
   analyticsSummary: AnalyticsSummary | null;
   latestAssessment: LatestAssessment | null;
   recommendations: Recommendation[];
+  recommendationHistory: Recommendation[];
   notifications: Notification[];
 
   // Chat Widget State
@@ -182,6 +202,7 @@ interface AppState {
   fetchJournalAiEntries: () => Promise<void>;
   fetchBurnoutRisk: () => Promise<void>;
   fetchRecommendations: () => Promise<void>;
+  fetchRecommendationHistory: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
   fetchAIHistory: () => Promise<void>;
   fetchAdminSettings: () => Promise<void>;
@@ -204,6 +225,8 @@ interface AppState {
   // Journals
   addJournalEntry: (content: string) => void;
   deleteJournalEntry: (id: string) => void;
+  addJournalAiEntry: (content: string) => Promise<void>;
+  deleteJournalAiEntry: (id: string) => Promise<void>;
 
   // Recommendations
   submitRecommendationFeedback: (
@@ -228,6 +251,14 @@ interface AppState {
   adminCreateRecommendation: (rec: Omit<Recommendation, 'id' | 'followedStatus' | 'rating' | 'feedbackText' | 'dateGenerated'>) => void;
   adminDeleteRecommendation: (id: string) => void;
   adminUpdateSettings: (settings: Partial<AdminSettings>) => void;
+
+  // Admin approval queue
+  pendingAiRecommendations: PendingAiRecommendation[];
+  pendingAiLoading: boolean;
+  fetchPendingAiRecommendations: () => Promise<void>;
+  approveAiRecommendation: (id: string) => Promise<void>;
+  editApproveAiRecommendation: (id: string, payload: { title?: string; message?: string; priority?: string; category?: string }) => Promise<void>;
+  rejectAiRecommendation: (id: string) => Promise<void>;
 }
 
 // Initial Mock Data Helpers
@@ -417,6 +448,7 @@ export const useStore = create<AppState>((set, get) => ({
   analyticsSummary: null,
   latestAssessment: null,
   recommendations: [],
+  recommendationHistory: [],
   notifications: [],
 
   // Chat Widget State
@@ -439,6 +471,8 @@ export const useStore = create<AppState>((set, get) => ({
     emailNotificationsEnabled: true,
     inAppNotificationsEnabled: true,
   },
+  pendingAiRecommendations: [],
+  pendingAiLoading: false,
 
   // Fetch actions
   fetchTrackerHistory: async () => {
@@ -497,7 +531,10 @@ export const useStore = create<AppState>((set, get) => ({
       ]);
 
       if (analyticsResponse?.success) {
-        set({ analyticsSummary: analyticsResponse.data });
+        set({
+          analyticsSummary: analyticsResponse.data,
+          recommendations: analyticsResponse.data.recommendations ?? get().recommendations,
+        });
       }
 
       if (latestResponse?.success && latestResponse.data.assessment) {
@@ -552,6 +589,20 @@ export const useStore = create<AppState>((set, get) => ({
       set({ recommendations: response.data });
     } catch (err) {
       console.error('[Store] Failed to fetch recommendations:', err);
+    }
+  },
+
+  fetchRecommendationHistory: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: Recommendation[];
+      }>('/recommendations/history', { token });
+      set({ recommendationHistory: response.data });
+    } catch (err) {
+      console.error('[Store] Failed to fetch recommendation history:', err);
     }
   },
 
@@ -796,6 +847,7 @@ export const useStore = create<AppState>((set, get) => ({
   burnoutRisk: null,
       trackerHistory: [],
       recommendations: [],
+      recommendationHistory: [],
       notifications: [],
       chatMessages: [
         {
@@ -1066,7 +1118,7 @@ export const useStore = create<AppState>((set, get) => ({
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
     try {
-      await apiRequest(/journal-ai/, {
+      await apiRequest(`/journal-ai/${id}`, {
         method: 'DELETE',
         token,
       });
@@ -1100,6 +1152,7 @@ export const useStore = create<AppState>((set, get) => ({
         body: JSON.stringify({ status: followedStatus, rating, feedbackText }),
       });
       await get().fetchRecommendations();
+      await get().fetchRecommendationHistory();
       await get().fetchNotifications();
     } catch (err) {
       console.error('[Store] Failed to submit recommendation feedback:', err);
@@ -1247,7 +1300,68 @@ export const useStore = create<AppState>((set, get) => ({
     })
       .then((response) => set({ adminSettings: response.data }))
       .catch((err) => console.error('[Store] Failed to update admin settings:', err));
-  }
+  },
+
+  // Admin Approval Queue
+  fetchPendingAiRecommendations: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    set({ pendingAiLoading: true });
+    try {
+      const response = await apiRequest<{ success: boolean; data: PendingAiRecommendation[] }>(
+        '/recommendations/admin/pending',
+        { token },
+      );
+      set({ pendingAiRecommendations: response.data, pendingAiLoading: false });
+    } catch (err) {
+      console.error('[Store] Failed to fetch pending AI recommendations:', err);
+      set({ pendingAiLoading: false });
+    }
+  },
+
+  approveAiRecommendation: async (id) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest(`/recommendations/admin/${id}/approve`, { method: 'PATCH', token });
+      set((state) => ({
+        pendingAiRecommendations: state.pendingAiRecommendations.filter((r) => r.id !== id),
+      }));
+    } catch (err) {
+      console.error('[Store] Failed to approve recommendation:', err);
+      throw err;
+    }
+  },
+
+  editApproveAiRecommendation: async (id, payload) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest(`/recommendations/admin/${id}/edit-approve`, {
+        method: 'PATCH',
+        token,
+        body: JSON.stringify(payload),
+      });
+      set((state) => ({
+        pendingAiRecommendations: state.pendingAiRecommendations.filter((r) => r.id !== id),
+      }));
+    } catch (err) {
+      console.error('[Store] Failed to edit-approve recommendation:', err);
+      throw err;
+    }
+  },
+
+  rejectAiRecommendation: async (id) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest(`/recommendations/admin/${id}/reject`, { method: 'DELETE', token });
+      set((state) => ({
+        pendingAiRecommendations: state.pendingAiRecommendations.filter((r) => r.id !== id),
+      }));
+    } catch (err) {
+      console.error('[Store] Failed to reject recommendation:', err);
+      throw err;
+    }
+  },
 }));
-
-

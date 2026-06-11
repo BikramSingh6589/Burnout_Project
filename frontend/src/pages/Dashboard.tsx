@@ -49,9 +49,10 @@ export const Dashboard: React.FC = () => {
   const averageSleep = trackerHistory.length > 0 
     ? (trackerHistory.reduce((sum, h) => sum + h.sleepHours, 0) / trackerHistory.length).toFixed(1) 
     : '0.0';
+  const dashboardRecommendations = analyticsSummary?.recommendations ?? recommendations;
 
   // Pie Chart Data: Recommendation Followed status
-  const followStats = recommendations.reduce(
+  const followStats = dashboardRecommendations.reduce(
     (acc, rec) => {
       if (rec.followedStatus === 'followed') acc.followed++;
       else if (rec.followedStatus === 'partially') acc.partially++;
@@ -71,7 +72,7 @@ export const Dashboard: React.FC = () => {
 
   // Fallback if no pie data has feedback yet
   const displayPieData = pieData.length > 0 ? pieData : [
-    { name: 'Pending Feedback', value: recommendations.length, color: '#C7C4D8' }
+    { name: 'Pending Feedback', value: dashboardRecommendations.length, color: '#C7C4D8' }
   ];
 
   // Format history for line chart (showing up to last 7 entries)
@@ -292,7 +293,7 @@ export const Dashboard: React.FC = () => {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">{recommendations.length}</span>
+                <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">{dashboardRecommendations.length}</span>
                 <span className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mt-0.5">Total</span>
               </div>
             </div>
@@ -370,7 +371,7 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {recommendations.slice(0, 2).map((rec) => (
+            {dashboardRecommendations.slice(0, 2).map((rec) => (
               <div key={rec.id} className="border border-border rounded-xl p-5 space-y-3 bg-surface-elevated/30 hover:border-primary/40 hover:shadow-md transition-all duration-300 cursor-pointer group">
                 <div className="flex justify-between items-center">
                   <span className={`text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-md border ${
@@ -386,6 +387,11 @@ export const Dashboard: React.FC = () => {
                 <p className="text-xs text-text-secondary  leading-relaxed">{rec.reason}</p>
               </div>
             ))}
+            {dashboardRecommendations.length === 0 && (
+              <div className="md:col-span-2 text-center py-8 text-xs text-text-secondary">
+                Complete an assessment to generate personalized interventions.
+              </div>
+            )}
           </div>
         </div>
 
@@ -393,4 +399,3 @@ export const Dashboard: React.FC = () => {
     </DashboardLayout>
   );
 };
-

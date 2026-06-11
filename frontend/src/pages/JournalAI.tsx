@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { Sparkles, Trash2, Calendar, Smile, AlertCircle, Loader2 } from 'lucide-react';
+import { Sparkles, Trash2, Calendar, AlertCircle, Loader2 } from 'lucide-react';
 
 export const JournalAI: React.FC = () => {
   const { journalAiEntries, addJournalAiEntry, deleteJournalAiEntry, fetchJournalAiEntries } = useStore();

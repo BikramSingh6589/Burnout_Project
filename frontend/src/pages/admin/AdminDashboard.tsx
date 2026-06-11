@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
-import { ShieldCheck, Users, AlertTriangle, FileText, Send, Settings, LogOut, Search, Plus, Trash2, ShieldAlert, Moon, Sun } from 'lucide-react';
+import type { PendingAiRecommendation } from '../../store/useStore';
+import { ShieldCheck, Users, AlertTriangle, FileText, Send, Settings, LogOut, Search, Plus, Trash2, ShieldAlert, Moon, Sun, Brain, CheckCircle2, XCircle, Pencil, Clock, RefreshCw } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -14,7 +15,13 @@ export const AdminDashboard: React.FC = () => {
     recommendations,
     adminCreateRecommendation,
     adminDeleteRecommendation,
-    adminSendNotification
+    adminSendNotification,
+    pendingAiRecommendations,
+    pendingAiLoading,
+    fetchPendingAiRecommendations,
+    approveAiRecommendation,
+    editApproveAiRecommendation,
+    rejectAiRecommendation,
   } = useStore();
 
   const navigate = useNavigate();
@@ -25,7 +32,7 @@ export const AdminDashboard: React.FC = () => {
   }
 
   // Active sub-section state
-  const [activeSection, setActiveSection] = useState<'overview' | 'students' | 'high-risk' | 'recommendations' | 'notifications' | 'settings'>('overview');
+  const [activeSection, setActiveSection] = useState<'overview' | 'students' | 'high-risk' | 'recommendations' | 'notifications' | 'settings' | 'ai-queue'>('overview');
 
   // Internal component states
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,6 +42,13 @@ export const AdminDashboard: React.FC = () => {
   const [recSuccess, setRecSuccess] = useState(false);
   const [settingsSuccess, setSettingsSuccess] = useState(false);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
+
+  // AI Review Queue state
+  const [queueActionId, setQueueActionId] = useState<string | null>(null);
+  const [editingRec, setEditingRec] = useState<PendingAiRecommendation | null>(null);
+  const [editFields, setEditFields] = useState({ title: '', message: '', priority: '' });
+  const [queueError, setQueueError] = useState<string | null>(null);
+  const [queueSuccess, setQueueSuccess] = useState<string | null>(null);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -46,6 +60,61 @@ export const AdminDashboard: React.FC = () => {
       root.classList.add('dark');
       localStorage.setItem('theme', 'dark');
       setIsDark(true);
+    }
+  };
+
+  // Fetch pending AI recommendations when tab is opened
+  useEffect(() => {
+    if (activeSection === 'ai-queue') {
+      fetchPendingAiRecommendations();
+    }
+  }, [activeSection]);
+
+  const handleApprove = async (id: string) => {
+    setQueueActionId(id);
+    setQueueError(null);
+    try {
+      await approveAiRecommendation(id);
+      setQueueSuccess('Recommendation approved and published to student.');
+      setTimeout(() => setQueueSuccess(null), 3000);
+    } catch {
+      setQueueError('Failed to approve. Please try again.');
+    } finally {
+      setQueueActionId(null);
+    }
+  };
+
+  const handleReject = async (id: string) => {
+    setQueueActionId(id);
+    setQueueError(null);
+    try {
+      await rejectAiRecommendation(id);
+      setQueueSuccess('Recommendation rejected and removed.');
+      setTimeout(() => setQueueSuccess(null), 3000);
+    } catch {
+      setQueueError('Failed to reject. Please try again.');
+    } finally {
+      setQueueActionId(null);
+    }
+  };
+
+  const handleEditApprove = async () => {
+    if (!editingRec) return;
+    setQueueActionId(editingRec.id);
+    setQueueError(null);
+    try {
+      await editApproveAiRecommendation(editingRec.id, {
+        title: editFields.title || editingRec.title,
+        message: editFields.message || editingRec.message,
+        priority: editFields.priority || editingRec.priority,
+      });
+      setEditingRec(null);
+      setQueueSuccess('Recommendation edited and approved.');
+      setTimeout(() => setQueueSuccess(null), 3000);
+    } catch {
+      setQueueError('Failed to edit-approve. Please try again.');
+    } finally {
+      setQueueActionId(null);
     }
   };
 
@@ -162,6 +231,23 @@ export const AdminDashboard: React.FC = () => {
           >
             <FileText className="h-5 w-5" />
             <span>Recommendations CRUD</span>
+          </button>
+
+          <button
+            onClick={() => { setActiveSection('ai-queue'); }}
+            className={`w-full flex justify-start items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 relative ${
+              activeSection === 'ai-queue'
+                ? 'bg-secondary text-white shadow-lg shadow-secondary/20'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[rgba(124,92,252,0.18)] dark:hover:text-[#9B84FF]'
+            }`}
+          >
+            <Brain className="h-5 w-5" />
+            <span>AI Review Queue</span>
+            {pendingAiRecommendations.length > 0 && (
+              <span className="ml-auto bg-amber-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                {pendingAiRecommendations.length}
+              </span>
+            )}
           </button>
 
           <button
@@ -682,6 +768,186 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                 </form>
               </div>
+            </div>
+          )}
+
+          {/* Section: AI Review Queue */}
+          {activeSection === 'ai-queue' && (
+            <div className="space-y-6 animate-in fade-in duration-200">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div>
+                  <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">AI Recommendation Review Queue</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">AI-generated suggestions awaiting counselor approval before being shown to students.</p>
+                </div>
+                <button
+                  onClick={() => fetchPendingAiRecommendations()}
+                  disabled={pendingAiLoading}
+                  className="inline-flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-secondary/10 hover:text-secondary transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${pendingAiLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+              </div>
+
+              {queueSuccess && (
+                <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 text-xs font-semibold px-4 py-3 rounded-xl">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  {queueSuccess}
+                </div>
+              )}
+              {queueError && (
+                <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 text-xs font-semibold px-4 py-3 rounded-xl">
+                  <XCircle className="h-4 w-4 shrink-0" />
+                  {queueError}
+                </div>
+              )}
+
+              {editingRec && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                  <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-lg p-6 space-y-5">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Pencil className="h-4 w-4 text-secondary" /> Edit and Approve Recommendation
+                      </h3>
+                      <button onClick={() => setEditingRec(null)} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors">
+                        <XCircle className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+                      <p><span className="font-semibold text-slate-700 dark:text-slate-300">Student:</span> {editingRec.studentName} ({editingRec.studentEmail})</p>
+                      <p><span className="font-semibold text-slate-700 dark:text-slate-300">Category:</span> {editingRec.category}</p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Title</label>
+                        <input
+                          type="text"
+                          defaultValue={editingRec.title}
+                          onChange={(e) => setEditFields(f => ({ ...f, title: e.target.value }))}
+                          className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Message</label>
+                        <textarea
+                          rows={4}
+                          defaultValue={editingRec.message}
+                          onChange={(e) => setEditFields(f => ({ ...f, message: e.target.value }))}
+                          className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100 resize-none"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Priority</label>
+                        <select
+                          defaultValue={editingRec.priority}
+                          onChange={(e) => setEditFields(f => ({ ...f, priority: e.target.value }))}
+                          className="w-full border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+                        >
+                          <option value="high">High</option>
+                          <option value="medium">Medium</option>
+                          <option value="low">Low</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex gap-3 justify-end pt-2">
+                      <button
+                        onClick={() => setEditingRec(null)}
+                        className="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleEditApprove}
+                        disabled={!!queueActionId}
+                        className="text-xs font-semibold px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Save and Approve
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {pendingAiLoading && (
+                <div className="flex items-center justify-center py-16 text-slate-400 dark:text-slate-500">
+                  <RefreshCw className="h-6 w-6 animate-spin mr-3" />
+                  <span className="text-sm font-semibold">Loading pending recommendations...</span>
+                </div>
+              )}
+
+              {!pendingAiLoading && pendingAiRecommendations.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-400 dark:text-slate-500 space-y-3">
+                  <CheckCircle2 className="h-12 w-12 text-emerald-400 dark:text-emerald-500 opacity-60" />
+                  <p className="text-sm font-semibold">All caught up! No pending AI recommendations.</p>
+                  <p className="text-xs text-center max-w-xs">AI recommendations will appear here when GROQ generates new suggestions that require counselor review.</p>
+                </div>
+              )}
+
+              {!pendingAiLoading && pendingAiRecommendations.length > 0 && (
+                <div className="space-y-4">
+                  {pendingAiRecommendations.map((rec) => (
+                    <div key={rec.id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm p-5 space-y-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <Brain className="h-4 w-4 text-violet-500 shrink-0" />
+                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white">{rec.title}</h3>
+                          </div>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                            For: <span className="font-semibold text-slate-700 dark:text-slate-300">{rec.studentName}</span> &middot; {rec.studentEmail}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase ${
+                            rec.priority === 'high' ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-700' :
+                            rec.priority === 'medium' ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700' :
+                            'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-700'
+                          }`}>{rec.priority}</span>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-900/20 dark:text-violet-300 dark:border-violet-700 uppercase">{rec.category}</span>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-700 flex items-center gap-1">
+                            <Brain className="h-2.5 w-2.5" /> AI
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-3">
+                        {rec.message}
+                      </p>
+                      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-slate-100 dark:border-slate-800">
+                        <p className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {new Date(rec.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => { setEditingRec(rec); setEditFields({ title: rec.title, message: rec.message, priority: rec.priority }); }}
+                            disabled={!!queueActionId}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40"
+                          >
+                            <Pencil className="h-3 w-3" /> Edit and Approve
+                          </button>
+                          <button
+                            onClick={() => handleApprove(rec.id)}
+                            disabled={!!queueActionId}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors disabled:opacity-40"
+                          >
+                            {queueActionId === rec.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleReject(rec.id)}
+                            disabled={!!queueActionId}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-40"
+                          >
+                            {queueActionId === rec.id ? <RefreshCw className="h-3 w-3 animate-spin" /> : <XCircle className="h-3 w-3" />}
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

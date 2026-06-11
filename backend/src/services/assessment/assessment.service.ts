@@ -5,6 +5,7 @@ import { AppError } from "../../middlewares/error.middleware.js";
 import { calculateBurnoutScore } from "../burnout/burnout-score.service.js";
 import { classifyBurnoutRisk } from "../burnout/risk-classifier.service.js";
 import { initializeBaseline } from "../burnout/baseline-tracker.service.js";
+import { generateAndStoreRecommendations } from "../recommendation/recommendation.service.js";
 import type { AssessmentRequestBody } from "../../types/assessment.types.js";
 import { AssessmentStatus } from "../../types/common.types.js";
 import type { IAssessment } from "../../models/Assessment.js";
@@ -54,6 +55,12 @@ export const submitAssessment = async (userId: string, assessment: AssessmentReq
 
     if (!updatedStudent) {
       throw new AppError("User not found", 404);
+    }
+
+    try {
+      await generateAndStoreRecommendations(userId, createdAssessment._id.toString(), assessment);
+    } catch (error) {
+      console.error("[Recommendation] Failed to generate recommendations:", error);
     }
   } catch (error) {
     await Assessment.findByIdAndDelete(createdAssessment._id).catch(() => null);

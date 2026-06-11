@@ -1,67 +1,79 @@
-import { Schema, model, type Document, type Model } from "mongoose";
-import { RecommendationCategory, RecommendationPriority, RiskLevel } from "../types/common.types.js";
+import { Schema, model, type Document, type Model, type Types } from "mongoose";
+import { RECOMMENDATION_CATEGORIES, RECOMMENDATION_PRIORITIES } from "../services/recommendation/recommendation.constants.js";
+import type { RecommendationCategory, RecommendationPriority } from "../services/recommendation/recommendation.types.js";
 
 export interface IRecommendation extends Document {
-  title: string;
-  description: string;
+  userId: Types.ObjectId;
+  assessmentId: Types.ObjectId;
   category: RecommendationCategory;
   priority: RecommendationPriority;
-  targetRiskLevels: RiskLevel[];
-  actionSteps: string[];
-  estimatedDurationMinutes?: number;
-  resourceUrl?: string;
-  isActive: boolean;
+  title: string;
+  message: string;
+  source: "AI" | "rules";
+  approved: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const RecommendationSchema = new Schema<IRecommendation>(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "Student",
+      required: true,
+      index: true,
+    },
+    assessmentId: {
+      type: Schema.Types.ObjectId,
+      ref: "Assessment",
+      required: true,
+      index: true,
+    },
+    category: {
+      type: String,
+      enum: RECOMMENDATION_CATEGORIES,
+      required: true,
+      index: true,
+    },
+    priority: {
+      type: String,
+      enum: RECOMMENDATION_PRIORITIES,
+      required: true,
+      default: "medium",
+      index: true,
+    },
     title: {
       type: String,
       required: true,
       trim: true,
       maxlength: 180,
     },
-    description: {
+    message: {
       type: String,
       required: true,
       trim: true,
-      maxlength: 5000,
+      maxlength: 1000,
     },
-    category: {
+    source: {
       type: String,
-      enum: Object.values(RecommendationCategory),
+      enum: ["AI", "rules"],
+      default: "rules",
       required: true,
       index: true,
     },
-    priority: {
-      type: String,
-      enum: Object.values(RecommendationPriority),
-      default: RecommendationPriority.Medium,
-      index: true,
-    },
-    targetRiskLevels: [{
-      type: String,
-      enum: Object.values(RiskLevel),
-      required: true,
-    }],
-    actionSteps: [{ type: String, trim: true }],
-    estimatedDurationMinutes: { type: Number, min: 1, max: 1440 },
-    resourceUrl: { type: String, trim: true },
-    isActive: {
+    approved: {
       type: Boolean,
       default: true,
+      required: true,
       index: true,
     },
   },
   { timestamps: true },
 );
 
-RecommendationSchema.index({ category: 1, priority: 1, isActive: 1 });
-RecommendationSchema.index({ targetRiskLevels: 1, isActive: 1 });
+RecommendationSchema.index({ userId: 1, assessmentId: 1, category: 1, title: 1 }, { unique: true });
+RecommendationSchema.index({ userId: 1, createdAt: -1 });
+RecommendationSchema.index({ userId: 1, assessmentId: 1, priority: 1, createdAt: -1 });
+RecommendationSchema.index({ approved: 1, createdAt: -1 });
 
-export const Recommendation: Model<IRecommendation> = model<IRecommendation>(
-  "Recommendation",
-  RecommendationSchema,
-);
+export const Recommendation: Model<IRecommendation> = model<IRecommendation>("Recommendation", RecommendationSchema);
