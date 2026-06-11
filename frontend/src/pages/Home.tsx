@@ -1,13 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { ArrowRight, Activity, Moon, Shield, Award, Sparkles, Send, Mail, Phone, MapPin } from 'lucide-react';
 
 export const Home: React.FC = () => {
-  const { isAuthenticated, user } = useStore();
+  const { isAuthenticated, user, burnoutRisk, fetchBurnoutRisk } = useStore();
   const navigate = useNavigate();
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [formSubmitted, setFormSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchBurnoutRisk();
+    }
+  }, [isAuthenticated, fetchBurnoutRisk]);
+
+  const getRiskBadgeColor = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') return 'text-error bg-error/10';
+    if (riskLevel === 'moderate') return 'text-amber-500 bg-amber-500/10';
+    return 'text-success bg-success/10';
+  };
+
+  const getRiskLabel = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') return 'High Risk';
+    if (riskLevel === 'moderate') return 'Moderate Risk';
+    return 'Low Risk';
+  };
+
+  const getRecommendation = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') {
+      return "Your journal entries show high negative sentiment. Consider taking breaks, reducing screen time, and reaching out for support.";
+    }
+    if (riskLevel === 'moderate') {
+      return "Your mood shows some stress patterns. Try maintaining consistent sleep schedule and taking short breaks between study sessions.";
+    }
+    return "Your journal sentiment is positive. Keep up the good work with your wellness routine!";
+  };
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,11 +124,27 @@ export const Home: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-semibold">Weekly Risk Indicator</span>
-                  <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Moderate Risk</span>
+                  {burnoutRisk ? (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getRiskBadgeColor(burnoutRisk.riskLevel)}`}>
+                      {getRiskLabel(burnoutRisk.riskLevel)}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-text-muted bg-surface-elevated px-2 py-0.5 rounded-full">
+                      Loading...
+                    </span>
+                  )}
                 </div>
                 <div className="h-2 w-full bg-surface-elevated rounded-full overflow-hidden">
-                  <div className="h-full progress-gradient w-[62%]"></div>
+                  <div 
+                    className="h-full progress-gradient transition-all duration-500" 
+                    style={{ width: burnoutRisk ? `${burnoutRisk.negativeRatio}%` : '0%' }}
+                  ></div>
                 </div>
+                {burnoutRisk && (
+                  <p className="text-[10px] text-text-muted">
+                    {burnoutRisk.negativeRatio}% negative sentiment ({burnoutRisk.totalEntries} entries)
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -123,7 +167,7 @@ export const Home: React.FC = () => {
                   <span className="text-xs font-bold">AI Recommendation</span>
                 </div>
                 <p className="text-xs text-text-primary leading-relaxed">
-                  "Evening screen use is currently 6.5 hours. Reducing this by 1.5 hours will improve deep sleep phase by 25%."
+                  {burnoutRisk ? getRecommendation(burnoutRisk.riskLevel) : "Loading your personalized wellness insights..."}
                 </p>
               </div>
             </div>

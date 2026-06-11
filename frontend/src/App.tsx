@@ -40,6 +40,9 @@ const Profile = lazy(() =>
 const Journal = lazy(() =>
   import('./pages/Journal').then((m) => ({ default: m.Journal }))
 );
+const JournalAI = lazy(() =>
+  import('./pages/JournalAI').then((m) => ({ default: m.JournalAI }))
+);
 const Notifications = lazy(() =>
   import('./pages/Notifications').then((m) => ({ default: m.Notifications }))
 );
@@ -208,6 +211,16 @@ const LayoutWrapper: React.FC = () => {
               <StudentRoute requireAssessment>
                 <LazyRoute fallback={<JournalSkeleton />}>
                   <Journal />
+                </LazyRoute>
+              </StudentRoute>
+            }
+          />
+          <Route
+            path="/journal-ai"
+            element={
+              <StudentRoute requireAssessment>
+                <LazyRoute fallback={<JournalSkeleton />}>
+                  <JournalAI />
                 </LazyRoute>
               </StudentRoute>
             }

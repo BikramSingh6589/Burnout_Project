@@ -57,6 +57,23 @@ export interface JournalEntry {
   timestamp: number;
 }
 
+export interface BurnoutRisk {
+  riskLevel: 'high' | 'moderate' | 'low';
+  negativeRatio: number;
+  totalEntries: number;
+  negativeEntries: number;
+  period: string;
+}
+
+export interface JournalAiEntry {
+  id: string;
+  studentId: string;
+  content: string;
+  sentiment: 'positive' | 'negative' | 'neutral';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TrackerHistory {
   date: string; // YYYY-MM-DD
   timestamp: number;
@@ -143,6 +160,8 @@ interface AppState {
 
   // Student Dashboard State
   journalEntries: JournalEntry[];
+  journalAiEntries: JournalAiEntry[];
+  burnoutRisk: BurnoutRisk | null;
   trackerHistory: TrackerHistory[];
   analyticsSummary: AnalyticsSummary | null;
   latestAssessment: LatestAssessment | null;
@@ -160,6 +179,8 @@ interface AppState {
   fetchTrackerHistory: () => Promise<void>;
   fetchAnalytics: () => Promise<void>;
   fetchJournalEntries: () => Promise<void>;
+  fetchJournalAiEntries: () => Promise<void>;
+  fetchBurnoutRisk: () => Promise<void>;
   fetchRecommendations: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
   fetchAIHistory: () => Promise<void>;
@@ -390,6 +411,8 @@ export const useStore = create<AppState>((set, get) => ({
 
   // Student Dashboard State
   journalEntries: [],
+  journalAiEntries: [],
+  burnoutRisk: null,
   trackerHistory: [],
   analyticsSummary: null,
   latestAssessment: null,
@@ -612,6 +635,8 @@ export const useStore = create<AppState>((set, get) => ({
         get().fetchAdminSettings();
         get().fetchTrackerHistory();
         get().fetchJournalEntries();
+        get().fetchJournalAiEntries();
+        get().fetchBurnoutRisk();
         get().fetchRecommendations();
         get().fetchNotifications();
         get().fetchAIHistory();
@@ -646,6 +671,8 @@ export const useStore = create<AppState>((set, get) => ({
         get().fetchAdminSettings();
         get().fetchTrackerHistory();
         get().fetchJournalEntries();
+        get().fetchJournalAiEntries();
+        get().fetchBurnoutRisk();
         get().fetchRecommendations();
         get().fetchNotifications();
         get().fetchAIHistory();
@@ -720,6 +747,8 @@ export const useStore = create<AppState>((set, get) => ({
         get().fetchAdminSettings();
         get().fetchTrackerHistory();
         get().fetchJournalEntries();
+        get().fetchJournalAiEntries();
+        get().fetchBurnoutRisk();
         get().fetchRecommendations();
         get().fetchNotifications();
         get().fetchAIHistory();
@@ -763,6 +792,8 @@ export const useStore = create<AppState>((set, get) => ({
       authToken: null,
       pendingVerificationEmail: null,
       journalEntries: [],
+  journalAiEntries: [],
+  burnoutRisk: null,
       trackerHistory: [],
       recommendations: [],
       notifications: [],
@@ -825,6 +856,8 @@ export const useStore = create<AppState>((set, get) => ({
           get().fetchAdminSettings();
           get().fetchTrackerHistory();
           get().fetchJournalEntries();
+        get().fetchJournalAiEntries();
+        get().fetchBurnoutRisk();
           get().fetchRecommendations();
           get().fetchNotifications();
           get().fetchAIHistory();
@@ -845,6 +878,8 @@ export const useStore = create<AppState>((set, get) => ({
         get().fetchAdminSettings();
         get().fetchTrackerHistory();
         get().fetchJournalEntries();
+        get().fetchJournalAiEntries();
+        get().fetchBurnoutRisk();
         get().fetchRecommendations();
         get().fetchNotifications();
         get().fetchAIHistory();
@@ -868,6 +903,8 @@ export const useStore = create<AppState>((set, get) => ({
           get().fetchAdminSettings();
           get().fetchTrackerHistory();
           get().fetchJournalEntries();
+        get().fetchJournalAiEntries();
+        get().fetchBurnoutRisk();
           get().fetchRecommendations();
           get().fetchNotifications();
           get().fetchAIHistory();
@@ -971,6 +1008,71 @@ export const useStore = create<AppState>((set, get) => ({
       await get().fetchTrackerHistory();
     } catch (err) {
       console.error('[Store] Failed to add journal entry:', err);
+    }
+  },
+
+  fetchJournalAiEntries: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: any[];
+      }>('/journal-ai', { token });
+      const mapped = response.data.map((j) => ({
+        id: j._id,
+        studentId: j.studentId,
+        content: j.content,
+        sentiment: j.sentiment,
+        createdAt: j.createdAt,
+        updatedAt: j.updatedAt,
+      }));
+      set({ journalAiEntries: mapped });
+    } catch (err) {
+      console.error('[Store] Failed to fetch AI journal entries:', err);
+    }
+  },
+
+  addJournalAiEntry: async (content) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest('/journal-ai', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ content }),
+      });
+      await get().fetchJournalAiEntries();
+    } catch (err) {
+      console.error('[Store] Failed to add AI journal entry:', err);
+    }
+  },
+
+  fetchBurnoutRisk: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: any;
+      }>('/journal-ai/burnout-risk', { token });
+      set({ burnoutRisk: response.data });
+    } catch (err) {
+      console.error('[Store] Failed to fetch burnout risk:', err);
+    }
+  },
+
+  deleteJournalAiEntry: async (id) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest(/journal-ai/, {
+        method: 'DELETE',
+        token,
+      });
+      await get().fetchJournalAiEntries();
+    } catch (err) {
+      console.error('[Store] Failed to delete AI journal entry:', err);
     }
   },
 

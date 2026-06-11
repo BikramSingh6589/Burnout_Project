@@ -6,7 +6,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { Sparkles, Calendar, Moon, Compass, ArrowRight } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics } = useStore();
+  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,7 +14,8 @@ export const Dashboard: React.FC = () => {
     fetchRecommendations();
     fetchNotifications();
     fetchAnalytics();
-  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics]);
+    fetchBurnoutRisk();
+  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics, fetchBurnoutRisk]);
 
   // Guard checks handled in DashboardLayout, but let's read the latest values
   const latestTracker = trackerHistory.length > 0 ? trackerHistory[trackerHistory.length - 1] : null;
@@ -30,6 +31,18 @@ export const Dashboard: React.FC = () => {
     if (score >= 70) return 'bg-error/10 text-error border-error/20';
     if (score >= 40) return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
     return 'bg-success/10 text-success border-success/20';
+  };
+
+  const getBurnoutRiskBadgeStyles = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') return 'bg-error/10 text-error border-error/20';
+    if (riskLevel === 'moderate') return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+    return 'bg-success/10 text-success border-success/20';
+  };
+
+  const getBurnoutRiskLabel = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') return 'High Risk';
+    if (riskLevel === 'moderate') return 'Moderate Risk';
+    return 'Low Risk';
   };
 
   // Calculations
@@ -146,6 +159,28 @@ export const Dashboard: React.FC = () => {
                 {getRiskLabel(currentScore)}
               </div>
               <p className="text-xs text-text-secondary mt-2">Based on cognitive stress factors</p>
+            </div>
+          </div>
+
+          {/* AI Journal Burnout Risk Card */}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
+            <span className="text-xs text-text-secondary font-semibold tracking-tight flex items-center">
+              <Sparkles className="h-3 w-3 mr-1 text-primary" />
+              AI Journal Risk
+            </span>
+            <div className="py-2 space-y-1">
+              {burnoutRisk ? (
+                <>
+                  <div className={`text-sm font-semibold px-3 py-1 rounded-lg border w-fit ${getBurnoutRiskBadgeStyles(burnoutRisk.riskLevel)}`}>
+                    {getBurnoutRiskLabel(burnoutRisk.riskLevel)}
+                  </div>
+                  <p className="text-xs text-text-secondary mt-2">
+                    {burnoutRisk.negativeRatio}% negative ({burnoutRisk.period})
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-text-secondary mt-2">Loading...</p>
+              )}
             </div>
           </div>
 

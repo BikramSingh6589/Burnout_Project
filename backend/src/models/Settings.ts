@@ -1,12 +1,15 @@
 import { Schema, model, type Document, type Model } from "mongoose";
 
-export interface ISettings extends Document {
+export interface ISettingsData {
   highRiskThreshold: number;
   moderateRiskThreshold: number;
   assessmentIntervalDays: number;
   maxWeeklyAssessmentsPerStudent: number;
   emailNotificationsEnabled: boolean;
   inAppNotificationsEnabled: boolean;
+}
+
+export interface ISettings extends Document, ISettingsData {
   createdAt: Date;
   updatedAt: Date;
 }

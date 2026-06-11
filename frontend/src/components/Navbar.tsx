@@ -118,12 +118,12 @@ export const Navbar: React.FC = () => {
             </a>
             {isAuthenticated && user?.role === 'student' && (
               <Link
-                to="/journal"
+                to="/journal-ai"
                 className={`transition-colors duration-200 hover:text-primary ${
-                  isLinkActive('/journal') ? 'text-primary border-b-2 border-primary py-5' : 'text-text-secondary'
+                  isLinkActive('/journal-ai') ? 'text-primary border-b-2 border-primary py-5' : 'text-text-secondary'
                 }`}
               >
-                Journal
+                AI Journal
               </Link>
             )}
           </div>
@@ -355,13 +355,13 @@ export const Navbar: React.FC = () => {
             </a>
             {isAuthenticated && user?.role === 'student' && (
               <Link
-                to="/journal"
+                to="/journal-ai"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  isLinkActive('/journal') ? 'bg-primary/10 text-primary' : 'text-text-primary'
+                  isLinkActive('/journal-ai') ? 'bg-primary/10 text-primary' : 'text-text-primary'
                 }`}
               >
-                Journal
+                AI Journal
               </Link>
             )}
 

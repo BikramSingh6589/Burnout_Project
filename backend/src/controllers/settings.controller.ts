@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
-import { Settings, type ISettings } from "../models/Settings.js";
+import { Settings, type ISettingsData } from "../models/Settings.js";
 
-const DEFAULT_SETTINGS: Omit<ISettings, '_id' | 'createdAt' | 'updatedAt'> = {
+const DEFAULT_SETTINGS: ISettingsData = {
   highRiskThreshold: 70,
   moderateRiskThreshold: 40,
   assessmentIntervalDays: 7,
@@ -30,7 +30,7 @@ export const getSettings = async (_req: Request, res: Response, next: NextFuncti
 };
 
 export const updateSettings = async (
-  req: Request<Record<string, never>, unknown, Partial<Omit<ISettings, '_id' | 'createdAt' | 'updatedAt'>>>,
+  req: Request<Record<string, never>, unknown, Partial<ISettingsData>>,
   res: Response,
   next: NextFunction,
 ): Promise<void> => {
