@@ -58,7 +58,26 @@ export const submitWeeklyAssessment = async (
 
   const assessmentRecord = new WeeklyAssessment({
     student: new Types.ObjectId(userId),
-    ...assessment,
+    // Original weekly assessment fields
+    academicLoadScore: assessment.academicLoadScore,
+    stressScore: assessment.stressScore,
+    sleepHoursAverage: assessment.sleepHoursAverage,
+    sleepQualityScore: assessment.sleepQualityScore,
+    moodScore: assessment.moodScore,
+    motivationScore: assessment.motivationScore,
+    concentrationScore: assessment.concentrationScore,
+    physicalFatigueScore: assessment.physicalFatigueScore,
+    // New fields from frontend form
+    stressLevel: assessment.stressLevel,
+    academicSatisfaction: assessment.academicSatisfaction,
+    studyHours: assessment.studyHours,
+    backlog: assessment.backlog,
+    procrastination: assessment.procrastination,
+    motivation: assessment.motivation,
+    energy: assessment.energy,
+    sleepHours: assessment.sleepHours,
+    screenTime: assessment.screenTime,
+    // Standard fields
     weekStartDate,
     burnoutScore,
     burnoutScoreBreakdown,

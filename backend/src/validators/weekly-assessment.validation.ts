@@ -22,6 +22,12 @@ const hoursField = (fieldName: string) =>
     .min(0, { message: `${fieldName} must be between 0 and 24` })
     .max(24, { message: `${fieldName} must be between 0 and 24` });
 
+const scale1To10Field = (fieldName: string) =>
+  z
+    .number()
+    .min(0, { message: `${fieldName} must be between 0 and 10` })
+    .max(10, { message: `${fieldName} must be between 0 and 10` });
+
 const weeklyAssessmentSchema = z.object({
   academicLoadScore: scoreField("academicLoadScore"),
   stressScore: scoreField("stressScore"),
@@ -31,6 +37,16 @@ const weeklyAssessmentSchema = z.object({
   motivationScore: scoreField("motivationScore"),
   concentrationScore: scoreField("concentrationScore"),
   physicalFatigueScore: scoreField("physicalFatigueScore"),
+  // Additional fields from frontend form
+  stressLevel: scale1To10Field("stressLevel"),
+  academicSatisfaction: scale1To10Field("academicSatisfaction"),
+  studyHours: hoursField("studyHours"),
+  backlog: scale1To10Field("backlog"),
+  procrastination: scale1To10Field("procrastination"),
+  motivation: scale1To10Field("motivation"),
+  energy: scale1To10Field("energy"),
+  sleepHours: hoursField("sleepHours"),
+  screenTime: hoursField("screenTime"),
 });
 
 type RequestValidator<TBody> = z.ZodType<TBody>;

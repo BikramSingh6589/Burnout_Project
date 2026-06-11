@@ -100,12 +100,23 @@ export interface WeeklyAssessmentRequestBody {
   motivationScore: number;
   concentrationScore: number;
   physicalFatigueScore: number;
+  // Additional fields from frontend form
+  stressLevel: number;
+  academicSatisfaction: number;
+  studyHours: number;
+  backlog: number;
+  procrastination: number;
+  motivation: number;
+  energy: number;
+  sleepHours: number;
+  screenTime: number;
 }
 
 export interface WeeklyAssessmentRepositoryData extends WeeklyAssessmentRequestBody {
   student: ObjectId;
   weekStartDate: Date;
   burnoutScore: number;
+  burnoutScoreBreakdown: BurnoutScoreBreakdown;
   riskLevel: RiskLevel;
   responses: WeeklyAssessmentRequestBody;
   status: AssessmentStatus;
@@ -124,6 +135,17 @@ export interface WeeklyAssessmentResponse {
   motivationScore: number;
   concentrationScore: number;
   physicalFatigueScore: number;
+  // Additional fields from frontend form
+  stressLevel: number;
+  academicSatisfaction: number;
+  studyHours: number;
+  backlog: number;
+  procrastination: number;
+  motivation: number;
+  energy: number;
+  sleepHours: number;
+  screenTime: number;
+  // Standard fields
   burnoutScore: number;
   riskLevel: RiskLevel;
   responses: WeeklyAssessmentRequestBody;

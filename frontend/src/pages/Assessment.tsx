@@ -20,7 +20,19 @@ export const Assessment: React.FC = () => {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    // Step 1: Academic
+    stressLevel: number;
+    academicSatisfaction: number;
+    studyHours: number | '';
+    assignmentBacklog: number | '';
+    procrastination: number;
+    // Step 2: Personal
+    motivationLevel: number;
+    energyLevel: number;
+    sleepHours: number | '';
+    screenTime: number | '';
+  }>({
     // Step 1: Academic
     stressLevel: 5,
     academicSatisfaction: 7,
@@ -34,6 +46,8 @@ export const Assessment: React.FC = () => {
     screenTime: 4,
   });
 
+
+
   const handleNext = () => {
     setStep(2);
   };
@@ -46,7 +60,15 @@ export const Assessment: React.FC = () => {
     e.preventDefault();
     setSubmitError(null);
     setSubmitting(true);
-    const errorMsg = await submitAssessment(formData, isWeekly);
+    // Convert any empty strings to 0 for submission
+    const submissionData = {
+      ...formData,
+      studyHours: formData.studyHours === '' ? 0 : formData.studyHours,
+      assignmentBacklog: formData.assignmentBacklog === '' ? 0 : formData.assignmentBacklog,
+      sleepHours: formData.sleepHours === '' ? 0 : formData.sleepHours,
+      screenTime: formData.screenTime === '' ? 0 : formData.screenTime,
+    };
+    const errorMsg = await submitAssessment(submissionData, isWeekly);
     setSubmitting(false);
 
     if (errorMsg !== null) {
@@ -66,7 +88,7 @@ export const Assessment: React.FC = () => {
       {/* Card Wrapper */}
       <div className="bg-surface rounded-2xl border border-border shadow-level2 p-8">
         {showDashboardRedirectMessage && step < 3 && (
-          <div className="mb-6 rounded-lg border border-primary/20 bg-primary/10 px-4 py-3 text-xs font-semibold text-primary">
+          <div className="mb-6 rounded-lg border border-error/20 bg-error/10 px-4 py-3 text-xs font-semibold text-error">
             Before accessing your dashboard, please complete the initial assessment so we can generate your baseline burnout score.
           </div>
         )}
@@ -172,8 +194,8 @@ export const Assessment: React.FC = () => {
                     type="number"
                     min="0"
                     max="24"
-                    value={formData.studyHours}
-                    onChange={(e) => setFormData({ ...formData, studyHours: Math.min(24, Math.max(0, Number(e.target.value))) })}
+                    value={formData.studyHours || ''}
+                    onChange={(e) => setFormData({ ...formData, studyHours: e.target.value === '' ? '' : Math.min(24, Math.max(0, Number(e.target.value))) })}
                     className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
@@ -186,8 +208,8 @@ export const Assessment: React.FC = () => {
                     type="number"
                     min="0"
                     max="50"
-                    value={formData.assignmentBacklog}
-                    onChange={(e) => setFormData({ ...formData, assignmentBacklog: Math.max(0, Number(e.target.value)) })}
+                    value={formData.assignmentBacklog || ''}
+                    onChange={(e) => setFormData({ ...formData, assignmentBacklog: e.target.value === '' ? '' : Math.max(0, Number(e.target.value)) })}
                     className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
@@ -256,8 +278,8 @@ export const Assessment: React.FC = () => {
                     min="0"
                     max="24"
                     step="0.5"
-                    value={formData.sleepHours}
-                    onChange={(e) => setFormData({ ...formData, sleepHours: Math.min(24, Math.max(0, Number(e.target.value))) })}
+                    value={formData.sleepHours || ''}
+                    onChange={(e) => setFormData({ ...formData, sleepHours: e.target.value === '' ? '' : Math.min(24, Math.max(0, Number(e.target.value))) })}
                     className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>
@@ -271,8 +293,8 @@ export const Assessment: React.FC = () => {
                     min="0"
                     max="24"
                     step="0.5"
-                    value={formData.screenTime}
-                    onChange={(e) => setFormData({ ...formData, screenTime: Math.min(24, Math.max(0, Number(e.target.value))) })}
+                    value={formData.screenTime || ''}
+                    onChange={(e) => setFormData({ ...formData, screenTime: e.target.value === '' ? '' : Math.min(24, Math.max(0, Number(e.target.value))) })}
                     className="w-full border border-border dark:border-[#334155] bg-white dark:bg-[#111827] text-text-primary dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#94A3B8] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#8B5CF6] focus:ring-2 focus:ring-primary/10"
                   />
                 </div>

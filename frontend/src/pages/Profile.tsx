@@ -6,7 +6,13 @@ import { Save, ShieldAlert, Check } from 'lucide-react';
 export const Profile: React.FC = () => {
   const { user, adminSettings, adminUpdateSettings, updateProfile } = useStore();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    gender: string;
+    age: number | '';
+  }>({
     name: user?.name || '',
     phone: user?.phone || '',
     email: user?.email || '',
@@ -37,7 +43,12 @@ export const Profile: React.FC = () => {
       return;
     }
 
-    const success = await updateProfile(formData);
+    // Convert age to number for submission
+    const submissionData = {
+      ...formData,
+      age: typeof formData.age === 'string' && formData.age === '' ? 0 : Number(formData.age),
+    };
+    const success = await updateProfile(submissionData);
     if (!success) {
       setError(useStore.getState().authError || 'Profile update failed.');
       return;
@@ -159,8 +170,8 @@ export const Profile: React.FC = () => {
                     <input
                       id="profile-age"
                       type="number"
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
+                      value={formData.age || ''}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value === '' ? '' : Number(e.target.value) })}
                       className={inputCls}
                     />
                   </div>

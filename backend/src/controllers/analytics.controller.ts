@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import { getAssessmentHistory } from "../services/assessment/assessment.service.js";
+import { getWeeklyAssessmentHistory } from "../services/assessment/weekly-assessment.service.js";
 import { summarizeHistoricalAnalytics } from "../services/burnout/trend-analysis.service.js";
 import { Student } from "../models/Student.js";
 import type { BurnoutHistoryItem } from "../types/burnout.types.js";
@@ -39,12 +40,22 @@ export const getAnalyticsSummary = async (
       return;
     }
 
-    const history = await getAssessmentHistory(userId);
+    // Fetch both initial and weekly assessment history
+    const initialHistory = await getAssessmentHistory(userId);
+    const weeklyHistory = await getWeeklyAssessmentHistory(userId);
 
-    const historyItems: BurnoutHistoryItem[] = history.map((item) => ({
+    // Map both to BurnoutHistoryItem format and combine
+    const initialHistoryItems: BurnoutHistoryItem[] = initialHistory.map((item) => ({
       burnoutScore: item.burnoutScore,
       completedAt: item.completedAt ?? item.createdAt,
     }));
+
+    const weeklyHistoryItems: BurnoutHistoryItem[] = weeklyHistory.map((item) => ({
+      burnoutScore: item.burnoutScore,
+      completedAt: item.completedAt ?? item.createdAt,
+    }));
+
+    const combinedHistory = [...initialHistoryItems, ...weeklyHistoryItems];
 
     const baselineRecord = student.baselineBurnoutScore !== undefined && student.baselineDate && student.baselineRiskLevel
       ? {
@@ -55,7 +66,7 @@ export const getAnalyticsSummary = async (
       : undefined;
 
     const summary = summarizeHistoricalAnalytics(
-      historyItems,
+      combinedHistory,
       student.currentBurnoutScore ?? 0,
       baselineRecord
     );

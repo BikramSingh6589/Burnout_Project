@@ -26,6 +26,7 @@ const mapToInitialAssessmentPayload = (data: AssessmentFormData) => ({
 });
 
 const mapToWeeklyAssessmentPayload = (data: AssessmentFormData) => ({
+  // Original weekly assessment transformed fields
   academicLoadScore: data.stressLevel * 10,
   stressScore: data.stressLevel * 10,
   sleepHoursAverage: data.sleepHours,
@@ -34,6 +35,16 @@ const mapToWeeklyAssessmentPayload = (data: AssessmentFormData) => ({
   motivationScore: data.motivationLevel * 10,
   concentrationScore: data.academicSatisfaction * 10,
   physicalFatigueScore: (10 - data.energyLevel) * 10,
+  // Original form fields (for consistency with Assessment model)
+  stressLevel: data.stressLevel,
+  academicSatisfaction: data.academicSatisfaction,
+  studyHours: typeof data.studyHours === 'number' ? data.studyHours : 0,
+  backlog: typeof data.assignmentBacklog === 'number' ? Math.min(10, data.assignmentBacklog) : 0,
+  procrastination: data.procrastination,
+  motivation: data.motivationLevel,
+  energy: data.energyLevel,
+  sleepHours: typeof data.sleepHours === 'number' ? data.sleepHours : 0,
+  screenTime: typeof data.screenTime === 'number' ? data.screenTime : 0,
 });
 
 // Types
@@ -505,11 +516,12 @@ export const useStore = create<AppState>((set, get) => ({
         date: (h.completedAt ?? h.createdAt).split('T')[0],
         timestamp: new Date(h.completedAt ?? h.createdAt).getTime(),
         burnoutScore: h.burnoutScore,
-        sleepHours: h.sleepHoursAverage ?? 0,
-        studyHours: h.academicLoadScore ? Math.round(h.academicLoadScore / 10) : 0,
-        screenTime: 0,
-        stressLevel: h.stressScore ? Math.round(h.stressScore / 10) : 0,
-        procrastination: 0,
+        // Now using the actual stored fields
+        sleepHours: h.sleepHours ?? h.sleepHoursAverage ?? 0,
+        studyHours: h.studyHours ?? (h.academicLoadScore ? Math.round(h.academicLoadScore / 10) : 0),
+        screenTime: h.screenTime ?? 0,
+        stressLevel: h.stressLevel ?? (h.stressScore ? Math.round(h.stressScore / 10) : 0),
+        procrastination: h.procrastination ?? 0,
       }));
 
       const mapped = [...initialHistory, ...weeklyHistory]
@@ -1034,6 +1046,7 @@ export const useStore = create<AppState>((set, get) => ({
       }
 
       await get().fetchTrackerHistory();
+      await get().fetchAnalytics();
       await get().fetchRecommendations();
       await get().fetchNotifications();
 

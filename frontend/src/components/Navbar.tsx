@@ -50,7 +50,10 @@ export const Navbar: React.FC = () => {
       navigate('/auth/login');
       return;
     }
-    // Always go to dashboard — it handles the locked overlay internally
+    if (!user?.assessmentCompleted) {
+      navigate('/assessment?from=dashboard');
+      return;
+    }
     navigate('/dashboard');
   };
 

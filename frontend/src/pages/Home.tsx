@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { ArrowRight, Activity, Moon, Shield, Award, Sparkles, Send, Mail, Phone, MapPin } from 'lucide-react';
 
 export const Home: React.FC = () => {
-  const { isAuthenticated, user, burnoutRisk, fetchBurnoutRisk } = useStore();
+  const { isAuthenticated, user, burnoutRisk, fetchBurnoutRisk, trackerHistory, fetchTrackerHistory } = useStore();
   const navigate = useNavigate();
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -12,8 +12,23 @@ export const Home: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated) {
       fetchBurnoutRisk();
+      fetchTrackerHistory();
     }
-  }, [isAuthenticated, fetchBurnoutRisk]);
+  }, [isAuthenticated, fetchBurnoutRisk, fetchTrackerHistory]);
+
+  // Calculate average sleep and study hours from tracker history
+  const averageSleep = trackerHistory.length > 0 
+    ? (trackerHistory.reduce((sum, h) => sum + h.sleepHours, 0) / trackerHistory.length).toFixed(1) 
+    : '7.0';
+    
+  const averageStudyHours = trackerHistory.length > 0 
+    ? (trackerHistory.reduce((sum, h) => sum + h.studyHours, 0) / trackerHistory.length).toFixed(1) 
+    : '6.0';
+    
+  const baselineSleep = 7.0;
+  const sleepDeviation = trackerHistory.length > 0 
+    ? Math.round(((parseFloat(averageSleep) - baselineSleep) / baselineSleep) * 100) 
+    : 0;
 
   const getRiskBadgeColor = (riskLevel: 'high' | 'moderate' | 'low') => {
     if (riskLevel === 'high') return 'text-error bg-error/10';
@@ -79,21 +94,13 @@ export const Home: React.FC = () => {
                   <ArrowRight className="h-4 w-4" />
                 </button>
               ) : !user?.assessmentCompleted ? (
-                <>
-                  <button
-                    onClick={() => navigate('/assessment')}
-                    className="bg-primary text-white font-semibold px-6 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 text-sm"
-                  >
-                    <span>Take Initial Assessment</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    className="bg-transparent border border-primary text-primary font-semibold px-6 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:bg-primary/5 hover:-translate-y-0.5 active:translate-y-0 text-sm"
-                  >
-                    <span>View Dashboard</span>
-                  </button>
-                </>
+                <button
+                  onClick={() => navigate('/assessment')}
+                  className="bg-primary text-white font-semibold px-6 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 text-sm"
+                >
+                  <span>Take Initial Assessment</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               ) : (
                 <button
                   onClick={() => navigate('/dashboard')}
@@ -150,12 +157,14 @@ export const Home: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-surface p-4 rounded-xl border border-border shadow-sm space-y-1">
                   <span className="text-[10px] text-text-muted font-medium">Average Sleep</span>
-                  <p className="text-lg font-bold text-text-primary">5.8 Hours</p>
-                  <span className="text-[9px] text-error font-medium">-15% from baseline</span>
+                  <p className="text-lg font-bold text-text-primary">{averageSleep} Hours</p>
+                  <span className={`text-[9px] font-medium ${sleepDeviation < 0 ? 'text-error' : 'text-success'}`}>
+                    {sleepDeviation > 0 ? '+' : ''}{sleepDeviation}% from baseline
+                  </span>
                 </div>
                 <div className="bg-surface p-4 rounded-xl border border-border shadow-sm space-y-1">
                   <span className="text-[10px] text-text-muted font-medium">Study Focus</span>
-                  <p className="text-lg font-bold text-text-primary">7.2 Hrs/Day</p>
+                  <p className="text-lg font-bold text-text-primary">{averageStudyHours} Hrs/Day</p>
                   <span className="text-[9px] text-success font-medium">Within target</span>
                 </div>
               </div>

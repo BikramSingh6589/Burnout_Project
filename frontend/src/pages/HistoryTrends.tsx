@@ -230,8 +230,8 @@ export const HistoryTrends: React.FC = () => {
                   <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                   <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                   <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
-                  <Line type="monotone" dataKey="studyHours" stroke="#8127CF" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} />
-                  <Line type="monotone" dataKey="screenTime" stroke="#9C48EA" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} />
+                  <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} />
+                  <Line type="monotone" dataKey="screenTime" stroke="#F59E0B" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
