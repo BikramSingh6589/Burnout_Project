@@ -1,18 +1,35 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
+<<<<<<< HEAD
 import { Activity, ArrowRight, Shield } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useStore();
+=======
+import { Activity, ArrowRight, Loader2, Shield } from 'lucide-react';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
+
+export const Login: React.FC = () => {
+  const { login, loginWithGoogle } = useStore();
+>>>>>>> testing
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+<<<<<<< HEAD
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+=======
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loading) return;
+>>>>>>> testing
     setError(null);
 
     if (!email || !password) {
@@ -21,6 +38,7 @@ export const Login: React.FC = () => {
     }
 
     // Call Login Action
+<<<<<<< HEAD
     const success = await login(email, password, 'student');
     if (success) {
       navigate('/');
@@ -33,6 +51,32 @@ export const Login: React.FC = () => {
     login('user.google@university.edu', 'google_token', 'student').then(() => {
       navigate('/');
     });
+=======
+    setLoading(true);
+    const success = await login(email, password, 'student');
+    setLoading(false);
+    if (success) {
+      navigate('/');
+    } else {
+      setError(useStore.getState().authError || 'Invalid email or password.');
+    }
+  };
+
+  const handleGoogleLogin = async (idToken: string) => {
+    if (loading || googleLoading) return;
+    setError(null);
+    setGoogleLoading(true);
+
+    const success = await loginWithGoogle(idToken);
+    setGoogleLoading(false);
+
+    if (success) {
+      const user = useStore.getState().user;
+      navigate(user?.profileCompleted === false ? '/complete-profile' : '/');
+    } else {
+      setError(useStore.getState().authError || 'Google sign-in failed');
+    }
+>>>>>>> testing
   };
 
   return (
@@ -68,7 +112,11 @@ export const Login: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
+<<<<<<< HEAD
               placeholder="biko@university.edu"
+=======
+              placeholder="Enter Your Email Address"
+>>>>>>> testing
             />
           </div>
 
@@ -86,16 +134,28 @@ export const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-primary dark:focus:border-[#4F46E5] focus:ring-2 focus:ring-primary/10"
+<<<<<<< HEAD
               placeholder="••••••••"
+=======
+              placeholder="Enter Your Password"
+>>>>>>> testing
             />
           </div>
 
           <button
             type="submit"
+<<<<<<< HEAD
             className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs"
           >
             <span>Login</span>
             <ArrowRight className="h-4 w-4" />
+=======
+            disabled={loading}
+            className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            <span>{loading ? 'Logging in...' : 'Login'}</span>
+>>>>>>> testing
           </button>
         </form>
 
@@ -108,6 +168,7 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
+<<<<<<< HEAD
         <button
           onClick={handleGoogleLogin}
           className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 text-neutral-slate dark:text-[#E2E8F0] hover:bg-slate-50 dark:hover:bg-[#273449] transition-colors text-xs"
@@ -120,6 +181,15 @@ export const Login: React.FC = () => {
           </svg>
           <span>Continue with Google</span>
         </button>
+=======
+        <GoogleSignInButton
+          onSuccess={handleGoogleLogin}
+          onError={setError}
+          disabled={loading}
+          loading={googleLoading}
+          label="Continue with Google"
+        />
+>>>>>>> testing
 
         <div className="flex flex-col space-y-4 pt-4 border-t border-slate-100 dark:border-[#334155] mt-6 text-center text-xs">
           <p className="text-neutral-outline dark:text-[#CBD5E1]">

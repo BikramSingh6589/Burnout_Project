@@ -1,0 +1,747 @@
+
+
+Your backend structure is actually quite good for a production-level student burnout detection platform. The biggest mistake teams make is creating all files first and then getting confused about implementation order.
+
+Follow this sequence.
+
+# Phase 1: Project Setup
+
+### Step 1: Initialize Backend
+
+```bash
+mkdir backend
+cd backend
+
+npm init -y
+
+npm install express mongoose cors dotenv bcryptjs jsonwebtoken nodemailer
+
+npm install express-rate-limit helmet morgan
+
+npm install node-cron
+
+npm install
+
+typescript
+ts-node-dev
+@types/node
+@types/express
+@types/bcryptjs
+@types/jsonwebtoken
+@types/cors
+
+-D
+```
+
+---
+
+### Step 2: Create Base Structure
+
+Start with:
+
+```text
+src/
+│
+├── app.ts
+├── server.ts
+│
+├── config/
+├── routes/
+├── controllers/
+├── services/
+├── models/
+├── middlewares/
+├── utils/
+```
+
+Do NOT create every file immediately.
+
+Build feature by feature.
+
+---
+
+# Phase 2: Database Layer
+
+### Step 3: MongoDB Connection
+
+Implement
+
+```text
+config/database.ts
+```
+
+Flow:
+
+```text
+server.ts
+    ↓
+database.ts
+    ↓
+MongoDB Atlas
+```
+
+---
+
+### Step 4: Create Models
+
+Create in this order:
+
+### User
+
+```text
+models/User.ts
+```
+
+Stores:
+
+```text
+name
+email
+password
+age
+gender
+role
+
+assessmentCompleted
+burnoutScore
+riskLevel
+```
+
+---
+
+### Assessment
+
+```text
+models/Assessment.ts
+```
+
+Stores:
+
+```text
+userId
+
+stressLevel
+academicSatisfaction
+studyHours
+backlog
+procrastination
+
+motivation
+energy
+sleepHours
+screenTime
+
+burnoutScore
+riskLevel
+```
+
+---
+
+### Journal
+
+```text
+models/Journal.ts
+```
+
+Stores:
+
+```text
+userId
+
+entry
+sentiment
+
+createdAt
+```
+
+---
+
+# Phase 3: Authentication Module
+
+Build authentication completely before anything else.
+
+---
+
+### Step 5: Auth Routes
+
+```text
+auth.routes.ts
+```
+
+Endpoints:
+
+```http
+POST /register
+
+POST /login
+
+POST /verify-otp
+
+POST /forgot-password
+```
+
+---
+
+### Step 6: Auth Controller
+
+```text
+auth.controller.ts
+```
+
+Only receives request.
+
+Example:
+
+```text
+Register Request
+      ↓
+Controller
+      ↓
+Auth Service
+      ↓
+Response
+```
+
+---
+
+### Step 7: Auth Service
+
+```text
+auth.service.ts
+```
+
+Responsibilities:
+
+```text
+Hash password
+
+Create user
+
+Verify credentials
+
+Generate JWT
+```
+
+---
+
+### Step 8: OTP Service
+
+```text
+otp.service.ts
+```
+
+Generate:
+
+```text
+123456
+```
+
+Store in database.
+
+Send via email.
+
+---
+
+### Step 9: JWT Middleware
+
+```text
+auth.middleware.ts
+```
+
+Protect routes.
+
+Flow:
+
+```text
+User Login
+     ↓
+JWT Generated
+     ↓
+Header
+     ↓
+Middleware
+     ↓
+Next Route
+```
+
+---
+
+# Phase 4: Assessment Module
+
+This is the core of the project.
+
+---
+
+### Step 10: Assessment APIs
+
+```text
+POST /assessment
+
+GET /assessment/history
+
+GET /assessment/latest
+```
+
+---
+
+### Step 11: Assessment Flow
+
+```text
+Student submits assessment
+        ↓
+assessment.service.ts
+        ↓
+calculateBurnout()
+        ↓
+calculateRisk()
+        ↓
+Save Assessment
+        ↓
+Update User
+```
+
+---
+
+Example:
+
+```text
+Stress = 9
+
+Sleep = 3
+
+Motivation = 2
+
+Backlog = 8
+```
+
+↓
+
+```text
+Burnout Score = 83
+```
+
+↓
+
+```text
+Risk = HIGH
+```
+
+---
+
+# Phase 5: Burnout Engine
+
+Now implement your prediction logic.
+
+---
+
+### burnout-score.service.ts
+
+Input:
+
+```json
+{
+  "stress": 8,
+  "sleep": 4,
+  "motivation": 2
+}
+```
+
+Output:
+
+```json
+{
+  "score": 78
+}
+```
+
+---
+
+### risk-classifier.service.ts
+
+```text
+0-30 = Low
+
+31-60 = Medium
+
+61-100 = High
+```
+
+---
+
+### baseline-tracker.service.ts
+
+Stores user's first assessment.
+
+Used for:
+
+```text
+Current Score
+
+vs
+
+Initial Score
+```
+
+---
+
+### trend-analysis.service.ts
+
+Compare:
+
+```text
+Last 7 Days
+
+Last 30 Days
+
+Last 90 Days
+```
+
+Generate trend.
+
+```text
+Improving
+
+Stable
+
+Worsening
+```
+
+---
+extra add::--One thing I would add beyond your original SRS: ask the LLM to store a burnoutScoreBreakdown (stress contribution, sleep contribution, motivation contribution, etc.). This makes the dashboard and recommendations much easier to build later.
+burnoutScoreBreakdown
+
+Stress Contribution
+Sleep Contribution
+Motivation Contribution
+Energy Contribution
+Backlog Contribution
+...
+
+
+
+# Phase 6: Journal Module
+
+### APIs
+
+```http
+POST /journal
+
+GET /journal
+
+DELETE /journal/:id
+```
+
+---
+
+### Flow
+
+```text
+Journal Entry
+      ↓
+Journal Service
+      ↓
+Sentiment Service
+      ↓
+Store Sentiment
+```
+
+Example:
+
+```text
+"I feel exhausted and overwhelmed"
+```
+
+↓
+
+```text
+Negative
+```
+
+---
+
+### sentiment.service.ts
+
+Initially use rule-based analysis.
+
+No AI required.
+
+```text
+happy = positive
+
+good = positive
+
+sad = negative
+
+tired = negative
+
+exhausted = negative
+```
+
+Later replace with AI.
+
+---
+
+# Phase 7: Recommendation Engine
+
+This is where the platform becomes smart.
+
+---
+
+### recommendation-rules.ts
+
+Example:
+
+```text
+IF sleep < 5
+
+THEN
+
+Recommend:
+"Sleep at least 7 hours"
+```
+
+---
+
+```text
+IF stress > 8
+
+THEN
+
+Recommend:
+"Try Pomodoro Technique"
+```
+
+---
+
+### recommendation.service.ts
+
+Flow:
+
+```text
+Assessment
+      ↓
+Risk Level
+      ↓
+Rules Engine
+      ↓
+Recommendations
+```
+
+Store recommendations.
+
+---
+
+# Phase 8: Dashboard Analytics
+
+### dashboard.service.ts
+
+Collect:
+
+```text
+Latest Assessment
+
+Burnout Score
+
+Risk Level
+
+Journal Trend
+
+Recommendations
+```
+
+Return one object.
+
+```json
+{
+  "burnoutScore": 78,
+  "riskLevel": "High",
+  "sleepAverage": 5,
+  "moodTrend": "Negative"
+}
+```
+
+---
+
+# Phase 9: AI Assistant
+
+Do NOT build LLM first.
+
+Start with rule-based AI.
+
+---
+
+### assistant.service.ts
+
+Example:
+
+User:
+
+```text
+I am feeling stressed.
+```
+
+Response:
+
+```text
+Your recent burnout score is high.
+Try taking short study breaks.
+```
+
+---
+
+Flow:
+
+```text
+Chat Message
+      ↓
+assistant.service.ts
+      ↓
+User Data
+      ↓
+Generate Response
+```
+
+Later integrate:
+
+* Gemini
+* OpenAI
+* Ollama (free)
+
+---
+
+# Phase 10: Notifications
+
+### notification.service.ts
+
+Triggers:
+
+```text
+Weekly Assessment
+
+High Risk Alert
+
+Recommendation Update
+```
+
+---
+
+### reminder.job.ts
+
+Using cron.
+
+Every Sunday:
+
+```text
+Take Weekly Assessment
+```
+
+---
+
+### trend-analysis.job.ts
+
+Runs daily.
+
+Checks:
+
+```text
+Has burnout increased?
+```
+
+If yes:
+
+```text
+Create Alert
+```
+
+---
+
+# Phase 11: Admin Panel APIs
+
+Create after student side is complete.
+
+---
+
+### Admin Dashboard
+
+```http
+GET /admin/stats
+```
+
+Returns:
+
+```json
+{
+  "totalStudents": 500,
+  "highRiskStudents": 28,
+  "mediumRiskStudents": 97,
+  "lowRiskStudents": 375
+}
+```
+
+---
+
+### High Risk Students
+
+```http
+GET /admin/high-risk
+```
+
+Returns all high-risk students.
+
+---
+
+# Complete Backend Flow
+
+```text
+Student Registers
+        ↓
+OTP Verification
+        ↓
+Login
+        ↓
+JWT Generated
+        ↓
+Assessment Submitted
+        ↓
+Burnout Score Calculated
+        ↓
+Risk Classified
+        ↓
+Recommendations Generated
+        ↓
+Dashboard Updated
+        ↓
+Journal Entries Added
+        ↓
+Sentiment Analyzed
+        ↓
+Trend Analysis Runs
+        ↓
+Notifications Generated
+        ↓
+AI Assistant Uses Data
+        ↓
+Admin Monitors Students
+```
+
+### Recommended Development Order
+
+```text
+1. MongoDB Connection
+2. User Model
+3. Authentication
+4. JWT Middleware
+5. Assessment Module
+6. Burnout Engine
+7. Dashboard APIs
+8. Journal Module
+9. Recommendation Engine
+10. Notifications
+11. AI Assistant
+12. Admin Panel
+13. Cron Jobs
+14. Testing
+15. Deployment
+```
+
+If you're building this as a final-year/project-showcase product, I would also add **exact MongoDB schemas, API endpoints, request/response formats, and collection design** before you start coding. That will save a lot of refactoring later.

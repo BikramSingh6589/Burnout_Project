@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
+<<<<<<< HEAD
 import { ShieldCheck, ArrowRight, RefreshCw } from 'lucide-react';
 
 export const VerifyOtp: React.FC = () => {
@@ -8,11 +9,25 @@ export const VerifyOtp: React.FC = () => {
   const navigate = useNavigate();
   const [otp, setOtp] = useState('');
   const [error, setError] = useState<string | null>(null);
+=======
+import { ShieldCheck, ArrowRight, RefreshCw, Loader2 } from 'lucide-react';
+
+export const VerifyOtp: React.FC = () => {
+  const { verifyOtp, resendOtp } = useStore();
+  const navigate = useNavigate();
+  const [otp, setOtp] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+>>>>>>> testing
   const [resending, setResending] = useState(false);
   const [resendStatus, setResendStatus] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+<<<<<<< HEAD
+=======
+    if (loading) return;
+>>>>>>> testing
     setError(null);
     setResendStatus(null);
 
@@ -21,6 +36,7 @@ export const VerifyOtp: React.FC = () => {
       return;
     }
 
+<<<<<<< HEAD
     const success = await verifyOtp(otp);
     if (success) {
       navigate('/');
@@ -36,6 +52,29 @@ export const VerifyOtp: React.FC = () => {
       setResending(false);
       setResendStatus('A new code has been sent to your email.');
     }, 1200);
+=======
+    setLoading(true);
+    const success = await verifyOtp(otp);
+    setLoading(false);
+    if (success) {
+      navigate('/');
+    } else {
+      setError(useStore.getState().authError || 'Invalid verification code.');
+    }
+  };
+
+  const handleResend = async () => {
+    setResending(true);
+    setError(null);
+    setResendStatus(null);
+    const success = await resendOtp();
+    setResending(false);
+    if (success) {
+      setResendStatus('A new code has been sent to your email.');
+    } else {
+      setError(useStore.getState().authError || 'Unable to resend verification code.');
+    }
+>>>>>>> testing
   };
 
   return (
@@ -78,17 +117,28 @@ export const VerifyOtp: React.FC = () => {
               placeholder="000000"
               required
             />
+<<<<<<< HEAD
             <span className="block text-[10px] text-center text-neutral-outline/80 mt-1">
               (Use demo code <strong className="text-primary font-bold">123456</strong> for testing)
             </span>
+=======
+>>>>>>> testing
           </div>
 
           <button
             type="submit"
+<<<<<<< HEAD
             className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs shadow-sm"
           >
             <span>Verify Email</span>
             <ArrowRight className="h-4 w-4" />
+=======
+            disabled={loading}
+            className="w-full bg-primary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-primary/95 transition-all text-xs shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            <span>{loading ? 'Verifying...' : 'Verify Email'}</span>
+>>>>>>> testing
           </button>
         </form>
 
@@ -99,7 +149,11 @@ export const VerifyOtp: React.FC = () => {
             className="text-xs font-semibold text-primary hover:underline flex items-center space-x-1 disabled:opacity-50"
           >
             <RefreshCw className={`h-3 w-3 ${resending ? 'animate-spin' : ''}`} />
+<<<<<<< HEAD
             <span>Resend Verification Code</span>
+=======
+            <span>{resending ? 'Sending...' : 'Resend Verification Code'}</span>
+>>>>>>> testing
           </button>
         </div>
       </div>

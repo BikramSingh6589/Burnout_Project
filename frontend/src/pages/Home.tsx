@@ -1,14 +1,68 @@
+<<<<<<< HEAD
 import React, { useState } from 'react';
+=======
+import React, { useState, useEffect } from 'react';
+>>>>>>> testing
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { ArrowRight, Activity, Moon, Shield, Award, Sparkles, Send, Mail, Phone, MapPin } from 'lucide-react';
 
 export const Home: React.FC = () => {
+<<<<<<< HEAD
   const { isAuthenticated, user } = useStore();
+=======
+  const { isAuthenticated, user, burnoutRisk, fetchBurnoutRisk, trackerHistory, fetchTrackerHistory } = useStore();
+>>>>>>> testing
   const navigate = useNavigate();
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [formSubmitted, setFormSubmitted] = useState(false);
 
+<<<<<<< HEAD
+=======
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchBurnoutRisk();
+      fetchTrackerHistory();
+    }
+  }, [isAuthenticated, fetchBurnoutRisk, fetchTrackerHistory]);
+
+  // Calculate average sleep and study hours from tracker history
+  const averageSleep = trackerHistory.length > 0 
+    ? (trackerHistory.reduce((sum, h) => sum + h.sleepHours, 0) / trackerHistory.length).toFixed(1) 
+    : '7.0';
+    
+  const averageStudyHours = trackerHistory.length > 0 
+    ? (trackerHistory.reduce((sum, h) => sum + h.studyHours, 0) / trackerHistory.length).toFixed(1) 
+    : '6.0';
+    
+  const baselineSleep = 7.0;
+  const sleepDeviation = trackerHistory.length > 0 
+    ? Math.round(((parseFloat(averageSleep) - baselineSleep) / baselineSleep) * 100) 
+    : 0;
+
+  const getRiskBadgeColor = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') return 'text-error bg-error/10';
+    if (riskLevel === 'moderate') return 'text-amber-500 bg-amber-500/10';
+    return 'text-success bg-success/10';
+  };
+
+  const getRiskLabel = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') return 'High Risk';
+    if (riskLevel === 'moderate') return 'Moderate Risk';
+    return 'Low Risk';
+  };
+
+  const getRecommendation = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') {
+      return "Your journal entries show high negative sentiment. Consider taking breaks, reducing screen time, and reaching out for support.";
+    }
+    if (riskLevel === 'moderate') {
+      return "Your mood shows some stress patterns. Try maintaining consistent sleep schedule and taking short breaks between study sessions.";
+    }
+    return "Your journal sentiment is positive. Keep up the good work with your wellness routine!";
+  };
+
+>>>>>>> testing
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!contactForm.name || !contactForm.email || !contactForm.message) return;
@@ -51,6 +105,7 @@ export const Home: React.FC = () => {
                   <ArrowRight className="h-4 w-4" />
                 </button>
               ) : !user?.assessmentCompleted ? (
+<<<<<<< HEAD
                 <>
                   <button
                     onClick={() => navigate('/assessment')}
@@ -66,6 +121,15 @@ export const Home: React.FC = () => {
                     <span>View Dashboard</span>
                   </button>
                 </>
+=======
+                <button
+                  onClick={() => navigate('/assessment')}
+                  className="bg-primary text-white font-semibold px-6 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card active:translate-y-0 text-sm"
+                >
+                  <span>Take Initial Assessment</span>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+>>>>>>> testing
               ) : (
                 <button
                   onClick={() => navigate('/dashboard')}
@@ -96,22 +160,57 @@ export const Home: React.FC = () => {
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs font-semibold">Weekly Risk Indicator</span>
+<<<<<<< HEAD
                   <span className="text-xs font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Moderate Risk</span>
                 </div>
                 <div className="h-2 w-full bg-surface-elevated rounded-full overflow-hidden">
                   <div className="h-full progress-gradient w-[62%]"></div>
                 </div>
+=======
+                  {burnoutRisk ? (
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${getRiskBadgeColor(burnoutRisk.riskLevel)}`}>
+                      {getRiskLabel(burnoutRisk.riskLevel)}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold text-text-muted bg-surface-elevated px-2 py-0.5 rounded-full">
+                      Loading...
+                    </span>
+                  )}
+                </div>
+                <div className="h-2 w-full bg-surface-elevated rounded-full overflow-hidden">
+                  <div 
+                    className="h-full progress-gradient transition-all duration-500" 
+                    style={{ width: burnoutRisk ? `${burnoutRisk.negativeRatio}%` : '0%' }}
+                  ></div>
+                </div>
+                {burnoutRisk && (
+                  <p className="text-[10px] text-text-muted">
+                    {burnoutRisk.negativeRatio}% negative sentiment ({burnoutRisk.totalEntries} entries)
+                  </p>
+                )}
+>>>>>>> testing
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-surface p-4 rounded-xl border border-border shadow-sm space-y-1">
                   <span className="text-[10px] text-text-muted font-medium">Average Sleep</span>
+<<<<<<< HEAD
                   <p className="text-lg font-bold text-text-primary">5.8 Hours</p>
                   <span className="text-[9px] text-error font-medium">-15% from baseline</span>
                 </div>
                 <div className="bg-surface p-4 rounded-xl border border-border shadow-sm space-y-1">
                   <span className="text-[10px] text-text-muted font-medium">Study Focus</span>
                   <p className="text-lg font-bold text-text-primary">7.2 Hrs/Day</p>
+=======
+                  <p className="text-lg font-bold text-text-primary">{averageSleep} Hours</p>
+                  <span className={`text-[9px] font-medium ${sleepDeviation < 0 ? 'text-error' : 'text-success'}`}>
+                    {sleepDeviation > 0 ? '+' : ''}{sleepDeviation}% from baseline
+                  </span>
+                </div>
+                <div className="bg-surface p-4 rounded-xl border border-border shadow-sm space-y-1">
+                  <span className="text-[10px] text-text-muted font-medium">Study Focus</span>
+                  <p className="text-lg font-bold text-text-primary">{averageStudyHours} Hrs/Day</p>
+>>>>>>> testing
                   <span className="text-[9px] text-success font-medium">Within target</span>
                 </div>
               </div>
@@ -123,7 +222,11 @@ export const Home: React.FC = () => {
                   <span className="text-xs font-bold">AI Recommendation</span>
                 </div>
                 <p className="text-xs text-text-primary leading-relaxed">
+<<<<<<< HEAD
                   "Evening screen use is currently 6.5 hours. Reducing this by 1.5 hours will improve deep sleep phase by 25%."
+=======
+                  {burnoutRisk ? getRecommendation(burnoutRisk.riskLevel) : "Loading your personalized wellness insights..."}
+>>>>>>> testing
                 </p>
               </div>
             </div>

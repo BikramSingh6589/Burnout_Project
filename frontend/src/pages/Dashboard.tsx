@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React from 'react';
+=======
+import React, { useEffect } from 'react';
+>>>>>>> testing
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
@@ -6,9 +10,23 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { Sparkles, Calendar, Moon, Compass, ArrowRight } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
+<<<<<<< HEAD
   const { user, trackerHistory, recommendations } = useStore();
   const navigate = useNavigate();
 
+=======
+  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk } = useStore();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchTrackerHistory();
+    fetchRecommendations();
+    fetchNotifications();
+    fetchAnalytics();
+    fetchBurnoutRisk();
+  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics, fetchBurnoutRisk]);
+
+>>>>>>> testing
   // Guard checks handled in DashboardLayout, but let's read the latest values
   const latestTracker = trackerHistory.length > 0 ? trackerHistory[trackerHistory.length - 1] : null;
   const currentScore = latestTracker ? latestTracker.burnoutScore : 0;
@@ -25,13 +43,35 @@ export const Dashboard: React.FC = () => {
     return 'bg-success/10 text-success border-success/20';
   };
 
+<<<<<<< HEAD
+=======
+  const getBurnoutRiskBadgeStyles = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') return 'bg-error/10 text-error border-error/20';
+    if (riskLevel === 'moderate') return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+    return 'bg-success/10 text-success border-success/20';
+  };
+
+  const getBurnoutRiskLabel = (riskLevel: 'high' | 'moderate' | 'low') => {
+    if (riskLevel === 'high') return 'High Risk';
+    if (riskLevel === 'moderate') return 'Moderate Risk';
+    return 'Low Risk';
+  };
+
+>>>>>>> testing
   // Calculations
   const averageSleep = trackerHistory.length > 0 
     ? (trackerHistory.reduce((sum, h) => sum + h.sleepHours, 0) / trackerHistory.length).toFixed(1) 
     : '0.0';
+<<<<<<< HEAD
 
   // Pie Chart Data: Recommendation Followed status
   const followStats = recommendations.reduce(
+=======
+  const dashboardRecommendations = analyticsSummary?.recommendations ?? recommendations;
+
+  // Pie Chart Data: Recommendation Followed status
+  const followStats = dashboardRecommendations.reduce(
+>>>>>>> testing
     (acc, rec) => {
       if (rec.followedStatus === 'followed') acc.followed++;
       else if (rec.followedStatus === 'partially') acc.partially++;
@@ -51,6 +91,7 @@ export const Dashboard: React.FC = () => {
 
   // Fallback if no pie data has feedback yet
   const displayPieData = pieData.length > 0 ? pieData : [
+<<<<<<< HEAD
     { name: 'Pending Feedback', value: recommendations.length, color: '#C7C4D8' }
   ];
 
@@ -59,6 +100,25 @@ export const Dashboard: React.FC = () => {
     ...h,
     dateLabel: new Date(h.date).toLocaleDateString([], { month: 'short', day: 'numeric' }),
   }));
+=======
+    { name: 'Pending Feedback', value: dashboardRecommendations.length, color: '#C7C4D8' }
+  ];
+
+  // Format history for line chart (showing up to last 7 entries)
+  const last7 = trackerHistory.slice(-7);
+  const dashDateGroups: Record<string, number> = {};
+  last7.forEach(h => { dashDateGroups[h.date] = (dashDateGroups[h.date] ?? 0) + 1; });
+  const chartData = last7.map(h => {
+    const sameDay = dashDateGroups[h.date] > 1;
+    const dt = new Date(h.timestamp);
+    return {
+      ...h,
+      dateLabel: sameDay
+        ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : dt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+    };
+  });
+>>>>>>> testing
 
   return (
     <DashboardLayout>
@@ -133,6 +193,44 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
+<<<<<<< HEAD
+=======
+          {/* AI Journal Burnout Risk Card */}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
+            <span className="text-xs text-text-secondary font-semibold tracking-tight flex items-center">
+              <Sparkles className="h-3 w-3 mr-1 text-primary" />
+              AI Journal Risk
+            </span>
+            <div className="py-2 space-y-1">
+              {burnoutRisk ? (
+                <>
+                  <div className={`text-sm font-semibold px-3 py-1 rounded-lg border w-fit ${getBurnoutRiskBadgeStyles(burnoutRisk.riskLevel)}`}>
+                    {getBurnoutRiskLabel(burnoutRisk.riskLevel)}
+                  </div>
+                  <p className="text-xs text-text-secondary mt-2">
+                    {burnoutRisk.negativeRatio}% negative ({burnoutRisk.period})
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-text-secondary mt-2">Loading...</p>
+              )}
+            </div>
+          </div>
+
+          {/* Average Score Card */}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
+            <span className="text-xs text-text-secondary font-semibold tracking-tight">Average Score</span>
+            <div className="py-2">
+              <div className="flex items-baseline space-x-1">
+                <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">
+                  {analyticsSummary ? Math.round(analyticsSummary.averageScore) : '--'}
+                </span>
+              </div>
+              <p className="text-xs text-text-secondary mt-1">Based on {analyticsSummary?.assessmentCount || 0} assessments</p>
+            </div>
+          </div>
+
+>>>>>>> testing
           {/* Average Sleep Hours Card */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
             <span className="text-xs text-text-secondary font-semibold tracking-tight">Sleep Average</span>
@@ -147,6 +245,7 @@ export const Dashboard: React.FC = () => {
 
           {/* Latest Mood Sentiment Card */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
+<<<<<<< HEAD
             <span className="text-xs text-text-secondary font-semibold tracking-tight">Latest Mood sentiment</span>
             <div className="py-2">
               <div className="text-xl font-semibold tracking-tight text-primary  flex items-center space-x-2">
@@ -154,6 +253,17 @@ export const Dashboard: React.FC = () => {
                 <span>Balanced</span>
               </div>
               <p className="text-xs text-text-secondary mt-2">Extracted from mood journals</p>
+=======
+            <span className="text-xs text-text-secondary font-semibold tracking-tight">Latest Risk Level</span>
+            <div className="py-2">
+              <div className="text-xl font-semibold tracking-tight text-primary  flex items-center space-x-2">
+                <Sparkles className="h-5 w-5 text-secondary dark:text-secondary shrink-0" />
+                <span>{latestAssessment ? latestAssessment.riskLevel : 'Unknown'}</span>
+              </div>
+              <p className="text-xs text-text-secondary mt-2">
+                Highest: {analyticsSummary?.highestScore || 0} / Lowest: {analyticsSummary?.lowestScore || 0}
+              </p>
+>>>>>>> testing
             </div>
           </div>
         </div>
@@ -226,7 +336,11 @@ export const Dashboard: React.FC = () => {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute flex flex-col items-center justify-center pointer-events-none">
+<<<<<<< HEAD
                 <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">{recommendations.length}</span>
+=======
+                <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">{dashboardRecommendations.length}</span>
+>>>>>>> testing
                 <span className="text-[10px] text-text-secondary font-semibold uppercase tracking-wider mt-0.5">Total</span>
               </div>
             </div>
@@ -304,7 +418,11 @@ export const Dashboard: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+<<<<<<< HEAD
             {recommendations.slice(0, 2).map((rec) => (
+=======
+            {dashboardRecommendations.slice(0, 2).map((rec) => (
+>>>>>>> testing
               <div key={rec.id} className="border border-border rounded-xl p-5 space-y-3 bg-surface-elevated/30 hover:border-primary/40 hover:shadow-md transition-all duration-300 cursor-pointer group">
                 <div className="flex justify-between items-center">
                   <span className={`text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-md border ${
@@ -320,6 +438,14 @@ export const Dashboard: React.FC = () => {
                 <p className="text-xs text-text-secondary  leading-relaxed">{rec.reason}</p>
               </div>
             ))}
+<<<<<<< HEAD
+=======
+            {dashboardRecommendations.length === 0 && (
+              <div className="md:col-span-2 text-center py-8 text-xs text-text-secondary">
+                Complete an assessment to generate personalized interventions.
+              </div>
+            )}
+>>>>>>> testing
           </div>
         </div>
 
@@ -327,4 +453,7 @@ export const Dashboard: React.FC = () => {
     </DashboardLayout>
   );
 };
+<<<<<<< HEAD
 
+=======
+>>>>>>> testing

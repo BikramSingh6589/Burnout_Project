@@ -1,11 +1,25 @@
+<<<<<<< HEAD
 import React, { useState } from 'react';
+=======
+import React, { useState, useEffect } from 'react';
+>>>>>>> testing
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, Legend } from 'recharts';
 import { Calendar, Filter, Sparkles, TrendingUp } from 'lucide-react';
 
 export const HistoryTrends: React.FC = () => {
+<<<<<<< HEAD
   const { trackerHistory } = useStore();
+=======
+  const { trackerHistory, fetchTrackerHistory, analyticsSummary, fetchAnalytics } = useStore();
+
+  useEffect(() => {
+    fetchTrackerHistory();
+    fetchAnalytics();
+  }, [fetchTrackerHistory, fetchAnalytics]);
+
+>>>>>>> testing
   const [filterDays, setFilterDays] = useState<7 | 30 | 90>(30);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -31,11 +45,37 @@ export const HistoryTrends: React.FC = () => {
 
   const filteredData = getFilteredData();
 
+<<<<<<< HEAD
   const formattedChartData = filteredData.map(item => ({
     ...item,
     dateLabel: new Date(item.date).toLocaleDateString([], { month: 'short', day: 'numeric' }),
     satisfaction: 10 - item.procrastination, // Mock satisfaction inversion for comparison
   }));
+=======
+  // Build unique labels per data point — if multiple entries share the same date,
+  // include the time so Recharts doesn't collapse them to a single tooltip value.
+  const dateGroups: Record<string, number> = {};
+  filteredData.forEach(item => {
+    const d = item.date;
+    dateGroups[d] = (dateGroups[d] ?? 0) + 1;
+  });
+
+  const formattedChartData = filteredData.map((item, idx) => {
+    const sameDay = dateGroups[item.date] > 1;
+    const dt = new Date(item.timestamp);
+    const dateLabel = sameDay
+      ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) +
+        ' ' +
+        dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    return {
+      ...item,
+      idx,
+      dateLabel,
+      satisfaction: 10 - item.procrastination,
+    };
+  });
+>>>>>>> testing
 
   return (
     <DashboardLayout>
@@ -48,6 +88,41 @@ export const HistoryTrends: React.FC = () => {
             <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">Monitor progress trends and behavior correlations</p>
           </div>
 
+<<<<<<< HEAD
+=======
+          {/* Backend Analytics Cards */}
+          <div className="flex gap-4">
+            {analyticsSummary?.currentTrend && (
+              <div className="bg-surface dark:bg-[#1E293B] px-4 py-2 rounded-lg border border-border shadow-sm">
+                <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Overall Trend</span>
+                <span className={`font-semibold text-sm ${
+                  analyticsSummary.currentTrend === 'IMPROVING' ? 'text-success' : 
+                  analyticsSummary.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
+                }`}>
+                  {analyticsSummary.currentTrend}
+                </span>
+              </div>
+            )}
+            
+            {analyticsSummary?.baselineComparison && (
+              <div className="bg-surface dark:bg-[#1E293B] px-4 py-2 rounded-lg border border-border shadow-sm">
+                <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Baseline Shift</span>
+                <div className="flex items-center space-x-2">
+                  <span className={`font-semibold text-sm ${
+                    analyticsSummary.baselineComparison.status === 'IMPROVED' ? 'text-success' : 
+                    analyticsSummary.baselineComparison.status === 'WORSENED' ? 'text-error' : 'text-primary'
+                  }`}>
+                    {analyticsSummary.baselineComparison.status}
+                  </span>
+                  <span className="text-xs text-text-secondary">
+                    ({analyticsSummary.baselineComparison.difference > 0 ? '+' : ''}{analyticsSummary.baselineComparison.difference} pts)
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+>>>>>>> testing
           {/* Quick Filters */}
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-neutral-outline dark:text-[#CBD5E1] shrink-0" />
@@ -174,8 +249,13 @@ export const HistoryTrends: React.FC = () => {
                   <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                   <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                   <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
+<<<<<<< HEAD
                   <Line type="monotone" dataKey="studyHours" stroke="#8127CF" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} />
                   <Line type="monotone" dataKey="screenTime" stroke="#9C48EA" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} />
+=======
+                  <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} />
+                  <Line type="monotone" dataKey="screenTime" stroke="#F59E0B" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} />
+>>>>>>> testing
                 </LineChart>
               </ResponsiveContainer>
             </div>
