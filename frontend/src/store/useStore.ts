@@ -715,10 +715,6 @@ export const useStore = create<AppState>((set, get) => ({
       text,
       timestamp: Date.now(),
     };
-<<<<<<< HEAD
-=======
-
->>>>>>> parent of 0c89ca7d (Merged the testing branch to main)
     set((state) => ({
       chatMessages: [...state.chatMessages, userMsg],
     }));
