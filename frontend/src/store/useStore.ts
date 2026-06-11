@@ -97,6 +97,10 @@ export interface TrackerHistory {
 }
 
 export interface AnalyticsSummary {
+  burnoutScore: number;
+  riskLevel: 'low' | 'moderate' | 'high';
+  sleepAverage: number;
+  moodTrend: 'Positive' | 'Neutral' | 'Negative';
   averageScore: number;
   highestScore: number;
   lowestScore: number;

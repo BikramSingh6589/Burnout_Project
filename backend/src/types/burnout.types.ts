@@ -52,3 +52,11 @@ export interface HistoricalAnalytics {
   baselineDifference?: number;
   baselineComparison?: BaselineComparisonResult;
 }
+
+export interface DashboardAnalytics extends HistoricalAnalytics {
+  burnoutScore: number;
+  riskLevel: RiskLevel;
+  sleepAverage: number;
+  moodTrend: "Positive" | "Neutral" | "Negative";
+  recommendations?: any[];
+}
