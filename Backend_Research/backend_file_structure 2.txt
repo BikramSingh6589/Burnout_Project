@@ -1,0 +1,114 @@
+backend/
+│
+├── src/
+│
+├── app.ts
+├── server.ts
+│
+├── config/
+│   ├── database.ts
+│   ├── jwt.ts
+│   ├── mail.ts
+│   └── env.ts
+│
+├── routes/
+│   ├── auth.routes.ts
+│   ├── user.routes.ts
+│   ├── assessment.routes.ts
+│   ├── journal.routes.ts
+│   ├── dashboard.routes.ts
+│   ├── recommendation.routes.ts
+│   ├── notification.routes.ts
+│   ├── profile.routes.ts
+│   ├── ai.routes.ts
+│   └── admin.routes.ts
+│
+├── controllers/
+│   ├── auth.controller.ts
+│   ├── assessment.controller.ts
+│   ├── journal.controller.ts
+│   ├── dashboard.controller.ts
+│   ├── recommendation.controller.ts
+│   ├── notification.controller.ts
+│   ├── profile.controller.ts
+│   ├── ai.controller.ts
+│   └── admin.controller.ts
+│
+├── services/
+│   │
+│   ├── auth/
+│   │   ├── auth.service.ts
+│   │   ├── otp.service.ts
+│   │   └── token.service.ts
+│   │
+│   ├── assessment/
+│   │   ├── assessment.service.ts
+│   │   └── reassessment.service.ts
+│   │
+│   ├── journal/
+│   │   ├── journal.service.ts
+│   │   └── sentiment.service.ts
+│   │
+│   ├── burnout/
+│   │   ├── burnout-score.service.ts
+│   │   ├── risk-classifier.service.ts
+│   │   ├── baseline-tracker.service.ts
+│   │   └── trend-analysis.service.ts
+│   │
+│   ├── recommendation/
+│   │   ├── recommendation.service.ts
+│   │   ├── recommendation-rules.ts
+│   │   └── recommendation-learning.ts
+│   │
+│   ├── notification/
+│   │   ├── notification.service.ts
+│   │   └── email.service.ts
+│   │
+│   ├── ai/
+│   │   ├── assistant.service.ts
+│   │   ├── feature-extractor.service.ts
+│   │   └── conversation-analysis.service.ts
+│   │
+│   └── analytics/
+│       ├── dashboard.service.ts
+│       ├── history.service.ts
+│       └── insight.service.ts
+│
+├── models/
+│   ├── User.ts
+│   ├── Assessment.ts
+│   ├── Journal.ts
+│   ├── Recommendation.ts
+│   ├── Notification.ts
+│   ├── Feedback.ts
+│   └── Conversation.ts
+│
+├── middlewares/
+│   ├── auth.middleware.ts
+│   ├── admin.middleware.ts
+│   ├── error.middleware.ts
+│   ├── validation.middleware.ts
+│   └── rateLimit.middleware.ts
+│
+├── validators/
+│   ├── auth.validation.ts
+│   ├── assessment.validation.ts
+│   ├── journal.validation.ts
+│   └── profile.validation.ts
+│
+├── utils/
+│   ├── logger.ts
+│   ├── generateOtp.ts
+│   ├── calculateBurnout.ts
+│   ├── calculateRisk.ts
+│   └── helpers.ts
+│
+├── types/
+│   ├── auth.types.ts
+│   ├── assessment.types.ts
+│   └── common.types.ts
+│
+└── jobs/
+    ├── weekly-insights.job.ts
+    ├── reminder.job.ts
+    └── trend-analysis.job.ts

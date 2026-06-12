@@ -1,0 +1,535 @@
+# Design System Specification
+
+# Academic Burnout Prediction Platform
+
+Version: 1.0
+
+---
+
+# 1. Design Philosophy
+
+The platform should feel:
+
+* Calm
+* Trustworthy
+* Professional
+* Student-Friendly
+* Modern
+* Data-Focused
+
+Avoid:
+
+* Bright aggressive colors
+* Heavy animations
+* Cluttered dashboards
+* Medical-looking interfaces
+
+The user should feel supported, not judged.
+
+---
+
+# 2. Design Theme
+
+Theme Name:
+
+Wellness Analytics
+
+Style:
+
+Modern SaaS Dashboard
+
+Design Inspiration:
+
+* Notion
+* Headspace
+* Linear
+* Calm
+* Google Material Design
+
+---
+
+# 3. Color System
+
+## Primary Color
+
+Used For:
+
+* Buttons
+* Active States
+* Progress Bars
+* Highlights
+* Navigation Active Items
+
+Primary 500
+
+#4F46E5
+
+---
+
+## Secondary Color
+
+Used For:
+
+* Supporting UI Elements
+* Charts
+* Analytics Cards
+
+Secondary 500
+
+#14B8A6
+
+---
+
+## Success Color
+
+#22C55E
+
+Used For:
+
+* Low Burnout Risk
+* Success Messages
+
+---
+
+## Warning Color
+
+#F59E0B
+
+Used For:
+
+* Moderate Burnout Risk
+
+---
+
+## Danger Color
+
+#EF4444
+
+Used For:
+
+* High Burnout Risk
+* Alerts
+
+---
+
+## Background Color
+
+#F8FAFC
+
+---
+
+## Surface Color
+
+#FFFFFF
+
+Used For:
+
+* Cards
+* Forms
+* Dashboard Panels
+
+---
+
+## Border Color
+
+#E2E8F0
+
+---
+
+# 4. Typography
+
+Primary Font
+
+Inter
+
+Fallback:
+
+sans-serif
+
+Google Font:
+
+Inter
+
+---
+
+Heading Sizes
+
+H1
+
+48px
+
+Weight: 700
+
+---
+
+H2
+
+36px
+
+Weight: 700
+
+---
+
+H3
+
+28px
+
+Weight: 600
+
+---
+
+H4
+
+22px
+
+Weight: 600
+
+---
+
+Body Text
+
+16px
+
+Weight: 400
+
+Line Height: 1.6
+
+---
+
+Small Text
+
+14px
+
+Weight: 400
+
+---
+
+# 5. Design Tokens
+
+IMPORTANT:
+
+All colors must use variables.
+
+Never hardcode colors.
+
+---
+
+CSS Variables
+
+:root {
+
+--color-primary: #4F46E5;
+
+--color-secondary: #14B8A6;
+
+--color-success: #22C55E;
+
+--color-warning: #F59E0B;
+
+--color-danger: #EF4444;
+
+--color-background: #F8FAFC;
+
+--color-surface: #FFFFFF;
+
+--color-border: #E2E8F0;
+
+--text-primary: #0F172A;
+
+--text-secondary: #64748B;
+
+}
+
+Changing:
+
+--color-primary
+
+must update the entire application.
+
+---
+
+# 6. Spacing System
+
+Base Unit
+
+8px
+
+Spacing Scale
+
+xs = 4px
+
+sm = 8px
+
+md = 16px
+
+lg = 24px
+
+xl = 32px
+
+2xl = 48px
+
+3xl = 64px
+
+---
+
+# 7. Border Radius
+
+Small
+
+8px
+
+Medium
+
+12px
+
+Large
+
+16px
+
+Extra Large
+
+24px
+
+Cards use:
+
+16px
+
+Buttons use:
+
+12px
+
+---
+
+# 8. Shadows
+
+Card Shadow
+
+0px 4px 12px rgba(0,0,0,0.08)
+
+---
+
+Hover Shadow
+
+0px 8px 24px rgba(0,0,0,0.12)
+
+---
+
+# 9. Buttons
+
+Primary Button
+
+Background:
+
+var(--color-primary)
+
+Text:
+
+White
+
+Radius:
+
+12px
+
+Height:
+
+48px
+
+---
+
+Secondary Button
+
+Background:
+
+Transparent
+
+Border:
+
+1px solid var(--color-primary)
+
+Text:
+
+var(--color-primary)
+
+---
+
+Danger Button
+
+Background:
+
+var(--color-danger)
+
+Text:
+
+White
+
+---
+
+# 10. Dashboard Layout
+
+Desktop
+
+Sidebar
+
+Width: 280px
+
+---
+
+Content Area
+
+Flexible Width
+
+---
+
+Top Navbar
+
+Height: 72px
+
+---
+
+Cards
+
+Padding: 24px
+
+Gap: 24px
+
+Radius: 16px
+
+---
+
+# 11. Risk Indicator Colors
+
+Low Risk
+
+Green
+
+#22C55E
+
+---
+
+Moderate Risk
+
+Yellow
+
+#F59E0B
+
+---
+
+High Risk
+
+Red
+
+#EF4444
+
+---
+
+# 12. Chart Colors
+
+Burnout Trend
+
+Primary Color
+
+---
+
+Sleep Trend
+
+Secondary Color
+
+---
+
+Attendance Trend
+
+Success Color
+
+---
+
+Stress Trend
+
+Danger Color
+
+---
+
+# 13. Dark Mode
+
+Background
+
+#0F172A
+
+Surface
+
+#1E293B
+
+Text
+
+#F8FAFC
+
+Borders
+
+#334155
+
+Primary Color remains unchanged.
+
+---
+
+# 14. Tailwind Theme Configuration
+
+colors:
+
+primary: "var(--color-primary)"
+
+secondary: "var(--color-secondary)"
+
+success: "var(--color-success)"
+
+warning: "var(--color-warning)"
+
+danger: "var(--color-danger)"
+
+background: "var(--color-background)"
+
+surface: "var(--color-surface)"
+
+This ensures changing a single variable updates every component automatically.
+
+---
+
+# 15. UI Components Required
+
+Authentication Pages
+
+* Login
+* Register
+
+Dashboard
+
+* Burnout Score Card
+* Risk Indicator
+* Trend Charts
+* Wellness Summary
+
+Forms
+
+* Assessment Form
+* Academic Form
+* Lifestyle Form
+* Journal Form
+
+Analytics
+
+* Sentiment Graph
+* Burnout Trend Graph
+* Attendance Analytics
+
+Notifications
+
+* Toast Messages
+* Alert Banners
+
+Profile
+
+* Student Information
+* Burnout History
+
+Settings
+
+* Theme Selection
+* Notification Preferences
