@@ -3,6 +3,29 @@ import { Student } from "../models/Student.js";
 import { AIConversation } from "../models/AIConversation.js";
 import { ConversationRole } from "../types/common.types.js";
 import { Types } from "mongoose";
+import { generateAIResponse } from "../services/ai/assistant.service.js";
+
+const getFallbackAssistantResponse = (message: string): string => {
+  const userText = message.toLowerCase();
+
+  if (userText.includes("sleep") || userText.includes("insomnia") || userText.includes("tired")) {
+    return "Sleep disruption is a strong burnout signal. Try a consistent bedtime routine, reduce screen exposure before bed, and aim for 7+ hours of rest per night.";
+  }
+
+  if (userText.includes("exam") || userText.includes("study") || userText.includes("stress") || userText.includes("overwhelmed")) {
+    return "Academic stress is common, and small, structured breaks can help. Try studying in focused intervals with built-in rest, and break your tasks into bite-sized steps.";
+  }
+
+  if (userText.includes("motivated") || userText.includes("procrastinate") || userText.includes("lazy")) {
+    return "Motivation dips are often linked to burnout and overwhelm. Start with one small, achievable task to build momentum and keep your goals simple.";
+  }
+
+  if (userText.includes("hello") || userText.includes("hi")) {
+    return "Hello! I'm here to support your wellness journey. Ask me about stress, sleep, study habits, or general questions anytime.";
+  }
+
+  return "I’m here to help. Tell me more about what you’re feeling or ask any question about your studies, wellness, or productivity.";
+};
 
 export const chatWithAI = async (
   req: Request,
@@ -37,7 +60,6 @@ export const chatWithAI = async (
       return;
     }
 
-    // Retrieve or create AI Conversation
     let conversation = await AIConversation.findOne({
       student: new Types.ObjectId(userId),
     });
@@ -56,17 +78,12 @@ export const chatWithAI = async (
       });
     }
 
-    const userText = message.toLowerCase();
-    let aiResponseText = "I see. Let's talk more about that. Sharing your feelings in your mood journal is also a great way to monitor your progress.";
-
-    if (userText.includes("sleep") || userText.includes("insomnia") || userText.includes("tired")) {
-      aiResponseText = "Sleep disruption is a primary indicator of burnout. I highly recommend establishing a screen-free window 1 hour before sleeping and aiming for a consistent 7+ hours of sleep. Would you like me to log this sleep alert in your analytics?";
-    } else if (userText.includes("exam") || userText.includes("study") || userText.includes("stress") || userText.includes("overwhelmed")) {
-      aiResponseText = "Academic pressure can quickly cause burnout. I suggest scheduling 10-minute micro-breaks for every 50 minutes of studying, and focusing on breaking your backlog down into small daily steps.";
-    } else if (userText.includes("motivated") || userText.includes("procrastinate") || userText.includes("lazy")) {
-      aiResponseText = "Motivation drops can be due to continuous stress. Try using the Pomodoro technique to complete just one simple, 15-minute task. It helps lower the entry barrier.";
-    } else if (userText.includes("hello") || userText.includes("hi")) {
-      aiResponseText = "Hello! I'm here to support your student wellness journey. Feel free to talk to me about your academic workload, sleep habits, or mood.";
+    let aiResponseText: string;
+    try {
+      aiResponseText = await generateAIResponse(userId, student, conversation.messages, message);
+    } catch (error) {
+      console.error("[AI] Groq assistant error:", error);
+      aiResponseText = getFallbackAssistantResponse(message);
     }
 
     conversation.messages.push({
@@ -82,6 +99,7 @@ export const chatWithAI = async (
     });
 
     conversation.lastMessageAt = new Date();
+    conversation.modelName = process.env.GROQ_MODEL ?? conversation.modelName;
     await conversation.save();
 
     res.status(200).json({
