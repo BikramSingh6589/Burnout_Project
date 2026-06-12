@@ -79,6 +79,7 @@ export enum NotificationType {
   RiskAlert = "risk_alert",
   Recommendation = "recommendation",
   System = "system",
+  AIAlert = "ai_alert",
 }
 
 export enum NotificationChannel {

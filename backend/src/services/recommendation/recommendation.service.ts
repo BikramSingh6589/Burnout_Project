@@ -8,6 +8,7 @@ import { StudentRecommendation, type IStudentRecommendation } from "../../models
 import { WeeklyAssessment } from "../../models/WeeklyAssessment.js";
 import type { AssessmentRequestBody, WeeklyAssessmentRequestBody } from "../../types/assessment.types.js";
 import { RecommendationStatus } from "../../types/common.types.js";
+import { NotificationService } from "../notification.service.js";
 import { RECOMMENDATION_DASHBOARD_LIMIT, RECOMMENDATION_PRIORITY_ORDER } from "./recommendation.constants.js";
 import { getRecommendationEnhancer } from "./recommendation-ai-enhancer.js";
 import { evaluateRecommendationRules } from "./recommendation-rules.js";
@@ -265,10 +266,21 @@ export const generateAndStoreRecommendations = async (
     { ordered: false },
   );
 
-  return Recommendation.find({
+  const recommendations = await Recommendation.find({
     userId: toObjectId(userId),
     assessmentId: toObjectId(assessmentId),
   }).sort({ priority: 1, createdAt: -1 });
+
+  // Trigger recommendation notification
+  try {
+    if (recommendations.length > 0) {
+      await NotificationService.createRecommendationNotification(userId);
+    }
+  } catch (error) {
+    console.error("[Recommendation Service] Error creating recommendation notification:", error);
+  }
+
+  return recommendations;
 };
 
 const hasRecommendationsForAssessment = async (userId: string, assessmentId: Types.ObjectId): Promise<boolean> => {

@@ -152,11 +152,12 @@ export interface PendingAiRecommendation {
 }
 
 export interface Notification {
-  id: string;
-  category: 'Assessment' | 'Risk' | 'Recommendation' | 'Mood' | 'General';
+  _id: string;
+  type: 'assessment_reminder' | 'risk_alert' | 'recommendation' | 'ai_alert' | 'system';
+  title: string;
   message: string;
-  read: boolean;
-  date: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface AdminStudent {
@@ -202,6 +203,7 @@ interface AppState {
   recommendations: Recommendation[];
   recommendationHistory: Recommendation[];
   notifications: Notification[];
+  unreadNotificationCount: number;
 
   // Chat Widget State
   chatMessages: { id: string; sender: 'user' | 'ai'; text: string; timestamp: number }[];
@@ -256,13 +258,13 @@ interface AppState {
   markAllNotificationsRead: () => void;
   deleteNotification: (id: string) => void;
   deleteAllNotifications: () => void;
-  addNotification: (category: Notification['category'], message: string) => void;
+  addNotification: (type: Notification['type'], message: string) => void;
 
   // Chat actions
   sendChatMessage: (text: string) => void;
 
   // Admin actions
-  adminSendNotification: (studentId: string | 'all', message: string, category: Notification['category']) => void;
+  adminSendNotification: (studentId: string | 'all', message: string, type: Notification['type']) => void;
   adminCreateRecommendation: (rec: Omit<Recommendation, 'id' | 'followedStatus' | 'rating' | 'feedbackText' | 'dateGenerated'>) => void;
   adminDeleteRecommendation: (id: string) => void;
   adminUpdateSettings: (settings: Partial<AdminSettings>) => void;
@@ -465,6 +467,7 @@ export const useStore = create<AppState>((set, get) => ({
   recommendations: [],
   recommendationHistory: [],
   notifications: [],
+  unreadNotificationCount: 0,
 
   // Chat Widget State
   chatMessages: [
@@ -628,9 +631,14 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const response = await apiRequest<{
         success: boolean;
+        count: number;
+        unreadCount: number;
         data: Notification[];
       }>('/notifications', { token });
-      set({ notifications: response.data });
+      set({ 
+        notifications: response.data,
+        unreadNotificationCount: response.unreadCount 
+      });
     } catch (err) {
       console.error('[Store] Failed to fetch notifications:', err);
     }
@@ -1270,13 +1278,16 @@ export const useStore = create<AppState>((set, get) => ({
           response.data.aiMessage,
         ],
       }));
+
+      // Refresh notification count after AI response
+      await get().fetchNotifications();
     } catch (err) {
       console.error('[Store] Failed to send chat message:', err);
     }
   },
 
   // Admin Actions
-  adminSendNotification: (studentId, message, _category) => {
+  adminSendNotification: (studentId, message, _type) => {
     if (studentId === 'all') {
       console.log(`Sending notification to all: ${message}`);
     } else {

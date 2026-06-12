@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore';
 import { MessageSquare, X, Send, Bot } from 'lucide-react';
 
 export const AIWidget: React.FC = () => {
-  const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory } = useStore();
+  const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory, fetchNotifications } = useStore();
   const [isOpen, setIsOpen] = useState(false);
   const [inputMsg, setInputMsg] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -41,11 +41,13 @@ export const AIWidget: React.FC = () => {
     return 'Low Risk';
   };
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputMsg.trim()) return;
-    sendChatMessage(inputMsg.trim());
+    const text = inputMsg.trim();
     setInputMsg('');
+    await sendChatMessage(text);
+    fetchNotifications();
   };
 
   return (

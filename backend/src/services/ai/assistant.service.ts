@@ -5,6 +5,7 @@ import type { IAIMessage } from "../../models/AIConversation.js";
 import type { IStudent } from "../../models/Student.js";
 import type { IAssessment } from "../../models/Assessment.js";
 import { ConversationRole } from "../../types/common.types.js";
+import { NotificationService } from "../notification.service.js";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.1-8b-instant";
@@ -130,6 +131,18 @@ export const generateAIResponse = async (
   conversationMessages: IAIMessage[],
   userMessage: string,
 ) => {
+  // Trigger AI alert if message contains stress patterns
+  try {
+    const triggerPatterns = ["stressed", "burnout", "overwhelmed", "hopeless", "exhausted", "can't cope", "giving up"];
+    const messageLower = userMessage.toLowerCase();
+    const hasTrigger = triggerPatterns.some((pattern) => messageLower.includes(pattern));
+    if (hasTrigger) {
+      await NotificationService.createAIAlert(userId);
+    }
+  } catch (error) {
+    console.error("[AI Assistant] Error triggering AI wellness alert:", error);
+  }
+
   if (!GROQ_API_KEY) {
     throw new Error("GROQ_API_KEY is not configured.");
   }
