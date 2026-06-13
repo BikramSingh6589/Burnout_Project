@@ -74,3 +74,44 @@ export const sendWeeklyReminderEmail = async (to: string, name: string): Promise
     `,
   });
 };
+
+const formatContactSubmittedAt = (date: Date): string => {
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+  return `${day}/${month}/${year} ${time}`;
+};
+
+export type ContactFormPayload = {
+  name: string;
+  email: string;
+  message: string;
+};
+
+export const sendContactFormEmail = async (payload: ContactFormPayload): Promise<void> => {
+  const submittedAt = formatContactSubmittedAt(new Date());
+  const text = [
+    `Name: ${payload.name}`,
+    "",
+    `Email: ${payload.email}`,
+    "",
+    "Message:",
+    payload.message,
+    "",
+    "Submitted At:",
+    submittedAt,
+  ].join("\n");
+
+  await getTransporter().sendMail({
+    from: fromAddress(),
+    to: "burnoutguard123@gmail.com",
+    replyTo: payload.email,
+    subject: "New Contact Form Submission",
+    text,
+  });
+};
