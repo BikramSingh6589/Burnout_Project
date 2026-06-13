@@ -1,13 +1,71 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Customized } from 'recharts';
 import { Sparkles, Calendar, Moon, Compass, ArrowRight, Loader2 } from 'lucide-react';
+
+type BehaviorChartEntry = {
+  id: string;
+  index: number;
+  dateLabel: string;
+  hoverTimeLabel: string;
+  sleepHours: number;
+  screenTime: number;
+  timestamp: number;
+};
+
+type BarHoverTimeLabelProps = {
+  hoveredIndex: number | null;
+  data: BehaviorChartEntry[];
+  valueKey: 'sleepHours' | 'screenTime';
+  xAxisMap?: Record<string, { scale: (v: string) => number; bandSize?: number }>;
+  yAxisMap?: Record<string, { scale: (v: number) => number }>;
+  offset?: { left: number; top: number };
+};
+
+const BarHoverTimeLabel: React.FC<BarHoverTimeLabelProps> = ({
+  hoveredIndex,
+  data,
+  valueKey,
+  xAxisMap,
+  yAxisMap,
+  offset,
+}) => {
+  if (hoveredIndex === null || !xAxisMap || !yAxisMap || !offset) return null;
+
+  const entry = data[hoveredIndex];
+  if (!entry) return null;
+
+  const xAxis = xAxisMap[Object.keys(xAxisMap)[0]];
+  const yAxis = yAxisMap[Object.keys(yAxisMap)[0]];
+  if (!xAxis?.scale || !yAxis?.scale) return null;
+
+  const bandWidth = xAxis.bandSize ?? 0;
+  const x = xAxis.scale(String(hoveredIndex)) + bandWidth / 2;
+  const y = yAxis.scale(entry[valueKey]) - 6;
+
+  return (
+    <g pointerEvents="none">
+      <text
+        x={x + offset.left}
+        y={y + offset.top}
+        textAnchor="middle"
+        fill="#CBD5E1"
+        fontSize={11}
+        fontWeight={500}
+      >
+        {entry.hoverTimeLabel}
+      </text>
+    </g>
+  );
+};
 
 export const Dashboard: React.FC = () => {
   const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk, analyticsLoading, trackerHistoryLoading, burnoutRiskLoading, recommendationsLoading } = useStore();
   const navigate = useNavigate();
+  const [sleepHoveredIndex, setSleepHoveredIndex] = useState<number | null>(null);
+  const [screenHoveredIndex, setScreenHoveredIndex] = useState<number | null>(null);
 
   useEffect(() => {
     fetchTrackerHistory();
@@ -101,24 +159,24 @@ export const Dashboard: React.FC = () => {
     };
   });
 
-  // Aggregate sleep/screen time by day so X-axis shows one label per calendar day
-  const dailyBehaviorData = (() => {
-    const byDate = new Map<string, (typeof trackerHistory)[number]>();
-    trackerHistory.forEach(h => {
-      const existing = byDate.get(h.date);
-      if (!existing || h.timestamp > existing.timestamp) {
-        byDate.set(h.date, h);
-      }
-    });
-
-    return Array.from(byDate.values())
+  const behaviorChartData = useMemo<BehaviorChartEntry[]>(() => (
+    [...trackerHistory]
       .sort((a, b) => a.timestamp - b.timestamp)
-      .slice(-7)
-      .map(h => ({
-        ...h,
-        dateLabel: new Date(`${h.date}T12:00:00`).toLocaleDateString([], { month: 'short', day: 'numeric' }),
-      }));
-  })();
+      .map((h, index) => {
+        const dt = new Date(h.timestamp);
+        const day = String(dt.getDate()).padStart(2, '0');
+        const month = String(dt.getMonth() + 1).padStart(2, '0');
+        return {
+          id: h.id,
+          index,
+          dateLabel: `${day}/${month}`,
+          hoverTimeLabel: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          sleepHours: h.sleepHours,
+          screenTime: h.screenTime,
+          timestamp: h.timestamp,
+        };
+      })
+  ), [trackerHistory]);
 
   return (
     <DashboardLayout>
@@ -354,19 +412,47 @@ export const Dashboard: React.FC = () => {
                 <Moon className="h-4 w-4 mr-2 text-indigo-500" />
                 <span>Sleep Tracker</span>
               </h3>
-              <span className="text-xs text-text-secondary font-medium">Last 7 days</span>
+              <span className="text-xs text-text-secondary font-medium">Hours slept</span>
             </div>
             {isLoading ? (
               <GraphLoading />
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyBehaviorData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <BarChart data={behaviorChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" interval={0} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => behaviorChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
+                    />
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
-                    <Bar dataKey="sleepHours" fill="#5D5CFF" radius={[4, 4, 0, 0]} name="Sleep Hours" activeBar={false} key={(entry) => entry.id} />
+                    <Customized
+                      component={(props: BarHoverTimeLabelProps) => (
+                        <BarHoverTimeLabel
+                          {...props}
+                          hoveredIndex={sleepHoveredIndex}
+                          data={behaviorChartData}
+                          valueKey="sleepHours"
+                        />
+                      )}
+                    />
+                    <Bar
+                      dataKey="sleepHours"
+                      fill="#5D5CFF"
+                      radius={[4, 4, 0, 0]}
+                      name="Sleep Hours"
+                      activeBar={false}
+                      onMouseEnter={(_, index) => setSleepHoveredIndex(index)}
+                      onMouseLeave={() => setSleepHoveredIndex(null)}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -380,19 +466,47 @@ export const Dashboard: React.FC = () => {
                 <Compass className="h-4 w-4 mr-2 text-purple-500" />
                 <span>Screen Time Exposure</span>
               </h3>
-              <span className="text-xs text-text-secondary font-medium">Last 7 days</span>
+              <span className="text-xs text-text-secondary font-medium">Daily exposure</span>
             </div>
             {isLoading ? (
               <GraphLoading />
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={dailyBehaviorData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <BarChart data={behaviorChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" interval={0} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => behaviorChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
+                    />
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
-                    <Bar dataKey="screenTime" fill="#8127CF" radius={[4, 4, 0, 0]} name="Screen Hours" activeBar={false} key={(entry) => entry.id} />
+                    <Customized
+                      component={(props: BarHoverTimeLabelProps) => (
+                        <BarHoverTimeLabel
+                          {...props}
+                          hoveredIndex={screenHoveredIndex}
+                          data={behaviorChartData}
+                          valueKey="screenTime"
+                        />
+                      )}
+                    />
+                    <Bar
+                      dataKey="screenTime"
+                      fill="#8127CF"
+                      radius={[4, 4, 0, 0]}
+                      name="Screen Hours"
+                      activeBar={false}
+                      onMouseEnter={(_, index) => setScreenHoveredIndex(index)}
+                      onMouseLeave={() => setScreenHoveredIndex(null)}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
