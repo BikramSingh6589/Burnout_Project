@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import { useStore } from '../store/useStore';
 import { MessageSquare, X, Send, Bot, Trash2 } from 'lucide-react';
 
@@ -117,7 +120,26 @@ export const AIWidget: React.FC = () => {
                       : 'bg-surface-elevated text-text-primary border border-border/50 rounded-bl-sm'
                   }`}
                 >
-                  <p className="whitespace-pre-line tracking-tight">{msg.text}</p>
+                  <div className="text-[13px] leading-relaxed tracking-tight break-words">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeSanitize]}
+                      components={{
+                        code({ inline, className, children, ...props }: any) {
+                          return (
+                            <code
+                              className={`${className ?? ''} ${inline ? 'px-1 py-[0.15rem] rounded bg-surface border border-border/50 text-[12px] font-mono' : 'block rounded-xl bg-surface-elevated border border-border/50 p-3 text-[12px] font-mono overflow-x-auto'}`}
+                              {...props}
+                            >
+                              {children}
+                            </code>
+                          );
+                        },
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
+                  </div>
                   <span
                     className={`block text-[9px] text-right mt-2 ${
                       msg.sender === 'user' ? 'text-white/70' : 'text-text-secondary'
