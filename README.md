@@ -71,3 +71,33 @@ export default defineConfig([
   },
 ])
 ```
+
+## Backend configuration (EMAIL)
+
+The backend sends emails using `nodemailer`. To enable sending, create a `.env` in the `backend/` folder with the following variables (you can copy `backend/.env.example`):
+
+```
+MONGO_URI=mongodb://localhost:27017/burnout_db
+PORT=5001
+EMAIL_USER=your-email@example.com
+EMAIL_PASSWORD=your-email-password
+TEST_EMAIL_RECIPIENT=admin@example.com
+```
+
+- For Gmail accounts, use an App Password or enable an SMTP relay — do not use your regular account password in production.
+- `TEST_EMAIL_RECIPIENT` is optional; if omitted the test script will send to `EMAIL_USER`.
+
+Run a local test send from the project root:
+
+```bash
+cd backend
+# copy example and edit
+cp .env.example .env
+# edit .env to add EMAIL_USER and EMAIL_PASSWORD
+
+# send a test email (requires tsx or `npm run dev` environment)
+npx tsx scripts/test-email.ts
+```
+
+If the test fails, check the error output and verify credentials and network connectivity. For production deployments, configure a secure SMTP provider and rotate credentials regularly.
+
