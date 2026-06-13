@@ -54,7 +54,7 @@ export const AIWidget: React.FC = () => {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Expanded Chat Window */}
       {isOpen && (
-        <div className="w-[360px] h-[550px] bg-surface backdrop-blur-xl rounded-2xl border border-border/60 shadow-2xl flex flex-col overflow-hidden mb-5 animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="w-[440px] h-[550px] bg-surface backdrop-blur-xl rounded-2xl border border-border/60 shadow-2xl flex flex-col overflow-hidden mb-5 animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
           <div className="bg-background-secondary/80 backdrop-blur-sm p-4 flex justify-between items-center border-b border-border/60">
             <div className="flex items-center space-x-3">

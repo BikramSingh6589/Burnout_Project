@@ -7,6 +7,7 @@ import {
   approveRecommendation,
   editAndApproveRecommendation,
   rejectRecommendation,
+  deleteRecommendation,
 } from "../services/recommendation/recommendation.service.js";
 import type { RecommendationWithFeedback } from "../services/recommendation/recommendation.types.js";
 
@@ -51,7 +52,7 @@ export const getRecommendations = async (
 export const getRecommendationHistoryHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   try {
     if (!req.user) {
@@ -94,7 +95,7 @@ export const submitRecommendationFeedback = async (
       id,
       status ?? "none",
       rating ?? 5,
-      feedbackText ?? "",
+      feedbackText ?? ""
     );
 
     res.status(200).json({
@@ -116,12 +117,10 @@ export const submitRecommendationFeedback = async (
   }
 };
 
-// ─── Admin / Counselor Approval Queue ────────────────────────────────────────
-
 export const getPendingAiRecommendationsHandler = async (
   _req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const pending = await getPendingAiRecommendations();
@@ -134,7 +133,7 @@ export const getPendingAiRecommendationsHandler = async (
 export const approveRecommendationHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -156,7 +155,7 @@ export const approveRecommendationHandler = async (
 export const editAndApproveRecommendationHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -179,7 +178,7 @@ export const editAndApproveRecommendationHandler = async (
 export const rejectRecommendationHandler = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const { id } = req.params;
@@ -194,6 +193,44 @@ export const rejectRecommendationHandler = async (
       res.status(400).json({ success: false, message: error.message });
       return;
     }
+    next(error);
+  }
+};
+
+export const deleteRecommendationHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Unauthorized access" });
+      return;
+    }
+
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).json({ success: false, message: "Missing recommendation ID" });
+      return;
+    }
+
+    await deleteRecommendation(req.user.userId.toString(), id);
+
+    res.status(200).json({
+      success: true,
+      message: "Recommendation deleted",
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "Invalid identifier") {
+      res.status(400).json({ success: false, message: error.message });
+      return;
+    }
+
+    if (error instanceof Error && error.message === "Recommendation not found") {
+      res.status(404).json({ success: false, message: error.message });
+      return;
+    }
+
     next(error);
   }
 };

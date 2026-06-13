@@ -3,10 +3,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { Sparkles, Calendar, Moon, Compass, ArrowRight } from 'lucide-react';
+import { Sparkles, Calendar, Moon, Compass, ArrowRight, Loader2 } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
-  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk } = useStore();
+  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk, analyticsLoading, trackerHistoryLoading, burnoutRiskLoading, recommendationsLoading } = useStore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +20,8 @@ export const Dashboard: React.FC = () => {
   // Guard checks handled in DashboardLayout, but let's read the latest values
   const latestTracker = trackerHistory.length > 0 ? trackerHistory[trackerHistory.length - 1] : null;
   const currentScore = latestTracker ? latestTracker.burnoutScore : 0;
+
+  const isLoading = trackerHistoryLoading || analyticsLoading || burnoutRiskLoading || recommendationsLoading;
 
   const getRiskLabel = (score: number) => {
     if (score >= 70) return 'High Risk';
@@ -44,6 +46,15 @@ export const Dashboard: React.FC = () => {
     if (riskLevel === 'moderate') return 'Moderate Risk';
     return 'Low Risk';
   };
+
+  const GraphLoading = () => (
+    <div className="flex items-center justify-center h-64 bg-surface-elevated/50 rounded-2xl border border-border">
+      <div className="flex flex-col items-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+        <p className="text-xs text-text-secondary">Loading...</p>
+      </div>
+    </div>
+  );
 
   // Calculations
   const averageSleep = trackerHistory.length > 0 
@@ -234,35 +245,39 @@ export const Dashboard: React.FC = () => {
               <h3 className="text-base font-semibold tracking-tight text-text-primary">Burnout score tracker</h3>
               <span className="text-xs text-text-secondary font-medium">Last 7 Sessions</span>
             </div>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                  <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', padding: '12px' }} 
-                    cursor={{ stroke: '#4F46E5', strokeWidth: 1, strokeDasharray: '4 4' }} 
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="burnoutScore"
-                    stroke="var(--color-primary, #4F46E5)"
-                    strokeWidth={3}
-                    fillOpacity={1}
-                    fill="url(#colorBurnout)"
-                    activeDot={{ r: 5, strokeWidth: 0 }}
-                    name="Burnout Score"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {isLoading ? (
+              <GraphLoading />
+            ) : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25}/>
+                        <stop offset="95%" stopColor="#4F46E5" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', padding: '12px' }} 
+                      cursor={{ stroke: '#4F46E5', strokeWidth: 1, strokeDasharray: '4 4' }} 
+                    />
+                    <Area 
+                      type="monotone"
+                      dataKey="burnoutScore"
+                      stroke="var(--color-primary, #4F46E5)"
+                      strokeWidth={3}
+                      fillOpacity={1}
+                      fill="url(#colorBurnout)"
+                      activeDot={false}
+                      name="Burnout Score"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           {/* Right: Recommendation Analytics Pie Chart */}
@@ -284,6 +299,7 @@ export const Dashboard: React.FC = () => {
                     paddingAngle={4}
                     dataKey="value"
                     stroke="none"
+                    activeIndex={undefined}
                   >
                     {displayPieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -321,17 +337,21 @@ export const Dashboard: React.FC = () => {
               </h3>
               <span className="text-xs text-text-secondary font-medium">Hours slept</span>
             </div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                  <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
-                  <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
-                  <Bar dataKey="sleepHours" fill="#5D5CFF" radius={[4, 4, 0, 0]} name="Sleep Hours" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {isLoading ? (
+              <GraphLoading />
+            ) : (
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
+                    <Bar dataKey="sleepHours" fill="#5D5CFF" radius={[4, 4, 0, 0]} name="Sleep Hours" activeBar={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           {/* Screen Time Trend */}
@@ -343,17 +363,21 @@ export const Dashboard: React.FC = () => {
               </h3>
               <span className="text-xs text-text-secondary font-medium">Daily exposure</span>
             </div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                  <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
-                  <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
-                  <Bar dataKey="screenTime" fill="#8127CF" radius={[4, 4, 0, 0]} name="Screen Hours" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {isLoading ? (
+              <GraphLoading />
+            ) : (
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
+                    <Bar dataKey="screenTime" fill="#8127CF" radius={[4, 4, 0, 0]} name="Screen Hours" activeBar={false} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
         </div>
 

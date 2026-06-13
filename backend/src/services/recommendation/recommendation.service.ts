@@ -153,6 +153,7 @@ const getRecommendationCollectionQuery = (userId: string, assessmentId?: Types.O
   const query: Record<string, unknown> = {
     userId: toObjectId(userId),
     approved: approvedOnly ? true : { $in: [true, false] },
+    deletedAt: { $exists: false },
   };
 
   if (assessmentId) {
@@ -250,7 +251,6 @@ export const generateAndStoreRecommendations = async (
             priority: recommendation.priority,
             message: recommendation.message,
             source: recommendation.source ?? "rules",
-            // AI recommendations require counselor approval; rules-based are auto-approved
             approved: recommendation.source === "AI" ? false : true,
           },
           $setOnInsert: {
@@ -266,15 +266,18 @@ export const generateAndStoreRecommendations = async (
     { ordered: false },
   );
 
-  const recommendations = await Recommendation.find({
-    userId: toObjectId(userId),
-    assessmentId: toObjectId(assessmentId),
-  }).sort({ priority: 1, createdAt: -1 });
+  const recommendations = await Recommendation.find(getRecommendationCollectionQuery(userId, toObjectId(assessmentId)))
+    .sort({ priority: 1, createdAt: -1 });
 
-  // Trigger recommendation notification
+  const approvedRecommendations = recommendations;
+  console.log('[generateAndStoreRecommendations] Approved recommendations count:', approvedRecommendations.length);
+
   try {
-    if (recommendations.length > 0) {
+    if (approvedRecommendations.length > 0) {
+      console.log('[generateAndStoreRecommendations] Calling createRecommendationNotification');
       await NotificationService.createRecommendationNotification(userId);
+    } else {
+      console.log('[generateAndStoreRecommendations] No approved recommendations, skipping notification');
     }
   } catch (error) {
     console.error("[Recommendation Service] Error creating recommendation notification:", error);
@@ -425,8 +428,6 @@ export const recordRecommendationFeedback = async (
   );
 };
 
-// ─── Admin / Counselor Queue Functions ───────────────────────────────────────
-
 export interface PendingAiRecommendation {
   id: string;
   userId: string;
@@ -527,5 +528,27 @@ export const rejectRecommendation = async (recommendationId: string): Promise<vo
 
   if (!result) {
     throw new Error("Recommendation not found or already approved");
+  }
+};
+
+export const deleteRecommendation = async (userId: string, recommendationId: string): Promise<void> => {
+  if (!isObjectId(userId) || !isObjectId(recommendationId)) {
+    throw new Error("Invalid identifier");
+  }
+
+  const recommendation = await Recommendation.findOneAndUpdate(
+    {
+      _id: toObjectId(recommendationId),
+      userId: toObjectId(userId),
+      deletedAt: { $exists: false },
+    },
+    {
+      $set: { deletedAt: new Date() },
+    },
+    { new: true }
+  );
+
+  if (!recommendation) {
+    throw new Error("Recommendation not found");
   }
 };

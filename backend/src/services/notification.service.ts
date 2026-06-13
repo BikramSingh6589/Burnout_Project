@@ -1,5 +1,6 @@
 import { Types } from "mongoose";
 import { Notification, type INotification } from "../models/Notification.js";
+import { Recommendation } from "../models/Recommendation.js";
 import { NotificationType, NotificationChannel, NotificationStatus } from "../types/common.types.js";
 import { AppError } from "../middlewares/error.middleware.js";
 
@@ -94,8 +95,28 @@ export const createRiskAlert = async (
 export const createRecommendationNotification = async (
   studentId: string | Types.ObjectId,
   metadata?: Record<string, unknown>
-): Promise<INotification> => {
-  return await createNotification({
+): Promise<INotification | null> => {
+  // Check if there are any approved recommendations first
+  const hasApprovedRecommendations = await Recommendation.countDocuments({
+    userId: new Types.ObjectId(studentId),
+    approved: true,
+  });
+
+  console.log('[createRecommendationNotification] Approved recommendations count:', hasApprovedRecommendations);
+
+  if (hasApprovedRecommendations === 0) {
+    console.log('[createRecommendationNotification] No approved recommendations found, returning null');
+    return null;
+  }
+
+  // Prevent duplicates within 24 hours (temporarily commented out for testing)
+  // const exists = await notificationAlreadyExistsToday(studentId, NotificationType.Recommendation);
+  // if (exists) {
+  //   console.log('[createRecommendationNotification] Recommendation notification already sent today');
+  //   return null;
+  // }
+
+  const notification = await createNotification({
     student: studentId,
     type: NotificationType.Recommendation,
     title: "Recommendation Update",
@@ -104,6 +125,10 @@ export const createRecommendationNotification = async (
     status: NotificationStatus.Sent,
     metadata,
   });
+
+  console.log('[createRecommendationNotification] Created notification:', notification);
+
+  return notification;
 };
 
 export const createAIAlert = async (

@@ -5,9 +5,9 @@ import { WeeklyAssessment } from "../models/WeeklyAssessment.js";
 import { NotificationService } from "../services/notification.service.js";
 import { AccountStatus } from "../types/common.types.js";
 import { logger } from "../utils/logger.js";
+import { sendWeeklyReminderEmail } from "../utils/email.js";
 
 export const initializeReminderJob = (): void => {
-  // Sunday at 9:00 AM: 0 9 * * 0
   cron.schedule("0 9 * * 0", async () => {
     logger.info("[Reminder Job] Starting weekly assessment reminder job");
     try {
@@ -15,7 +15,6 @@ export const initializeReminderJob = (): void => {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
       for (const student of activeStudents) {
-        // Check if student completed an assessment in the last 7 days
         const recentAssessment = await Assessment.findOne({
           student: student._id,
           status: "completed",
@@ -35,6 +34,13 @@ export const initializeReminderJob = (): void => {
 
         await NotificationService.createAssessmentReminder(student._id);
         logger.info(`[Reminder Job] Sent assessment reminder to ${student.email}`);
+
+        try {
+          await sendWeeklyReminderEmail(student.email, student.name);
+          logger.info(`[Reminder Job] Sent weekly reminder email to ${student.email}`);
+        } catch (emailError) {
+          logger.error(`[Reminder Job] Failed to send email to ${student.email}:`, emailError);
+        }
       }
       logger.info("[Reminder Job] Completed weekly assessment reminder job");
     } catch (error) {

@@ -229,7 +229,7 @@ export const Navbar: React.FC = () => {
                                 onClick={() => {
                                   markNotificationRead(n._id);
                                   if (n.type === 'assessment_reminder') navigate('/assessment');
-                                  if (n.type === 'recommendation') navigate('/dashboard');
+                                  if (n.type === 'recommendation') navigate('/dashboard/recommendations');
                                   setNotifDropdownOpen(false);
                                 }}
                                 className={`px-5 py-4 hover:bg-slate-50 dark:hover:bg-[#273449] cursor-pointer border-b border-slate-100/50 dark:border-[#334155] last:border-0 text-sm transition-colors ${
