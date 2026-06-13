@@ -3,7 +3,7 @@ import { Student } from "../models/Student.js";
 import { Assessment } from "../models/Assessment.js";
 import { WeeklyAssessment } from "../models/WeeklyAssessment.js";
 import { NotificationService } from "../services/notification.service.js";
-import { AccountStatus } from "../types/common.types.js";
+import { AccountStatus, AssessmentStatus } from "../types/common.types.js";
 import { logger } from "../utils/logger.js";
 import { sendWeeklyReminderEmail } from "../utils/email.js";
 
@@ -17,13 +17,13 @@ export const initializeReminderJob = (): void => {
       for (const student of activeStudents) {
         const recentAssessment = await Assessment.findOne({
           student: student._id,
-          status: "completed",
+          status: AssessmentStatus.Completed,
           completedAt: { $gte: sevenDaysAgo },
         }).lean();
 
         const recentWeeklyAssessment = await WeeklyAssessment.findOne({
           student: student._id,
-          status: "completed",
+          status: AssessmentStatus.Completed,
           completedAt: { $gte: sevenDaysAgo },
         }).lean();
 
@@ -36,7 +36,7 @@ export const initializeReminderJob = (): void => {
         logger.info(`[Reminder Job] Sent assessment reminder to ${student.email}`);
 
         try {
-          await sendWeeklyReminderEmail(student.email, student.name);
+          await sendWeeklyReminderEmail(student.email, student.fullName);
           logger.info(`[Reminder Job] Sent weekly reminder email to ${student.email}`);
         } catch (emailError) {
           logger.error(`[Reminder Job] Failed to send email to ${student.email}:`, emailError);
