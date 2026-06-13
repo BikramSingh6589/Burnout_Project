@@ -4,6 +4,8 @@ import { Admin } from "../../models/Admin.js";
 import { Student } from "../../models/Student.js";
 import { BurnoutPrediction } from "../../models/BurnoutPrediction.js";
 import { Assessment } from "../../models/Assessment.js";
+import { WeeklyAssessment } from "../../models/WeeklyAssessment.js";
+import { Journal } from "../../models/Journal.js";
 import { config } from "../../config/env.js";
 import { Types } from "mongoose";
 
@@ -27,6 +29,7 @@ export interface DashboardMetrics {
   mediumRiskStudents: number;
   highRiskStudents: number;
   averageBurnoutScore: number;
+  weeklyActiveStudents?: number;
 }
 
 export interface StudentInfo {
@@ -97,6 +100,13 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
 
   const averageBurnoutScore =
     allPredictions.length > 0 ? Math.round(totalScore / allPredictions.length) : 0;
+  // Compute weekly active students (students with at least one assessment or weekly assessment in last 7 days)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const recentAssessmentIds = await Assessment.distinct('student', { createdAt: { $gte: sevenDaysAgo } });
+  const recentWeeklyIds = await WeeklyAssessment.distinct('student', { createdAt: { $gte: sevenDaysAgo } });
+  const uniqueIds = new Set<string>([...recentAssessmentIds.map(String), ...recentWeeklyIds.map(String)]);
 
   return {
     totalStudents,
@@ -105,6 +115,7 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
     mediumRiskStudents: riskCounts.MEDIUM,
     highRiskStudents: riskCounts.HIGH,
     averageBurnoutScore,
+    weeklyActiveStudents: uniqueIds.size,
   };
 };
 
@@ -127,6 +138,12 @@ export const getAllStudents = async (
     .sort({ createdAt: -1 })
     .lean();
 
+  const weeklyAssessments = await WeeklyAssessment.find({ student: { $in: studentIds } })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const journals = await Journal.find({ studentId: { $in: studentIds } }).lean();
+
   const predictionMap = new Map();
   predictions.forEach((p: any) => {
     if (!predictionMap.has(p.studentId.toString())) {
@@ -141,14 +158,69 @@ export const getAllStudents = async (
     }
   });
 
+  const weeklyMap = new Map();
+  weeklyAssessments.forEach((w: any) => {
+    const key = w.student?.toString ? w.student.toString() : (w.studentId ? String(w.studentId) : null);
+    if (!key) return;
+    if (!weeklyMap.has(key)) weeklyMap.set(key, []);
+    weeklyMap.get(key).push(w);
+  });
+
+  const journalMap = new Map();
+  journals.forEach((j: any) => {
+    const key = j.studentId.toString();
+    if (!journalMap.has(key)) journalMap.set(key, []);
+    journalMap.get(key).push(j);
+  });
+
   const studentInfos: StudentInfo[] = students.map((student: any) => {
     const prediction = predictionMap.get(student._id.toString());
     const assessment = assessmentMap.get(student._id.toString());
     const score = prediction?.predictedScore || 0;
 
+    // compute averages from weekly assessments + latest assessment if present
+    const weeklyForStudent = weeklyMap.get(student._id.toString()) || [];
+    const sleepValues: number[] = [];
+    const stressValues: number[] = [];
+    const moodValues: number[] = [];
+
+    if (assessment) {
+      if (typeof assessment.sleepHours === 'number') sleepValues.push(assessment.sleepHours);
+      if (typeof assessment.stressLevel === 'number') stressValues.push(assessment.stressLevel);
+      if (typeof assessment.moodScore === 'number') moodValues.push(assessment.moodScore);
+    }
+
+    weeklyForStudent.forEach((w: any) => {
+      if (typeof w.sleepHours === 'number') sleepValues.push(w.sleepHours);
+      if (typeof w.sleepHoursAverage === 'number') sleepValues.push(w.sleepHoursAverage);
+      if (typeof w.stressScore === 'number') stressValues.push(Math.round(w.stressScore / 10));
+      if (typeof w.moodScore === 'number') moodValues.push(w.moodScore);
+      if (typeof w.stressLevel === 'number') stressValues.push(w.stressLevel);
+    });
+
+    const sleepAvg = sleepValues.length > 0 ? Math.round((sleepValues.reduce((a, b) => a + b, 0) / sleepValues.length) * 10) / 10 : 0;
+    const stressAvg = stressValues.length > 0 ? Math.round((stressValues.reduce((a, b) => a + b, 0) / stressValues.length) * 10) / 10 : 0;
+
+    // simple mood trend calculation
+    const moodAvg = moodValues.length > 0 ? moodValues.reduce((a, b) => a + b, 0) / moodValues.length : 0;
+    let moodTrend: 'Positive' | 'Neutral' | 'Negative' = 'Neutral';
+    if (moodAvg >= 60) moodTrend = 'Positive';
+    else if (moodAvg <= 40) moodTrend = 'Negative';
+
+    // journal sentiment summary
+    const journalsForStudent = journalMap.get(student._id.toString()) || [];
+    const totalJ = journalsForStudent.length;
+    const negativeCount = journalsForStudent.filter((j: any) => j.sentiment === 'negative').length;
+    const positiveCount = journalsForStudent.filter((j: any) => j.sentiment === 'positive').length;
+    let sentimentSummary = 'Neutral';
+    if (negativeCount > positiveCount && negativeCount / Math.max(1, totalJ) >= 0.5) sentimentSummary = 'Mostly Negative';
+    else if (positiveCount > negativeCount && positiveCount / Math.max(1, totalJ) >= 0.5) sentimentSummary = 'Mostly Positive';
+
     let riskLevel: "LOW" | "MEDIUM" | "HIGH" = "LOW";
     if (score >= 70) riskLevel = "HIGH";
     else if (score >= 40) riskLevel = "MEDIUM";
+
+    const lastAssessmentDate = assessment?.createdAt || (weeklyForStudent[0] && weeklyForStudent[0].createdAt) || null;
 
     return {
       id: student._id.toString(),
@@ -156,7 +228,10 @@ export const getAllStudents = async (
       email: student.email,
       burnoutScore: Math.round(score),
       riskLevel,
-      lastAssessmentDate: assessment?.createdAt,
+      lastAssessmentDate,
+      sleepHoursAvg: sleepAvg,
+      stressLevelAvg: stressAvg,
+      journalSentimentSummary: sentimentSummary,
     };
   });
 

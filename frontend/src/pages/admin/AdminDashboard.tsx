@@ -19,6 +19,9 @@ export const AdminDashboard: React.FC = () => {
     fetchAdminDashboardMetrics,
     fetchAdminSettings,
     sendWellnessEmail,
+    fetchAdminStudentDetail,
+    adminStudentDetail,
+    adminStudentLoading,
   } = useStore();
 
   const navigate = useNavigate();
@@ -42,6 +45,12 @@ export const AdminDashboard: React.FC = () => {
   const [emailForm, setEmailForm] = useState({ subject: '', message: '' });
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [bulkModal, setBulkModal] = useState<{
+    type: 'high' | 'moderate' | 'low' | null;
+    subject: string;
+    message: string;
+  } | null>(null);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -94,7 +103,7 @@ export const AdminDashboard: React.FC = () => {
   const highRiskCount = adminDashboardMetrics?.highRiskStudents ?? adminStudents.filter(s => s.burnoutScore >= adminSettings.highRiskThreshold).length;
   const lowRiskCount = adminDashboardMetrics?.lowRiskStudents ?? adminStudents.filter(s => s.burnoutScore < adminSettings.moderateRiskThreshold).length;
   const moderateRiskCount = adminDashboardMetrics?.mediumRiskStudents ?? adminStudents.filter(s => s.burnoutScore >= adminSettings.moderateRiskThreshold && s.burnoutScore < adminSettings.highRiskThreshold).length;
-  const activeStudentsCount = Math.round(totalStudentsCount * 0.85); // Retain a simple engagement approximation
+  const activeStudentsCount = adminDashboardMetrics?.weeklyActiveStudents ?? Math.round(totalStudentsCount * 0.85);
   const riskBase = totalStudentsCount || 1;
   const highRiskStudents = adminHighRiskStudents.length > 0 ? adminHighRiskStudents : adminStudents.filter(s => s.burnoutScore >= adminSettings.highRiskThreshold);
 
@@ -103,6 +112,14 @@ export const AdminDashboard: React.FC = () => {
     s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Sort by risk priority (HIGH -> MODERATE -> LOW) and then by burnoutScore desc
+  const riskPriority = (r: string) => (r === 'High' ? 0 : r === 'Moderate' ? 1 : 2);
+  const sortedStudents = filteredStudents.slice().sort((a, b) => {
+    const pr = riskPriority(a.riskLevel) - riskPriority(b.riskLevel);
+    if (pr !== 0) return pr;
+    return b.burnoutScore - a.burnoutScore;
+  });
 
   const handleSendNotification = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,18 +191,6 @@ export const AdminDashboard: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveSection('high-risk')}
-            className={`w-full flex justify-start items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-              activeSection === 'high-risk'
-                ? 'bg-secondary text-white shadow-lg shadow-secondary/20'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[rgba(124,92,252,0.18)] dark:hover:text-[#9B84FF]'
-            }`}
-          >
-            <AlertTriangle className="h-5 w-5" />
-            <span>High Risk Center</span>
-          </button>
-
-          <button
             onClick={() => setActiveSection('notifications')}
             className={`w-full flex justify-start items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
               activeSection === 'notifications'
@@ -197,17 +202,7 @@ export const AdminDashboard: React.FC = () => {
             <span>Notification Center</span>
           </button>
 
-          <button
-            onClick={() => setActiveSection('settings')}
-            className={`w-full flex justify-start items-center space-x-3 px-4 py-3 rounded-lg transition-colors duration-200 ${
-              activeSection === 'settings'
-                ? 'bg-secondary text-white shadow-lg shadow-secondary/20'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-[rgba(124,92,252,0.18)] dark:hover:text-[#9B84FF]'
-            }`}
-          >
-            <Settings className="h-5 w-5" />
-            <span>System Settings</span>
-          </button>
+          {/* Sidebar reduced to Overview, Student Monitoring, Notification Center only */}
         </nav>
 
         {/* Footer Logout */}
@@ -336,7 +331,7 @@ export const AdminDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-semibold text-slate-700 dark:text-slate-200">
-                      {filteredStudents.map((student) => (
+                      {sortedStudents.map((student) => (
                         <tr key={student.id} className="transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-700/90">
                           <td className="p-4 font-bold text-slate-900 dark:text-slate-100">{student.name}</td>
                           <td className="p-4 text-[10px] text-slate-300">{student.email}</td>
@@ -352,12 +347,28 @@ export const AdminDashboard: React.FC = () => {
                           </td>
                           <td className="p-4 text-[10px] text-slate-500">{student.lastAssessmentDate || 'N/A'}</td>
                           <td className="p-4 text-center">
-                            <button
-                              onClick={() => setEmailModal({ studentId: student.id, studentName: student.name })}
-                              className="text-[10px] text-secondary border border-secondary/20 hover:bg-secondary/15 font-bold px-2 py-1 rounded transition-colors duration-200"
-                            >
-                              Send Email
-                            </button>
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={async () => {
+                                  setDetailModalOpen(true);
+                                  try {
+                                    await fetchAdminStudentDetail(student.id);
+                                  } catch (err) {
+                                    // ignore - store handles errors
+                                  }
+                                }}
+                                className="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 font-bold px-2 py-1 rounded transition-colors duration-200"
+                              >
+                                View Details
+                              </button>
+
+                              <button
+                                onClick={() => setEmailModal({ studentId: student.id, studentName: student.name })}
+                                className="text-[10px] text-secondary border border-secondary/20 hover:bg-secondary/15 font-bold px-2 py-1 rounded transition-colors duration-200"
+                              >
+                                Send Email
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -369,54 +380,7 @@ export const AdminDashboard: React.FC = () => {
           )}
 
           {/* Section 3: High Risk Center */}
-          {activeSection === 'high-risk' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">High-Risk Care Intervention Center</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {highRiskStudents.map((student) => (
-                  <div key={student.id} className="bg-white dark:bg-[#3f1f1f] p-6 rounded-2xl border border-error/20 dark:border-error/30 bg-error/5 dark:bg-error/10 shadow-sm space-y-4 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-error/5 dark:bg-error/10 rounded-full blur-xl"></div>
-                    
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-extrabold text-sm text-neutral-slate">{student.name}</h3>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{student.email}</p>
-                      </div>
-                      <span className="bg-error text-white font-bold text-[9px] px-2 py-0.5 rounded-full uppercase">
-                        Score {student.burnoutScore}
-                      </span>
-                    </div>
-
-                    <div className="space-y-3 text-[10px] text-slate-500">
-                      <div>
-                        <span className="block text-slate-400">Last assessment</span>
-                        <span className="font-semibold text-slate-900 dark:text-slate-100">{student.lastAssessmentDate || 'N/A'}</span>
-                      </div>
-                      <div>
-                        <span className="block text-slate-400">Risk classification</span>
-                        <span className="font-semibold text-error">{student.riskLevel}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center pt-2">
-                      <div className="text-[10px]">
-                        <span className="text-slate-400">Ready alert recipient:</span>
-                        <span className="font-bold text-slate-900 dark:text-slate-100">{student.email}</span>
-                      </div>
-                      
-                      <button
-                        onClick={() => triggerDirectAlert(student.id)}
-                        className="bg-error text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-error/95 transition-all shadow-sm"
-                      >
-                        Send Risk Alert
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* High Risk Center removed from UI per new admin spec */}
 
           {/* Section 5: Send notifications (Individual/Bulk) */}
           {activeSection === 'notifications' && (
@@ -491,97 +455,34 @@ export const AdminDashboard: React.FC = () => {
                     <span>Dispatch Alert Message</span>
                   </button>
                 </form>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <button
+                    onClick={() => setBulkModal({ type: 'high', subject: 'Wellness Support Reminder', message: `Your recent assessments indicate a high burnout risk.\n\nWe recommend reviewing your recommendations, improving sleep habits, reducing stress where possible, and engaging with the AI Assistant for personalized guidance.` })}
+                    className="w-full bg-error text-white py-2 rounded-lg text-xs font-bold hover:opacity-95"
+                  >
+                    Send High Risk Alert
+                  </button>
+
+                  <button
+                    onClick={() => setBulkModal({ type: 'moderate', subject: 'Wellness Progress Reminder', message: `Your burnout indicators are currently moderate.\n\nYou are making progress, but there is still room for improvement through better balance, stress management, and consistent healthy habits.` })}
+                    className="w-full bg-amber-500 text-white py-2 rounded-lg text-xs font-bold hover:opacity-95"
+                  >
+                    Send Moderate Reminder
+                  </button>
+
+                  <button
+                    onClick={() => setBulkModal({ type: 'low', subject: 'Congratulations on Your Progress', message: `Your recent assessments indicate a healthy wellness status.\n\nKeep maintaining your positive habits and continue monitoring your wellbeing through the platform.` })}
+                    className="w-full bg-success text-white py-2 rounded-lg text-xs font-bold hover:opacity-95"
+                  >
+                    Send Low Risk Appreciation
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           {/* Section 6: System Settings */}
-          {activeSection === 'settings' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Platform Configuration Settings</h2>
-              
-              <div className="max-w-xl bg-white/95 dark:bg-[#0B1120] p-6 rounded-3xl border border-slate-200 dark:border-[#334155] shadow-xl shadow-slate-950/20 space-y-4">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-[#F8FAFC] border-b border-slate-200 dark:border-[#334155] pb-2">Threshold Specifications</h3>
-                
-                {settingsSuccess && (
-                  <div className="bg-success/10 border border-success/20 text-success p-2.5 rounded-lg text-xs font-semibold text-center">
-                    Settings parameters saved.
-                  </div>
-                )}
-
-                <form onSubmit={handleUpdateSettings} className="space-y-5">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold">
-                      <label className="text-slate-700 dark:text-slate-300">High Risk Score Threshold</label>
-                      <span className="text-secondary">{adminSettings.highRiskThreshold}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="50"
-                      max="95"
-                      value={adminSettings.highRiskThreshold}
-                      onChange={(e) => adminUpdateSettings({ highRiskThreshold: Number(e.target.value) })}
-                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-secondary"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs font-bold">
-                      <label className="text-slate-700 dark:text-slate-300">Moderate Risk Score Threshold</label>
-                      <span className="text-secondary">{adminSettings.moderateRiskThreshold}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="25"
-                      max="49"
-                      value={adminSettings.moderateRiskThreshold}
-                      onChange={(e) => adminUpdateSettings({ moderateRiskThreshold: Number(e.target.value) })}
-                      className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-secondary"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300" htmlFor="assess-days-select">Mandatory Assessment Interval (Days)</label>
-                    <select
-                      id="assess-days-select"
-                      value={adminSettings.assessmentIntervalDays}
-                      onChange={(e) => adminUpdateSettings({ assessmentIntervalDays: Number(e.target.value) })}
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 placeholder:text-slate-500"
-                    >
-                      <option value={5}>Every 5 Days</option>
-                      <option value={7}>Every 7 Days (Standard)</option>
-                      <option value={10}>Every 10 Days</option>
-                      <option value={14}>Every 14 Days</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300" htmlFor="weekly-assessment-limit">
-                      Weekly Assessments Allowed Per Student
-                    </label>
-                    <input
-                      id="weekly-assessment-limit"
-                      type="number"
-                      min="1"
-                      max="20"
-                      value={adminSettings.maxWeeklyAssessmentsPerStudent}
-                      onChange={(e) => adminUpdateSettings({
-                        maxWeeklyAssessmentsPerStudent: Math.max(1, Number(e.target.value)),
-                      })}
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 placeholder:text-slate-500"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-secondary text-white font-semibold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 hover:bg-secondary/95 transition-all shadow-sm"
-                  >
-                    <span>Save Configurations</span>
-                  </button>
-                </form>
-              </div>
-            </div>
-          )}
+          {/* System Settings removed from admin UI per spec */}
 
         </div>
       </main>
@@ -643,6 +544,112 @@ export const AdminDashboard: React.FC = () => {
                   {emailLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   Send
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Student Detail Modal */}
+      {detailModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-2xl w-full shadow-xl">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Student Details</h3>
+              <button className="text-sm text-slate-500" onClick={() => { setDetailModalOpen(false); }}>
+                Close
+              </button>
+            </div>
+
+            {adminStudentLoading ? (
+              <p className="text-sm text-slate-500">Loading...</p>
+            ) : adminStudentDetail ? (
+              <div className="space-y-4 text-sm text-slate-700 dark:text-slate-200">
+                <div>
+                  <div className="text-xs text-slate-400">Profile</div>
+                  <div className="font-bold text-base">{adminStudentDetail.profile?.name}</div>
+                  <div className="text-[12px] text-slate-500">{adminStudentDetail.profile?.email}</div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-400">Burnout Analytics</div>
+                  <div className="font-bold">{adminStudentDetail.burnout?.currentScore ?? 'N/A'} / Risk: {adminStudentDetail.burnout?.riskLevel ?? 'N/A'}</div>
+                  <div className="text-[12px] text-slate-500">Last updated: {adminStudentDetail.burnout?.lastUpdated ? new Date(adminStudentDetail.burnout.lastUpdated).toLocaleString() : 'N/A'}</div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-400">Assessments</div>
+                  <ul className="list-disc pl-5 text-[13px]">
+                    {adminStudentDetail.assessments && adminStudentDetail.assessments.length > 0 ? (
+                      adminStudentDetail.assessments.map((a: any, idx: number) => (
+                        <li key={idx}>{a.type ?? 'Assessment'} — {a.score ?? a.predictedScore ?? 'N/A'} ({new Date(a.date || a.createdAt).toLocaleDateString()})</li>
+                      ))
+                    ) : (
+                      <li className="text-slate-500">No assessments found</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">No details available.</p>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Bulk Email Modal */}
+      {bulkModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{bulkModal.type === 'high' ? 'High Risk Alert' : bulkModal.type === 'moderate' ? 'Moderate Risk Reminder' : 'Low Risk Appreciation'}</h3>
+              <button className="text-sm text-slate-500" onClick={() => setBulkModal(null)}>Close</button>
+            </div>
+
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              if (!bulkModal) return;
+              const subject = bulkModal.subject;
+              const message = bulkModal.message;
+              setNotificationError(null);
+              try {
+                const targets = adminStudents.filter(s =>
+                  bulkModal.type === 'high' ? s.burnoutScore >= adminSettings.highRiskThreshold :
+                  bulkModal.type === 'moderate' ? (s.burnoutScore >= adminSettings.moderateRiskThreshold && s.burnoutScore < adminSettings.highRiskThreshold) :
+                  s.burnoutScore < adminSettings.moderateRiskThreshold
+                );
+
+                if (targets.length === 0) {
+                  setNotificationError('No target students for selected risk group');
+                  return;
+                }
+
+                for (const student of targets) {
+                  // send directly so subject can be included
+                  // eslint-disable-next-line no-await-in-loop
+                  await sendWellnessEmail(student.id, subject, message);
+                }
+
+                setNotifSuccess(true);
+                setTimeout(() => setNotifSuccess(false), 2500);
+                setBulkModal(null);
+              } catch (err) {
+                setNotificationError(err instanceof Error ? err.message : 'Failed sending bulk emails');
+              }
+            }} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Subject</label>
+                <input value={bulkModal.subject} onChange={(e) => setBulkModal({ ...bulkModal, subject: e.target.value })} className="w-full border rounded px-3 py-2" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Message</label>
+                <textarea rows={6} value={bulkModal.message} onChange={(e) => setBulkModal({ ...bulkModal, message: e.target.value })} className="w-full border rounded px-3 py-2" />
+              </div>
+
+              {notificationError && <div className="text-sm text-red-600">{notificationError}</div>}
+
+              <div className="flex gap-3">
+                <button type="button" onClick={() => setBulkModal(null)} className="flex-1 px-4 py-2 border rounded">Cancel</button>
+                <button type="submit" className="flex-1 px-4 py-2 bg-secondary text-white rounded">Send to Group</button>
               </div>
             </form>
           </div>

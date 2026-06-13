@@ -765,6 +765,9 @@ export const useStore = create<AppState>((set, get) => ({
           burnoutScore: number;
           riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
           lastAssessmentDate?: string;
+          sleepHoursAvg?: number;
+          stressLevelAvg?: number;
+          journalSentimentSummary?: string;
         }>;
       }>(`/admin/students?page=${page}&limit=${limit}`, { token });
       
@@ -778,9 +781,9 @@ export const useStore = create<AppState>((set, get) => ({
         burnoutScore: s.burnoutScore,
         riskLevel: s.riskLevel === 'HIGH' ? 'High' : s.riskLevel === 'MEDIUM' ? 'Moderate' : 'Low',
         lastAssessmentDate: s.lastAssessmentDate ? new Date(s.lastAssessmentDate).toISOString().split('T')[0] : '',
-        sleepHoursAvg: 0,
-        stressLevelAvg: 0,
-        journalSentimentSummary: '',
+        sleepHoursAvg: typeof s.sleepHoursAvg === 'number' ? s.sleepHoursAvg : 0,
+        stressLevelAvg: typeof s.stressLevelAvg === 'number' ? s.stressLevelAvg : 0,
+        journalSentimentSummary: s.journalSentimentSummary ?? '',
       }));
       
       set({ adminStudents: mapped });
