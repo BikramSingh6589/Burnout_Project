@@ -5,6 +5,17 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Customized } from 'recharts';
 import { Sparkles, Calendar, Moon, Compass, ArrowRight, Loader2 } from 'lucide-react';
 
+const formatDDMM = (timestamp: number) => {
+  const dt = new Date(timestamp);
+  return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const formatAssessmentTime = (timestamp: number) =>
+  new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const tooltipTimeLabel = (_: unknown, payload: readonly { payload?: { hoverTimeLabel?: string } }[]) =>
+  payload?.[0]?.payload?.hoverTimeLabel ?? '';
+
 type BehaviorChartEntry = {
   id: string;
   index: number;
@@ -145,37 +156,26 @@ export const Dashboard: React.FC = () => {
   ];
 
   // Format history for burnout trend (showing up to last 7 sessions)
-  const last7 = trackerHistory.slice(-7);
-  const dashDateGroups: Record<string, number> = {};
-  last7.forEach(h => { dashDateGroups[h.date] = (dashDateGroups[h.date] ?? 0) + 1; });
-  const chartData = last7.map(h => {
-    const sameDay = dashDateGroups[h.date] > 1;
-    const dt = new Date(h.timestamp);
-    return {
-      ...h,
-      dateLabel: sameDay
-        ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : dt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
-    };
-  });
+  const last7 = [...trackerHistory].sort((a, b) => a.timestamp - b.timestamp).slice(-7);
+  const chartData = last7.map((h, index) => ({
+    ...h,
+    index,
+    dateLabel: formatDDMM(h.timestamp),
+    hoverTimeLabel: formatAssessmentTime(h.timestamp),
+  }));
 
   const behaviorChartData = useMemo<BehaviorChartEntry[]>(() => (
     [...trackerHistory]
       .sort((a, b) => a.timestamp - b.timestamp)
-      .map((h, index) => {
-        const dt = new Date(h.timestamp);
-        const day = String(dt.getDate()).padStart(2, '0');
-        const month = String(dt.getMonth() + 1).padStart(2, '0');
-        return {
-          id: h.id,
-          index,
-          dateLabel: `${day}/${month}`,
-          hoverTimeLabel: dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          sleepHours: h.sleepHours,
-          screenTime: h.screenTime,
-          timestamp: h.timestamp,
-        };
-      })
+      .map((h, index) => ({
+        id: h.id,
+        index,
+        dateLabel: formatDDMM(h.timestamp),
+        hoverTimeLabel: formatAssessmentTime(h.timestamp),
+        sleepHours: h.sleepHours,
+        screenTime: h.screenTime,
+        timestamp: h.timestamp,
+      }))
   ), [trackerHistory]);
 
   return (
@@ -335,11 +335,22 @@ export const Dashboard: React.FC = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => chartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
+                    />
                     <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', padding: '12px' }} 
-                      cursor={{ stroke: '#4F46E5', strokeWidth: 1, strokeDasharray: '4 4' }} 
+                    <Tooltip
+                      labelFormatter={tooltipTimeLabel}
+                      contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', padding: '12px' }}
+                      cursor={{ stroke: '#4F46E5', strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
                     <Area 
                       type="monotone"
@@ -433,7 +444,7 @@ export const Dashboard: React.FC = () => {
                       dy={10}
                     />
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
                     <Customized
                       component={(props: BarHoverTimeLabelProps) => (
                         <BarHoverTimeLabel
@@ -487,7 +498,7 @@ export const Dashboard: React.FC = () => {
                       dy={10}
                     />
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
                     <Customized
                       component={(props: BarHoverTimeLabelProps) => (
                         <BarHoverTimeLabel

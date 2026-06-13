@@ -4,6 +4,17 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, Legend } from 'recharts';
 import { Calendar, Filter, Sparkles, TrendingUp, Loader2 } from 'lucide-react';
 
+const formatDDMM = (timestamp: number) => {
+  const dt = new Date(timestamp);
+  return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const formatAssessmentTime = (timestamp: number) =>
+  new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const tooltipTimeLabel = (_: unknown, payload: readonly { payload?: { hoverTimeLabel?: string } }[]) =>
+  payload?.[0]?.payload?.hoverTimeLabel ?? '';
+
 export const HistoryTrends: React.FC = () => {
   const { trackerHistory, fetchTrackerHistory, analyticsSummary, fetchAnalytics, trackerHistoryLoading, analyticsLoading } = useStore();
 
@@ -21,17 +32,13 @@ export const HistoryTrends: React.FC = () => {
   // Filter tracker data based on selection
   const getFilteredData = () => {
     let data = [...trackerHistory];
-    
-    // Sort chronologically just in case
-    data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    data.sort((a, b) => a.timestamp - b.timestamp);
 
     if (startDate && endDate) {
       const start = new Date(startDate).getTime();
       const end = new Date(endDate).getTime();
-      return data.filter(item => {
-        const itemTime = new Date(item.date).getTime();
-        return itemTime >= start && itemTime <= end;
-      });
+      return data.filter(item => item.timestamp >= start && item.timestamp <= end);
     }
 
     return data.slice(-filterDays);
@@ -39,29 +46,13 @@ export const HistoryTrends: React.FC = () => {
 
   const filteredData = getFilteredData();
 
-  // Build unique labels per data point — if multiple entries share the same date,
-  // include the time so Recharts doesn't collapse them to a single tooltip value.
-  const dateGroups: Record<string, number> = {};
-  filteredData.forEach(item => {
-    const d = item.date;
-    dateGroups[d] = (dateGroups[d] ?? 0) + 1;
-  });
-
-  const formattedChartData = filteredData.map((item, idx) => {
-    const sameDay = dateGroups[item.date] > 1;
-    const dt = new Date(item.timestamp);
-    const dateLabel = sameDay
-      ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) +
-        ' ' +
-        dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-      : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    return {
-      ...item,
-      idx,
-      dateLabel,
-      satisfaction: 10 - item.procrastination,
-    };
-  });
+  const formattedChartData = filteredData.map((item, index) => ({
+    ...item,
+    index,
+    dateLabel: formatDDMM(item.timestamp),
+    hoverTimeLabel: formatAssessmentTime(item.timestamp),
+    satisfaction: 10 - item.procrastination,
+  }));
 
   const EmptyState = ({ title }: { title: string }) => (
     <div className="flex items-center justify-center h-56 bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-[#334155]">
@@ -206,9 +197,19 @@ export const HistoryTrends: React.FC = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
                     <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#433FE5', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#433FE5', strokeWidth: 1, strokeDasharray: '4 4' }} />
                     <Area type="monotone" dataKey="burnoutScore" stroke="#433FE5" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" activeDot={false} name="Burnout" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -234,9 +235,19 @@ export const HistoryTrends: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
                     <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
                     <Line type="monotone" dataKey="sleepHours" stroke="#5D5CFF" strokeWidth={2} name="Sleep Hours" dot={{ r: 2 }} activeDot={false} />
                     <Line type="monotone" dataKey="stressLevel" stroke="#EF4444" strokeWidth={2} name="Stress Level" dot={{ r: 2 }} activeDot={false} />
@@ -261,9 +272,19 @@ export const HistoryTrends: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
                     <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
                     <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} activeDot={false} />
                     <Line type="monotone" dataKey="screenTime" stroke="#F59E0B" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} activeDot={false} />
@@ -294,9 +315,19 @@ export const HistoryTrends: React.FC = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
                     <YAxis domain={[0, 10]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#EF4444', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#EF4444', strokeWidth: 1, strokeDasharray: '4 4' }} />
                     <Area type="monotone" dataKey="procrastination" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorProcr)" activeDot={false} name="Procrastination" />
                   </AreaChart>
                 </ResponsiveContainer>
