@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { MessageSquare, X, Send, Bot } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Trash2 } from 'lucide-react';
 
 export const AIWidget: React.FC = () => {
-  const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory, fetchNotifications } = useStore();
+  const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory, fetchNotifications, clearAIHistory } = useStore();
+  const [isClearing, setIsClearing] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [inputMsg, setInputMsg] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -76,6 +77,23 @@ export const AIWidget: React.FC = () => {
               <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md tracking-wide uppercase border ${getRiskBadgeColor(currentScore)}`}>
                 {getRiskLabel(currentScore)}
               </span>
+              <button
+                onClick={async () => {
+                  const ok = window.confirm('Clear chat history? This will delete your AI conversation and cannot be undone.');
+                  if (!ok) return;
+                  setIsClearing(true);
+                  try {
+                    await clearAIHistory();
+                  } finally {
+                    setIsClearing(false);
+                  }
+                }}
+                title="Clear Chat"
+                className="p-1.5 rounded-lg hover:bg-surface-elevated/50 text-text-secondary hover:text-text-primary dark:hover:text-[#F8FAFC] transition-colors"
+                disabled={isClearing}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
               <button
                 onClick={() => setIsOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-surface-elevated/50 text-text-secondary hover:text-text-primary dark:hover:text-[#F8FAFC] transition-colors"

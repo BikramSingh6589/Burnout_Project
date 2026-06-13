@@ -275,3 +275,25 @@ export const getAIHistory = async (
     next(error);
   }
 };
+
+export const clearAIHistory = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Unauthorized access" });
+      return;
+    }
+
+    const userId = req.user.userId.toString();
+
+    // Delete only the conversation for the current authenticated student
+    await AIConversation.deleteOne({ student: new Types.ObjectId(userId) });
+
+    res.status(200).json({ success: true, message: "AI conversation cleared" });
+  } catch (error) {
+    next(error);
+  }
+};

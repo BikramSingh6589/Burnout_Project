@@ -230,6 +230,7 @@ interface AppState {
   fetchRecommendationHistory: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
   fetchAIHistory: () => Promise<void>;
+  clearAIHistory: () => Promise<void>;
   fetchAdminSettings: () => Promise<void>;
 
   // Actions
@@ -678,6 +679,31 @@ export const useStore = create<AppState>((set, get) => ({
       set({ chatMessages: response.data });
     } catch (err) {
       console.error('[Store] Failed to fetch AI history:', err);
+    }
+  },
+
+  clearAIHistory: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+
+    // Optimistically remove messages from the frontend immediately
+    set({
+      chatMessages: [
+        {
+          id: 'm-0',
+          sender: 'ai',
+          text: "Hi there! I'm your Wellness Assistant. I analyze your journal entries and weekly assessments to offer suggestions and monitor burnout. How are you feeling today?",
+          timestamp: Date.now(),
+        },
+      ],
+    });
+
+    try {
+      await apiRequest('/ai/clear', { method: 'DELETE', token });
+      // Re-sync with server state (will return default greeting if cleared)
+      await get().fetchAIHistory();
+    } catch (err) {
+      console.error('[Store] Failed to clear AI history:', err);
     }
   },
 

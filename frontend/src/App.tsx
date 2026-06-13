@@ -251,7 +251,7 @@ const LayoutWrapper: React.FC = () => {
           <Route path="*" element={<Navigate to="/auth/register" replace />} />
         </Routes>
       </div>
-      {!isAdminRoute && <AIWidget />}
+      {!isAdminRoute && !isAuthRoute && <AIWidget />}
     </div>
   );
 };
