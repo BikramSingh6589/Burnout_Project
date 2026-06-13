@@ -11,6 +11,7 @@ export interface IRecommendation extends Document {
   message: string;
   source: "AI" | "rules";
   approved: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,6 +66,11 @@ const RecommendationSchema = new Schema<IRecommendation>(
       type: Boolean,
       default: true,
       required: true,
+      index: true,
+    },
+    deletedAt: {
+      type: Date,
+      default: undefined,
       index: true,
     },
   },

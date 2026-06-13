@@ -6,6 +6,7 @@ export interface INotification extends Document {
   type: NotificationType;
   channel: NotificationChannel;
   status: NotificationStatus;
+  isRead: boolean;
   title: string;
   message: string;
   metadata: Record<string, unknown>;
@@ -34,13 +35,20 @@ const NotificationSchema = new Schema<INotification>(
     channel: {
       type: String,
       enum: Object.values(NotificationChannel),
+      default: NotificationChannel.InApp,
       required: true,
       index: true,
     },
     status: {
       type: String,
       enum: Object.values(NotificationStatus),
-      default: NotificationStatus.Pending,
+      default: NotificationStatus.Sent,
+      index: true,
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
+      required: true,
       index: true,
     },
     title: {
@@ -66,6 +74,12 @@ const NotificationSchema = new Schema<INotification>(
   },
   { timestamps: true },
 );
+
+// Required indexes
+NotificationSchema.index({ student: 1 });
+NotificationSchema.index({ isRead: 1 });
+NotificationSchema.index({ createdAt: -1 });
+NotificationSchema.index({ type: 1 });
 
 NotificationSchema.index({ student: 1, status: 1, createdAt: -1 });
 NotificationSchema.index({ status: 1, scheduledFor: 1 });

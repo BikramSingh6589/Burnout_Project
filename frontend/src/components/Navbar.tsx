@@ -4,7 +4,7 @@ import { useStore } from '../store/useStore';
 import { Bell, LogOut, Activity, ChevronDown, Menu, X, Settings, Moon, Sun } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated, notifications, logout, markNotificationRead, deleteAllNotifications } = useStore();
+  const { user, isAuthenticated, notifications, unreadNotificationCount, logout, markNotificationRead, deleteAllNotifications } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,7 +42,7 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const activeNotifications = notifications.filter((n) => !n.read);
+  const activeNotificationsCount = unreadNotificationCount;
 
   const handleDashboardClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -171,9 +171,9 @@ export const Navbar: React.FC = () => {
                     className="p-2 rounded-full text-text-primary hover:bg-surface-elevated hover:text-primary relative transition-all"
                   >
                     <Bell className="h-5 w-5" />
-                    {activeNotifications.length > 0 && (
+                    {activeNotificationsCount > 0 && (
                       <span className="absolute top-1 right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-error rounded-full animate-pulse">
-                        {activeNotifications.length}
+                        {activeNotificationsCount}
                       </span>
                     )}
                   </button>
@@ -210,33 +210,48 @@ export const Navbar: React.FC = () => {
                             No notifications
                           </div>
                         ) : (
-                          notifications.slice(0, 4).map((n) => (
-                            <div
-                              key={n.id}
-                              onClick={() => {
-                                markNotificationRead(n.id);
-                                if (n.category === 'Assessment') navigate('/assessment');
-                                if (n.category === 'Recommendation') navigate('/dashboard/recommendations');
-                                setNotifDropdownOpen(false);
-                              }}
-                              className={`px-5 py-4 hover:bg-slate-50 dark:hover:bg-[#273449] cursor-pointer border-b border-slate-100/50 dark:border-[#334155] last:border-0 text-sm transition-colors ${
-                                !n.read ? 'bg-primary/5 dark:bg-primary/10 font-medium' : ''
-                              }`}
-                            >
-                              <div className="flex justify-between items-center mb-1.5">
-                                <span className={`font-semibold px-2 py-0.5 rounded-md text-[10px] tracking-wide uppercase border ${
-                                  n.category === 'Risk' ? 'bg-error/10 text-error dark:border-error/20' :
-                                  n.category === 'Assessment' ? 'bg-primary/10 text-primary dark:border-primary/20' :
-                                  n.category === 'Recommendation' ? 'bg-secondary/10 text-secondary dark:border-secondary/20' :
-                                  'bg-slate-100 text-slate-600 border-slate-200/60 dark:bg-[#334155] dark:text-[#CBD5E1] dark:border-[#334155]'
-                                }`}>
-                                  {n.category}
-                                </span>
-                                <span className="text-[10px] text-text-muted dark:text-[#CBD5E1]">{n.date}</span>
+                          notifications.slice(0, 4).map((n) => {
+                            const getNotifCategory = (type: string) => {
+                              switch (type) {
+                                case 'assessment_reminder': return 'Assessment';
+                                case 'risk_alert': return 'Risk';
+                                case 'recommendation': return 'Recommendation';
+                                case 'ai_alert': return 'AI Alert';
+                                default: return 'System';
+                              }
+                            };
+                            const category = getNotifCategory(n.type);
+                            const formattedDate = new Date(n.createdAt).toLocaleDateString();
+
+                            return (
+                              <div
+                                key={n._id}
+                                onClick={() => {
+                                  markNotificationRead(n._id);
+                                  if (n.type === 'assessment_reminder') navigate('/assessment');
+                                  if (n.type === 'recommendation') navigate('/dashboard/recommendations');
+                                  setNotifDropdownOpen(false);
+                                }}
+                                className={`px-5 py-4 hover:bg-slate-50 dark:hover:bg-[#273449] cursor-pointer border-b border-slate-100/50 dark:border-[#334155] last:border-0 text-sm transition-colors ${
+                                  !n.isRead ? 'bg-primary/5 dark:bg-primary/10 font-medium' : ''
+                                }`}
+                              >
+                                <div className="flex justify-between items-center mb-1.5">
+                                  <span className={`font-semibold px-2 py-0.5 rounded-md text-[10px] tracking-wide uppercase border ${
+                                    category === 'Risk' ? 'bg-error/10 text-error dark:border-error/20 border-error/20' :
+                                    category === 'Assessment' ? 'bg-primary/10 text-primary dark:border-primary/20 border-primary/20' :
+                                    category === 'Recommendation' ? 'bg-secondary/10 text-secondary dark:border-secondary/20 border-secondary/20' :
+                                    category === 'AI Alert' ? 'bg-indigo-500/10 text-indigo-600 dark:border-indigo-500/20 border-indigo-500/20' :
+                                    'bg-slate-100 text-slate-600 border-slate-200/60 dark:bg-[#334155] dark:text-[#CBD5E1] dark:border-[#334155]'
+                                  }`}>
+                                    {category}
+                                  </span>
+                                  <span className="text-[10px] text-text-muted dark:text-[#CBD5E1]">{formattedDate}</span>
+                                </div>
+                                <p className="text-text-primary dark:text-[#F8FAFC] line-clamp-2">{n.message}</p>
                               </div>
-                              <p className="text-text-primary dark:text-[#F8FAFC] line-clamp-2">{n.message}</p>
-                            </div>
-                          ))
+                            );
+                          })
                         )}
                       </div>
                     </div>

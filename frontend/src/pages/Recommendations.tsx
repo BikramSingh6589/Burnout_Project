@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
-import { Filter, History, Star, Brain } from 'lucide-react';
+import { Filter, History, Star, Brain, Trash2, Loader2 } from 'lucide-react';
 
 type PriorityFilter = 'all' | 'High' | 'Medium' | 'Low';
 type CategoryFilter = 'all' | NonNullable<ReturnType<typeof useStore.getState>['recommendations'][number]['category']>;
@@ -22,11 +22,16 @@ export const Recommendations: React.FC = () => {
     recommendations,
     recommendationHistory,
     submitRecommendationFeedback,
+    deleteRecommendation,
     fetchRecommendations,
     fetchRecommendationHistory,
     latestAssessment,
     analyticsSummary,
     fetchAnalytics,
+    deletingRecommendationIds,
+    recommendationsLoading,
+    recommendationHistoryLoading,
+    analyticsLoading,
   } = useStore();
 
   useEffect(() => {
@@ -34,10 +39,10 @@ export const Recommendations: React.FC = () => {
     fetchRecommendationHistory();
     fetchAnalytics();
   }, [fetchRecommendations, fetchRecommendationHistory, fetchAnalytics]);
-  
+
   // Keep track of which recommendation card has its feedback form open
   const [activeFeedbackId, setActiveFeedbackId] = useState<string | null>(null);
-  
+
   // Feedback form states
   const [status, setStatus] = useState<'followed' | 'partially' | 'not'>('followed');
   const [rating, setRating] = useState(5);
@@ -77,17 +82,37 @@ export const Recommendations: React.FC = () => {
     submitRecommendationFeedback(id, status, rating, feedbackText);
     setActiveFeedbackId(null);
     setSubmitSuccessId(id);
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => {
       setSubmitSuccessId(null);
     }, 3000);
   };
 
+  const isLoading = recommendationsLoading || 
+    (viewMode === 'history' && recommendationHistoryLoading) || 
+    analyticsLoading;
+
+  const RecommendationsLoading = () => (
+    <div className="space-y-6 py-12">
+      {[1, 2].map((i) => (
+        <div key={i} className="bg-white dark:bg-[#1E293B] rounded-xl border border-slate-100 dark:border-[#334155] p-6 shadow-sm">
+          <div className="flex justify-between items-center mb-4">
+            <div className="h-6 w-24 bg-slate-200 dark:bg-[#334155] rounded animate-pulse"></div>
+            <div className="h-4 w-20 bg-slate-200 dark:bg-[#334155] rounded animate-pulse"></div>
+          </div>
+          <div className="h-5 w-48 bg-slate-200 dark:bg-[#334155] rounded mb-3 animate-pulse"></div>
+          <div className="h-4 w-full bg-slate-200 dark:bg-[#334155] rounded mb-2 animate-pulse"></div>
+          <div className="h-4 w-3/4 bg-slate-200 dark:bg-[#334155] rounded animate-pulse"></div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-in fade-in duration-300">
-        
+
         {/* Header Block */}
         <div className="pb-4 border-b border-slate-100 dark:border-[#334155] flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
@@ -96,7 +121,7 @@ export const Recommendations: React.FC = () => {
               AI-suggested interventions based on your recent burnout score trends
             </p>
           </div>
-          
+
           <div className="flex flex-wrap gap-3 bg-slate-50 dark:bg-[#1E293B] p-3 rounded-lg border border-slate-100 dark:border-[#334155]">
             <div>
               <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Latest Score</span>
@@ -105,7 +130,7 @@ export const Recommendations: React.FC = () => {
             <div className="border-l border-slate-200 dark:border-[#334155] pl-4">
               <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Trend</span>
               <span className={`text-sm font-semibold ${
-                analyticsSummary?.currentTrend === 'IMPROVING' ? 'text-success' : 
+                analyticsSummary?.currentTrend === 'IMPROVING' ? 'text-success' :
                 analyticsSummary?.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
               }`}>
                 {analyticsSummary?.currentTrend || '--'}
@@ -114,7 +139,7 @@ export const Recommendations: React.FC = () => {
             <div className="border-l border-slate-200 dark:border-[#334155] pl-4">
               <span className="block text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1]">Baseline</span>
               <span className={`text-sm font-semibold ${
-                analyticsSummary?.baselineComparison?.status === 'IMPROVED' ? 'text-success' : 
+                analyticsSummary?.baselineComparison?.status === 'IMPROVED' ? 'text-success' :
                 analyticsSummary?.baselineComparison?.status === 'WORSENED' ? 'text-error' : 'text-primary'
               }`}>
                 {analyticsSummary?.baselineComparison?.status || '--'}
@@ -198,26 +223,30 @@ export const Recommendations: React.FC = () => {
         </div>
 
         {/* Recommendation Cards List */}
-        <div className="space-y-6">
-          {visibleRecommendations.length === 0 ? (
-            <div className="text-center py-12 text-xs text-neutral-outline">
-              {sourceRecommendations.length === 0
-                ? viewMode === 'active'
-                  ? 'No active recommendations. Complete your assessments to trigger new suggestions.'
-                  : 'No recommendation history yet. Past assessment recommendations will appear here.'
-                : 'No recommendations match the selected filters.'}
-            </div>
-          ) : (
-            visibleRecommendations.map((rec) => {
-              const isFormOpen = activeFeedbackId === rec.id;
-              const hasFeedback = rec.followedStatus !== 'none';
-              
+        {isLoading ? (
+          <RecommendationsLoading />
+        ) : (
+          <div className="space-y-6">
+            {visibleRecommendations.length === 0 ? (
+              <div className="text-center py-12 text-xs text-neutral-outline">
+                {sourceRecommendations.length === 0
+                  ? viewMode === 'active'
+                    ? 'No active recommendations. Complete your assessments to trigger new suggestions.'
+                    : 'No recommendation history yet. Past assessment recommendations will appear here.'
+                  : 'No recommendations match the selected filters.'}
+              </div>
+            ) : (
+              visibleRecommendations.map((rec) => {
+                const isFormOpen = activeFeedbackId === rec.id;
+                const hasFeedback = rec.followedStatus !== 'none';
+                const isDeleting = deletingRecommendationIds.has(rec.id);
+
               return (
                 <div
                   key={rec.id}
                   className={`bg-white dark:bg-[#1E293B] rounded-xl border p-6 shadow-sm transition-all duration-200 hover:shadow-md dark:hover:shadow-xl ${
                     isFormOpen ? 'border-primary ring-1 ring-primary/20 bg-surface-low/10 dark:bg-[#111827]/30 dark:border-[#4F46E5] dark:ring-[#4F46E5]/20' : 'border-slate-100 dark:border-[#334155]'
-                  }`}
+                  } ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}
                 >
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
                     {/* Title and details */}
@@ -242,7 +271,7 @@ export const Recommendations: React.FC = () => {
                     </div>
 
                     {/* Action buttons */}
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex items-center gap-2">
                       {!isFormOpen && (
                         <button
                           onClick={() => handleOpenForm(rec.id, rec.followedStatus, rec.rating, rec.feedbackText)}
@@ -253,6 +282,23 @@ export const Recommendations: React.FC = () => {
                           }`}
                         >
                           {hasFeedback ? 'Update Feedback Log' : 'Log Experience Feedback'}
+                        </button>
+                      )}
+                      {viewMode === 'history' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteRecommendation(rec.id);
+                          }}
+                          className="p-2 rounded-lg text-neutral-outline hover:text-error hover:bg-error/5 dark:hover:bg-error/10 transition-colors"
+                          title="Delete recommendation"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-4 w-4" />
+                          )}
                         </button>
                       )}
                     </div>
@@ -289,7 +335,7 @@ export const Recommendations: React.FC = () => {
                   {isFormOpen && (
                     <div className="mt-4 pt-4 border-t border-slate-200 dark:border-[#334155] space-y-4 animate-in slide-in-from-top-3 duration-250">
                       <h4 className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC]">Intervention Feedback Form</h4>
-                      
+
                       {/* Radio buttons for status */}
                       <div className="space-y-1.5">
                         <label className="text-[10px] uppercase font-bold text-neutral-outline dark:text-[#CBD5E1] block">Have you followed this recommendation?</label>
@@ -386,7 +432,8 @@ export const Recommendations: React.FC = () => {
               );
             })
           )}
-        </div>
+          </div>
+        )}
 
       </div>
     </DashboardLayout>

@@ -152,11 +152,12 @@ export interface PendingAiRecommendation {
 }
 
 export interface Notification {
-  id: string;
-  category: 'Assessment' | 'Risk' | 'Recommendation' | 'Mood' | 'General';
+  _id: string;
+  type: 'assessment_reminder' | 'risk_alert' | 'recommendation' | 'ai_alert' | 'system';
+  title: string;
   message: string;
-  read: boolean;
-  date: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface AdminStudent {
@@ -202,6 +203,13 @@ interface AppState {
   recommendations: Recommendation[];
   recommendationHistory: Recommendation[];
   notifications: Notification[];
+  unreadNotificationCount: number;
+  deletingRecommendationIds: Set<string>;
+  recommendationsLoading: boolean;
+  recommendationHistoryLoading: boolean;
+  analyticsLoading: boolean;
+  trackerHistoryLoading: boolean;
+  burnoutRiskLoading: boolean;
 
   // Chat Widget State
   chatMessages: { id: string; sender: 'user' | 'ai'; text: string; timestamp: number }[];
@@ -250,19 +258,20 @@ interface AppState {
     rating: number,
     feedbackText: string
   ) => void;
+  deleteRecommendation: (id: string) => void;
 
   // Notifications
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
   deleteNotification: (id: string) => void;
   deleteAllNotifications: () => void;
-  addNotification: (category: Notification['category'], message: string) => void;
+  addNotification: (type: Notification['type'], message: string) => void;
 
   // Chat actions
   sendChatMessage: (text: string) => void;
 
   // Admin actions
-  adminSendNotification: (studentId: string | 'all', message: string, category: Notification['category']) => void;
+  adminSendNotification: (studentId: string | 'all', message: string, type: Notification['type']) => void;
   adminCreateRecommendation: (rec: Omit<Recommendation, 'id' | 'followedStatus' | 'rating' | 'feedbackText' | 'dateGenerated'>) => void;
   adminDeleteRecommendation: (id: string) => void;
   adminUpdateSettings: (settings: Partial<AdminSettings>) => void;
@@ -465,6 +474,13 @@ export const useStore = create<AppState>((set, get) => ({
   recommendations: [],
   recommendationHistory: [],
   notifications: [],
+  unreadNotificationCount: 0,
+  deletingRecommendationIds: new Set(),
+  recommendationsLoading: false,
+  recommendationHistoryLoading: false,
+  analyticsLoading: false,
+  trackerHistoryLoading: false,
+  burnoutRiskLoading: false,
 
   // Chat Widget State
   chatMessages: [
@@ -493,6 +509,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchTrackerHistory: async () => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
+    set({ trackerHistoryLoading: true });
     try {
       const [initialResponse, weeklyResponse] = await Promise.all([
         apiRequest<{
@@ -530,16 +547,17 @@ export const useStore = create<AppState>((set, get) => ({
 
       const mapped = [...initialHistory, ...weeklyHistory]
         .sort((a, b) => a.timestamp - b.timestamp);
-
-      set({ trackerHistory: mapped });
+      set({ trackerHistory: mapped, trackerHistoryLoading: false });
     } catch (err) {
       console.error('[Store] Failed to fetch tracker history:', err);
+      set({ trackerHistoryLoading: false });
     }
   },
 
   fetchAnalytics: async () => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
+    set({ analyticsLoading: true });
     try {
       const [analyticsResponse, latestResponse] = await Promise.all([
         apiRequest<{ success: boolean; data: any }>('/analytics/summary', { token }).catch(() => null),
@@ -564,6 +582,8 @@ export const useStore = create<AppState>((set, get) => ({
       }
     } catch (err) {
       console.error('[Store] Failed to fetch analytics:', err);
+    } finally {
+      set({ analyticsLoading: false });
     }
   },
 
@@ -597,28 +617,32 @@ export const useStore = create<AppState>((set, get) => ({
   fetchRecommendations: async () => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
+    set({ recommendationsLoading: true });
     try {
       const response = await apiRequest<{
         success: boolean;
         data: Recommendation[];
       }>('/recommendations', { token });
-      set({ recommendations: response.data });
+      set({ recommendations: response.data, recommendationsLoading: false });
     } catch (err) {
       console.error('[Store] Failed to fetch recommendations:', err);
+      set({ recommendationsLoading: false });
     }
   },
 
   fetchRecommendationHistory: async () => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
+    set({ recommendationHistoryLoading: true });
     try {
       const response = await apiRequest<{
         success: boolean;
         data: Recommendation[];
       }>('/recommendations/history', { token });
-      set({ recommendationHistory: response.data });
+      set({ recommendationHistory: response.data, recommendationHistoryLoading: false });
     } catch (err) {
       console.error('[Store] Failed to fetch recommendation history:', err);
+      set({ recommendationHistoryLoading: false });
     }
   },
 
@@ -628,9 +652,14 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const response = await apiRequest<{
         success: boolean;
+        count: number;
+        unreadCount: number;
         data: Notification[];
       }>('/notifications', { token });
-      set({ notifications: response.data });
+      set({ 
+        notifications: response.data,
+        unreadNotificationCount: response.unreadCount 
+      });
     } catch (err) {
       console.error('[Store] Failed to fetch notifications:', err);
     }
@@ -1120,14 +1149,16 @@ export const useStore = create<AppState>((set, get) => ({
   fetchBurnoutRisk: async () => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
+    set({ burnoutRiskLoading: true });
     try {
       const response = await apiRequest<{
         success: boolean;
         data: any;
       }>('/journal-ai/burnout-risk', { token });
-      set({ burnoutRisk: response.data });
+      set({ burnoutRisk: response.data, burnoutRiskLoading: false });
     } catch (err) {
       console.error('[Store] Failed to fetch burnout risk:', err);
+      set({ burnoutRiskLoading: false });
     }
   },
 
@@ -1173,6 +1204,41 @@ export const useStore = create<AppState>((set, get) => ({
       await get().fetchNotifications();
     } catch (err) {
       console.error('[Store] Failed to submit recommendation feedback:', err);
+    }
+  },
+
+  deleteRecommendation: async (id) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+
+    // Optimistically remove from both lists
+    const originalRecommendations = [...get().recommendations];
+    const originalRecommendationHistory = [...get().recommendationHistory];
+
+    set((state) => ({
+      deletingRecommendationIds: new Set(state.deletingRecommendationIds).add(id),
+      recommendations: state.recommendations.filter((rec) => rec.id !== id),
+      recommendationHistory: state.recommendationHistory.filter((rec) => rec.id !== id),
+    }));
+
+    try {
+      await apiRequest(`/recommendations/${id}`, {
+        method: 'DELETE',
+        token,
+      });
+    } catch (err) {
+      console.error('[Store] Failed to delete recommendation:', err);
+      // Revert on error
+      set((state) => ({
+        recommendations: originalRecommendations,
+        recommendationHistory: originalRecommendationHistory,
+      }));
+    } finally {
+      set((state) => {
+        const newSet = new Set(state.deletingRecommendationIds);
+        newSet.delete(id);
+        return { deletingRecommendationIds: newSet };
+      });
     }
   },
 
@@ -1270,13 +1336,16 @@ export const useStore = create<AppState>((set, get) => ({
           response.data.aiMessage,
         ],
       }));
+
+      // Refresh notification count after AI response
+      await get().fetchNotifications();
     } catch (err) {
       console.error('[Store] Failed to send chat message:', err);
     }
   },
 
   // Admin Actions
-  adminSendNotification: (studentId, message, _category) => {
+  adminSendNotification: (studentId, message, _type) => {
     if (studentId === 'all') {
       console.log(`Sending notification to all: ${message}`);
     } else {

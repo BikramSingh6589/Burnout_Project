@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, Legend } from 'recharts';
-import { Calendar, Filter, Sparkles, TrendingUp } from 'lucide-react';
+import { Calendar, Filter, Sparkles, TrendingUp, Loader2 } from 'lucide-react';
 
 export const HistoryTrends: React.FC = () => {
-  const { trackerHistory, fetchTrackerHistory, analyticsSummary, fetchAnalytics } = useStore();
+  const { trackerHistory, fetchTrackerHistory, analyticsSummary, fetchAnalytics, trackerHistoryLoading, analyticsLoading } = useStore();
+
+  const isLoading = trackerHistoryLoading || analyticsLoading;
 
   useEffect(() => {
     fetchTrackerHistory();
@@ -61,6 +63,24 @@ export const HistoryTrends: React.FC = () => {
     };
   });
 
+  const EmptyState = ({ title }: { title: string }) => (
+    <div className="flex items-center justify-center h-56 bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-[#334155]">
+      <div className="text-center">
+        <p className="text-sm text-neutral-outline dark:text-[#CBD5E1] font-medium mb-1">No assessment is taken</p>
+        <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]/70">during this period</p>
+      </div>
+    </div>
+  );
+
+  const GraphLoading = () => (
+    <div className="flex items-center justify-center h-56 bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-[#334155]">
+      <div className="flex flex-col items-center">
+        <Loader2 className="h-8 w-8 text-primary animate-spin mb-2" />
+        <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">Loading...</p>
+      </div>
+    </div>
+  );
+
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-in fade-in duration-300">
@@ -75,7 +95,7 @@ export const HistoryTrends: React.FC = () => {
           {/* Backend Analytics Cards */}
           <div className="flex gap-4">
             {analyticsSummary?.currentTrend && (
-              <div className="bg-surface dark:bg-[#1E293B] px-4 py-2 rounded-lg border border-border shadow-sm">
+              <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
                 <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Overall Trend</span>
                 <span className={`font-semibold text-sm ${
                   analyticsSummary.currentTrend === 'IMPROVING' ? 'text-success' : 
@@ -87,9 +107,9 @@ export const HistoryTrends: React.FC = () => {
             )}
             
             {analyticsSummary?.baselineComparison && (
-              <div className="bg-surface dark:bg-[#1E293B] px-4 py-2 rounded-lg border border-border shadow-sm">
+              <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
                 <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Baseline Shift</span>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <span className={`font-semibold text-sm ${
                     analyticsSummary.baselineComparison.status === 'IMPROVED' ? 'text-success' : 
                     analyticsSummary.baselineComparison.status === 'WORSENED' ? 'text-error' : 'text-primary'
@@ -131,7 +151,7 @@ export const HistoryTrends: React.FC = () => {
         </div>
 
         {/* Custom Date Range Picker */}
-        <div className="bg-surface-low/30 dark:bg-[#1E293B] border border-slate-100 dark:border-[#334155] rounded-xl p-4 flex flex-wrap gap-4 items-center shadow-sm">
+        <div className="bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm border border-slate-100 dark:border-[#334155] rounded-xl p-4 flex flex-wrap gap-4 items-center shadow-sm">
           <span className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC] flex items-center">
             <Calendar className="h-4 w-4 mr-1 text-primary dark:text-[#4F46E5]" />
             Custom Range:
@@ -173,23 +193,29 @@ export const HistoryTrends: React.FC = () => {
               </h3>
               <span className="text-[10px] text-neutral-outline dark:text-[#CBD5E1] font-semibold">Scale (0–100)</span>
             </div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#433FE5" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#433FE5" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                  <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#433FE5', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                  <Area type="monotone" dataKey="burnoutScore" stroke="#433FE5" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" name="Burnout" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {isLoading ? (
+              <GraphLoading />
+            ) : formattedChartData.length > 0 ? (
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#433FE5" stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor="#433FE5" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#433FE5', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                    <Area type="monotone" dataKey="burnoutScore" stroke="#433FE5" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" activeDot={false} name="Burnout" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState title="Burnout Index Trend" />
+            )}
           </div>
 
           {/* Graph 2: Sleep & Stress Correlation */}
@@ -201,19 +227,25 @@ export const HistoryTrends: React.FC = () => {
               </h3>
               <span className="text-[10px] text-neutral-outline dark:text-[#CBD5E1] font-semibold">Dual Metric Analysis</span>
             </div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                  <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
-                  <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
-                  <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
-                  <Line type="monotone" dataKey="sleepHours" stroke="#5D5CFF" strokeWidth={2} name="Sleep Hours" dot={{ r: 2 }} />
-                  <Line type="monotone" dataKey="stressLevel" stroke="#EF4444" strokeWidth={2} name="Stress Level" dot={{ r: 2 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {isLoading ? (
+              <GraphLoading />
+            ) : formattedChartData.length > 0 ? (
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
+                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
+                    <Line type="monotone" dataKey="sleepHours" stroke="#5D5CFF" strokeWidth={2} name="Sleep Hours" dot={{ r: 2 }} activeDot={false} />
+                    <Line type="monotone" dataKey="stressLevel" stroke="#EF4444" strokeWidth={2} name="Stress Level" dot={{ r: 2 }} activeDot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState title="Sleep & Stress Correlation" />
+            )}
           </div>
 
           {/* Graph 3: Study Hours vs Screen Time */}
@@ -222,19 +254,25 @@ export const HistoryTrends: React.FC = () => {
               <h3 className="text-xs font-bold dark:text-[#F8FAFC]">Study Focus vs Digital Exposure</h3>
               <span className="text-[10px] text-neutral-outline dark:text-[#CBD5E1] font-semibold">Hours per Day</span>
             </div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                  <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
-                  <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
-                  <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
-                  <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} />
-                  <Line type="monotone" dataKey="screenTime" stroke="#F59E0B" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            {isLoading ? (
+              <GraphLoading />
+            ) : formattedChartData.length > 0 ? (
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
+                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
+                    <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
+                    <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} activeDot={false} />
+                    <Line type="monotone" dataKey="screenTime" stroke="#F59E0B" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} activeDot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState title="Study Focus vs Digital Exposure" />
+            )}
           </div>
 
           {/* Graph 4: Procrastination Trend */}
@@ -243,23 +281,29 @@ export const HistoryTrends: React.FC = () => {
               <h3 className="text-xs font-bold dark:text-[#F8FAFC]">Procrastination Factor</h3>
               <span className="text-[10px] text-neutral-outline dark:text-[#CBD5E1] font-semibold">Severity (1–10)</span>
             </div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorProcr" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.15}/>
-                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                  <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
-                  <YAxis domain={[0, 10]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                  <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#EF4444', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                  <Area type="monotone" dataKey="procrastination" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorProcr)" name="Procrastination" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {isLoading ? (
+              <GraphLoading />
+            ) : formattedChartData.length > 0 ? (
+              <div className="h-56">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorProcr" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
+                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#EF4444', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                    <Area type="monotone" dataKey="procrastination" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorProcr)" activeDot={false} name="Procrastination" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <EmptyState title="Procrastination Factor" />
+            )}
           </div>
 
         </div>
