@@ -186,6 +186,15 @@ export interface AdminSettings {
   inAppNotificationsEnabled: boolean;
 }
 
+export interface AdminDashboardMetrics {
+  totalStudents: number;
+  totalAssessments: number;
+  lowRiskStudents: number;
+  mediumRiskStudents: number;
+  highRiskStudents: number;
+  averageBurnoutScore: number;
+}
+
 interface AppState {
   // Auth State
   user: User | null;
@@ -218,12 +227,15 @@ interface AppState {
 
   // Admin Portal State
   adminStudents: AdminStudent[];
+  adminHighRiskStudents: AdminStudent[];
+  adminDashboardMetrics: AdminDashboardMetrics | null;
   adminSettings: AdminSettings;
   adminStudentDetail: any | null;
   adminStudentLoading: boolean;
 
   // Fetch actions
   fetchTrackerHistory: () => Promise<void>;
+  fetchAdminDashboardMetrics: () => Promise<void>;
   fetchAnalytics: () => Promise<void>;
   fetchJournalEntries: () => Promise<void>;
   fetchJournalAiEntries: () => Promise<void>;
@@ -280,7 +292,7 @@ interface AppState {
   sendChatMessage: (text: string) => void;
 
   // Admin actions
-  adminSendNotification: (studentId: string | 'all', message: string, type: Notification['type']) => void;
+  adminSendNotification: (studentId: string | 'all', message: string, category: string) => Promise<void>;
   adminCreateRecommendation: (rec: Omit<Recommendation, 'id' | 'followedStatus' | 'rating' | 'feedbackText' | 'dateGenerated'>) => void;
   adminDeleteRecommendation: (id: string) => void;
   adminUpdateSettings: (settings: Partial<AdminSettings>) => void;
@@ -502,7 +514,9 @@ export const useStore = create<AppState>((set, get) => ({
   ],
 
   // Admin Portal State
-  adminStudents: mockAdminStudents,
+  adminStudents: [],
+  adminHighRiskStudents: [],
+  adminDashboardMetrics: null,
   adminSettings: {
     highRiskThreshold: 70,
     moderateRiskThreshold: 40,
@@ -727,6 +741,17 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  fetchAdminDashboardMetrics: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{ success: boolean; data: AdminDashboardMetrics }>('/admin/dashboard', { token });
+      set({ adminDashboardMetrics: response.data });
+    } catch (err) {
+      console.error('[Store] Failed to fetch admin dashboard metrics:', err);
+    }
+  },
+
   fetchAdminStudents: async (page = 1, limit = 20) => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
@@ -795,7 +820,7 @@ export const useStore = create<AppState>((set, get) => ({
         journalSentimentSummary: '',
       }));
       
-      set({ adminStudents: mapped });
+      set({ adminHighRiskStudents: mapped });
     } catch (err) {
       console.error('[Store] Failed to fetch high-risk students:', err);
     }
@@ -1584,11 +1609,21 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Admin Actions
-  adminSendNotification: (studentId, message, _type) => {
+  adminSendNotification: async (studentId, message, _category) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
     if (studentId === 'all') {
-      console.log(`Sending notification to all: ${message}`);
+      const students = get().adminStudents;
+      if (students.length === 0) {
+        throw new Error('No students are loaded for bulk dispatch');
+      }
+      await Promise.all(
+        students.map((student) =>
+          get().sendWellnessEmail(student.id, 'Platform Notification', message),
+        ),
+      );
     } else {
-      console.log(`Sending notification to student ${studentId}: ${message}`);
+      await get().sendWellnessEmail(studentId, 'Platform Notification', message);
     }
   },
 
