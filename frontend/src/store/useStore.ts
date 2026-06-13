@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { apiRequest } from '../lib/api';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5001/api';
+
 type AssessmentFormData = {
   stressLevel: number;
   academicSatisfaction: number;
@@ -1304,42 +1306,126 @@ export const useStore = create<AppState>((set, get) => ({
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
 
-    // Optimistically add user message
     const userMsg = {
       id: `m-usr-${Date.now()}`,
       sender: 'user' as const,
       text,
       timestamp: Date.now(),
     };
+
+    const aiMsgId = `m-ai-${Date.now() + 1}`;
+    const aiMessage = {
+      id: aiMsgId,
+      sender: 'ai' as const,
+      text: '',
+      timestamp: Date.now() + 1,
+    };
+
     set((state) => ({
-      chatMessages: [...state.chatMessages, userMsg],
+      chatMessages: [...state.chatMessages, userMsg, aiMessage],
     }));
 
     try {
-      const response = await apiRequest<{
-        success: boolean;
-        data: {
-          userMessage: any;
-          aiMessage: any;
-        };
-      }>('/ai/chat', {
+      const response = await fetch(`${API_BASE_URL}/ai/chat/stream`, {
         method: 'POST',
-        token,
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ message: text }),
       });
 
-      // Update state with AI response
-      set((state) => ({
-        chatMessages: [
-          ...state.chatMessages.filter((m) => m.id !== userMsg.id),
-          response.data.userMessage,
-          response.data.aiMessage,
-        ],
-      }));
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'AI request failed.');
+        let errorMessage = 'AI request failed.';
 
-      // Refresh notification count after AI response
-      await get().fetchNotifications();
+        try {
+          const parsed = JSON.parse(errorText);
+          errorMessage = parsed?.message || errorMessage;
+        } catch {
+          if (errorText) errorMessage = errorText;
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('AI stream unavailable.');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let currentEvent = 'message';
+      let currentData = '';
+
+      const flushEvent = () => {
+        if (!currentData) return;
+        if (currentEvent === 'message') {
+          let parsed = currentData;
+          try {
+            parsed = JSON.parse(currentData);
+          } catch {
+            // keep raw string
+          }
+
+          const chunk = typeof parsed === 'string'
+            ? parsed
+            : parsed?.delta ?? '';
+
+          if (typeof chunk === 'string' && chunk) {
+            set((state) => ({
+              chatMessages: state.chatMessages.map((msg) =>
+                msg.id === aiMsgId ? { ...msg, text: msg.text + chunk } : msg,
+              ),
+            }));
+          }
+        }
+
+        currentEvent = 'message';
+        currentData = '';
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            flushEvent();
+            continue;
+          }
+
+          if (trimmed.startsWith('event:')) {
+            currentEvent = trimmed.slice(6).trim();
+            continue;
+          }
+
+          if (trimmed.startsWith('data:')) {
+            const content = trimmed.slice(5).trim();
+            if (content === '[DONE]') {
+              flushEvent();
+              continue;
+            }
+            currentData += content;
+          }
+        }
+      }
+
+      flushEvent();
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unable to reach the assistant.';
+      set((state) => ({
+        chatMessages: state.chatMessages.map((msg) =>
+          msg.id === aiMsgId ? { ...msg, text: `⚠️ ${errorMessage}` } : msg,
+        ),
+      }));
       console.error('[Store] Failed to send chat message:', err);
     }
   },

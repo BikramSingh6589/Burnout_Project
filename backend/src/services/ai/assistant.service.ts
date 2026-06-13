@@ -125,6 +125,146 @@ const extractGroqResponse = async (response: Response): Promise<string> => {
   return String(choice.message.content).trim();
 };
 
+const parseStreamEvent = (line: string) => {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("data:")) return null;
+  const payload = trimmed.slice(5).trim();
+  if (!payload || payload === "[DONE]") return { done: true };
+
+  try {
+    const parsed = JSON.parse(payload);
+    const content = parsed?.choices?.[0]?.delta?.content;
+    return { content: typeof content === "string" ? content : null };
+  } catch {
+    return { content: payload };
+  }
+};
+
+export const streamAIResponse = async (
+  userId: string,
+  student: IStudent,
+  conversationMessages: IAIMessage[],
+  userMessage: string,
+  onDelta: (chunk: string) => Promise<void> | void,
+): Promise<string> => {
+  if (!GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY is not configured.");
+  }
+
+  const analytics = await getDashboardAnalytics(userId);
+  const latestAssessment = await getLatestAssessment(userId).catch(() => null);
+  const wellnessContext = buildContextSummary(student, analytics, latestAssessment);
+  const conversation = buildConversationMessages(conversationMessages);
+
+  const systemMessages = [
+    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: wellnessContext },
+  ];
+
+  const payload = {
+    model: GROQ_MODEL,
+    messages: [
+      ...systemMessages,
+      ...conversation,
+      { role: "user", content: userMessage.trim() },
+    ],
+    temperature: 0.7,
+    max_tokens: 512,
+    top_p: 0.95,
+    stream: true,
+  };
+
+  const response = await fetch(GROQ_API_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${GROQ_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const bodyText = await response.text().catch(() => null);
+    let errorMessage = `Groq request failed with status ${response.status}`;
+    if (bodyText) {
+      try {
+        const parsed = JSON.parse(bodyText);
+        errorMessage = parsed?.error?.message || parsed?.message || errorMessage;
+      } catch {
+        errorMessage = bodyText;
+      }
+    }
+    throw new Error(errorMessage);
+  }
+
+  if (!response.body) {
+    throw new Error("Groq streaming response body is unavailable.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let assistantText = "";
+  let eventType = "message";
+  let eventData = "";
+
+  const flushEvent = async (): Promise<void> => {
+    if (!eventData) return;
+
+    if (eventType === "message") {
+      const parsedEvent = parseStreamEvent(`data: ${eventData}`);
+      if (parsedEvent?.done) {
+        eventType = "message";
+        eventData = "";
+        return;
+      }
+
+      if (parsedEvent?.content) {
+        assistantText += parsedEvent.content;
+        await onDelta(parsedEvent.content);
+      }
+    }
+
+    eventType = "message";
+    eventData = "";
+  };
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split(/\r?\n/);
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        await flushEvent();
+        continue;
+      }
+
+      if (trimmed.startsWith("event:")) {
+        eventType = trimmed.slice(6).trim();
+      } else if (trimmed.startsWith("data:")) {
+        const content = trimmed.slice(5).trim();
+        if (content === "[DONE]") {
+          await flushEvent();
+          return assistantText.trim();
+        }
+
+        if (eventData) {
+          eventData += "\n";
+        }
+        eventData += content;
+      }
+    }
+  }
+
+  await flushEvent();
+  return assistantText.trim();
+};
+
 export const generateAIResponse = async (
   userId: string,
   student: IStudent,

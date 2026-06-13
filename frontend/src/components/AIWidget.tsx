@@ -6,6 +6,7 @@ export const AIWidget: React.FC = () => {
   const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory, fetchNotifications } = useStore();
   const [isOpen, setIsOpen] = useState(false);
   const [inputMsg, setInputMsg] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,8 +47,13 @@ export const AIWidget: React.FC = () => {
     if (!inputMsg.trim()) return;
     const text = inputMsg.trim();
     setInputMsg('');
-    await sendChatMessage(text);
-    fetchNotifications();
+    setIsTyping(true);
+    try {
+      await sendChatMessage(text);
+    } finally {
+      setIsTyping(false);
+      fetchNotifications();
+    }
   };
 
   return (
@@ -104,6 +110,17 @@ export const AIWidget: React.FC = () => {
                 </div>
               </div>
             ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="max-w-[65%] p-3.5 rounded-2xl bg-surface-elevated text-text-primary border border-border/50 rounded-bl-sm">
+                  <div className="flex items-center space-x-2">
+                    <span className="h-2 w-2 rounded-full bg-text-secondary animate-pulse" />
+                    <span className="h-2 w-2 rounded-full bg-text-secondary animate-pulse" />
+                    <span className="h-2 w-2 rounded-full bg-text-secondary animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 

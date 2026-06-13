@@ -3,7 +3,7 @@ import { Student } from "../models/Student.js";
 import { AIConversation } from "../models/AIConversation.js";
 import { ConversationRole } from "../types/common.types.js";
 import { Types } from "mongoose";
-import { generateAIResponse } from "../services/ai/assistant.service.js";
+import { generateAIResponse, streamAIResponse } from "../services/ai/assistant.service.js";
 
 const getFallbackAssistantResponse = (message: string): string => {
   const userText = message.toLowerCase();
@@ -119,6 +119,111 @@ export const chatWithAI = async (
         },
       },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const chatWithAIStream = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Unauthorized access" });
+      return;
+    }
+
+    const userId = req.user.userId.toString();
+    const student = await Student.findById(userId);
+
+    if (!student) {
+      res.status(404).json({ success: false, message: "Student profile not found" });
+      return;
+    }
+
+    if (!student.assessmentCompleted) {
+      res.status(403).json({
+        success: false,
+        message: "Please complete your initial assessment before accessing the Wellness AI Assistant.",
+      });
+      return;
+    }
+
+    const { message } = req.body;
+    if (!message || typeof message !== "string" || !message.trim()) {
+      res.status(400).json({ success: false, message: "Message content is required" });
+      return;
+    }
+
+    let conversation = await AIConversation.findOne({
+      student: new Types.ObjectId(userId),
+    });
+
+    if (!conversation) {
+      conversation = new AIConversation({
+        student: new Types.ObjectId(userId),
+        sessionId: `session-${userId}-${Date.now()}`,
+        messages: [
+          {
+            role: ConversationRole.Assistant,
+            content: "Hi there! I'm your Wellness Assistant. I analyze your journal entries and weekly assessments to offer suggestions and monitor burnout. How are you feeling today?",
+            createdAt: new Date(),
+          },
+        ],
+      });
+    }
+
+    res.setHeader("Content-Type", "text/event-stream;charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders?.();
+
+    const sendEvent = (event: string, data: any) => {
+      if (res.writableEnded) return;
+      res.write(`event: ${event}\n`);
+      res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
+
+    const sendDelta = (chunk: string) => sendEvent("message", chunk);
+
+    let finalAssistantText = "";
+    try {
+      finalAssistantText = await streamAIResponse(
+        userId,
+        student,
+        conversation.messages,
+        message,
+        (delta) => {
+          sendDelta(delta);
+        },
+      );
+    } catch (error) {
+      console.error("[AI] Groq assistant streaming error:", error);
+      const fallbackText = getFallbackAssistantResponse(message);
+      sendDelta(fallbackText);
+      finalAssistantText = fallbackText;
+    }
+
+    conversation.messages.push({
+      role: ConversationRole.Student,
+      content: message.trim(),
+      createdAt: new Date(),
+    });
+
+    conversation.messages.push({
+      role: ConversationRole.Assistant,
+      content: finalAssistantText,
+      createdAt: new Date(),
+    });
+    conversation.lastMessageAt = new Date();
+    conversation.modelName = process.env.GROQ_MODEL ?? conversation.modelName;
+    await conversation.save();
+
+    sendEvent("done", { success: true });
+    res.end();
   } catch (error) {
     next(error);
   }
