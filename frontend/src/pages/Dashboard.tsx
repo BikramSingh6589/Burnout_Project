@@ -86,7 +86,7 @@ export const Dashboard: React.FC = () => {
     { name: 'Pending Feedback', value: dashboardRecommendations.length, color: '#C7C4D8' }
   ];
 
-  // Format history for line chart (showing up to last 7 entries)
+  // Format history for burnout trend (showing up to last 7 sessions)
   const last7 = trackerHistory.slice(-7);
   const dashDateGroups: Record<string, number> = {};
   last7.forEach(h => { dashDateGroups[h.date] = (dashDateGroups[h.date] ?? 0) + 1; });
@@ -96,10 +96,29 @@ export const Dashboard: React.FC = () => {
     return {
       ...h,
       dateLabel: sameDay
-        ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         : dt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
     };
   });
+
+  // Aggregate sleep/screen time by day so X-axis shows one label per calendar day
+  const dailyBehaviorData = (() => {
+    const byDate = new Map<string, (typeof trackerHistory)[number]>();
+    trackerHistory.forEach(h => {
+      const existing = byDate.get(h.date);
+      if (!existing || h.timestamp > existing.timestamp) {
+        byDate.set(h.date, h);
+      }
+    });
+
+    return Array.from(byDate.values())
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice(-7)
+      .map(h => ({
+        ...h,
+        dateLabel: new Date(`${h.date}T12:00:00`).toLocaleDateString([], { month: 'short', day: 'numeric' }),
+      }));
+  })();
 
   return (
     <DashboardLayout>
@@ -335,16 +354,16 @@ export const Dashboard: React.FC = () => {
                 <Moon className="h-4 w-4 mr-2 text-indigo-500" />
                 <span>Sleep Tracker</span>
               </h3>
-              <span className="text-xs text-text-secondary font-medium">Hours slept</span>
+              <span className="text-xs text-text-secondary font-medium">Last 7 days</span>
             </div>
             {isLoading ? (
               <GraphLoading />
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <BarChart data={dailyBehaviorData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
+                    <XAxis dataKey="dateLabel" interval={0} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
                     <Bar dataKey="sleepHours" fill="#5D5CFF" radius={[4, 4, 0, 0]} name="Sleep Hours" activeBar={false} key={(entry) => entry.id} />
@@ -361,16 +380,16 @@ export const Dashboard: React.FC = () => {
                 <Compass className="h-4 w-4 mr-2 text-purple-500" />
                 <span>Screen Time Exposure</span>
               </h3>
-              <span className="text-xs text-text-secondary font-medium">Daily exposure</span>
+              <span className="text-xs text-text-secondary font-medium">Last 7 days</span>
             </div>
             {isLoading ? (
               <GraphLoading />
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <BarChart data={dailyBehaviorData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
+                    <XAxis dataKey="dateLabel" interval={0} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
                     <Bar dataKey="screenTime" fill="#8127CF" radius={[4, 4, 0, 0]} name="Screen Hours" activeBar={false} key={(entry) => entry.id} />
