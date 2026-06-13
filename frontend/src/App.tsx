@@ -11,6 +11,7 @@ import { ResetPassword } from './pages/auth/ResetPassword';
 import { AdminLogin } from './pages/admin/AdminLogin';
 import { useStore } from './store/useStore';
 import { LazyRoute } from './components/skeletons/LazyRoute';
+import { PageTransition } from './components/PageTransition';
 import {
   AssessmentSkeleton,
   DashboardSkeleton,
@@ -115,141 +116,143 @@ const LayoutWrapper: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       {!hideNavbar && <Navbar />}
       <div className="flex-1">
-        <Routes>
-          {/* Root: smart redirect based on auth state */}
-          <Route path="/" element={<RootRedirect />} />
+        <PageTransition>
+          <Routes>
+            {/* Root: smart redirect based on auth state */}
+            <Route path="/" element={<RootRedirect />} />
 
-          {/* Public Routes */}
-          <Route path="/home" element={<Home />} />
-          <Route path="/auth/login" element={<Login />} />
-          <Route path="/auth/register" element={<Register />} />
-          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-          <Route path="/auth/reset-password" element={<ResetPassword />} />
+            {/* Public Routes */}
+            <Route path="/home" element={<Home />} />
+            <Route path="/auth/login" element={<Login />} />
+            <Route path="/auth/register" element={<Register />} />
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
 
-          {/* Student Protected Routes */}
-          <Route
-            path="/auth/verify-otp"
-            element={
-              <OtpRoute>
-                <VerifyOtp />
-              </OtpRoute>
-            }
-          />
-          <Route
-            path="/assessment"
-            element={
-              <StudentRoute>
-                <LazyRoute fallback={<AssessmentSkeleton />}>
-                  <Assessment />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/assessment/weekly"
-            element={
-              <StudentRoute>
-                <LazyRoute fallback={<AssessmentSkeleton />}>
-                  <Assessment />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/dashboard"
-            element={
-              <StudentRoute requireAssessment>
-                <LazyRoute fallback={<DashboardSkeleton />}>
-                  <Dashboard />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/dashboard/history"
-            element={
-              <StudentRoute requireAssessment>
-                <LazyRoute fallback={<HistoryTrendsSkeleton />}>
-                  <HistoryTrends />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/dashboard/recommendations"
-            element={
-              <StudentRoute requireAssessment>
-                <LazyRoute fallback={<RecommendationSkeleton />}>
-                  <Recommendations />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <StudentRoute requireAssessment>
-                <LazyRoute fallback={<ProfileSkeleton />}>
-                  <Profile />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/complete-profile"
-            element={
-              <StudentRoute>
-                <LazyRoute fallback={<ProfileSkeleton />}>
-                  <Profile />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/journal"
-            element={
-              <StudentRoute requireAssessment>
-                <LazyRoute fallback={<JournalSkeleton />}>
-                  <Journal />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/journal-ai"
-            element={
-              <StudentRoute requireAssessment>
-                <LazyRoute fallback={<JournalSkeleton />}>
-                  <JournalAI />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
-          <Route
-            path="/notifications"
-            element={
-              <StudentRoute requireAssessment>
-                <LazyRoute fallback={<NotificationSkeleton />}>
-                  <Notifications />
-                </LazyRoute>
-              </StudentRoute>
-            }
-          />
+            {/* Student Protected Routes */}
+            <Route
+              path="/auth/verify-otp"
+              element={
+                <OtpRoute>
+                  <VerifyOtp />
+                </OtpRoute>
+              }
+            />
+            <Route
+              path="/assessment"
+              element={
+                <StudentRoute>
+                  <LazyRoute fallback={<AssessmentSkeleton />}>
+                    <Assessment />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/assessment/weekly"
+              element={
+                <StudentRoute>
+                  <LazyRoute fallback={<AssessmentSkeleton />}>
+                    <Assessment />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <StudentRoute requireAssessment>
+                  <LazyRoute fallback={<DashboardSkeleton />}>
+                    <Dashboard />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/dashboard/history"
+              element={
+                <StudentRoute requireAssessment>
+                  <LazyRoute fallback={<HistoryTrendsSkeleton />}>
+                    <HistoryTrends />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/dashboard/recommendations"
+              element={
+                <StudentRoute requireAssessment>
+                  <LazyRoute fallback={<RecommendationSkeleton />}>
+                    <Recommendations />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <StudentRoute requireAssessment>
+                  <LazyRoute fallback={<ProfileSkeleton />}>
+                    <Profile />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/complete-profile"
+              element={
+                <StudentRoute>
+                  <LazyRoute fallback={<ProfileSkeleton />}>
+                    <Profile />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/journal"
+              element={
+                <StudentRoute requireAssessment>
+                  <LazyRoute fallback={<JournalSkeleton />}>
+                    <Journal />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/journal-ai"
+              element={
+                <StudentRoute requireAssessment>
+                  <LazyRoute fallback={<JournalSkeleton />}>
+                    <JournalAI />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <StudentRoute requireAssessment>
+                  <LazyRoute fallback={<NotificationSkeleton />}>
+                    <Notifications />
+                  </LazyRoute>
+                </StudentRoute>
+              }
+            />
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <LazyRoute fallback={<AdminDashboardSkeleton />}>
-                <AdminDashboard />
-              </LazyRoute>
-            }
-          />
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <LazyRoute fallback={<AdminDashboardSkeleton />}>
+                  <AdminDashboard />
+                </LazyRoute>
+              }
+            />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/auth/register" replace />} />
-        </Routes>
+            {/* Fallback */}
+            <Route path="*" element={<Navigate to="/auth/register" replace />} />
+          </Routes>
+        </PageTransition>
       </div>
       {!isAdminRoute && !isAuthRoute && <AIWidget />}
     </div>

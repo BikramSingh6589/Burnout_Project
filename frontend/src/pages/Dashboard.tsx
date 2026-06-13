@@ -96,7 +96,7 @@ export const Dashboard: React.FC = () => {
     return {
       ...h,
       dateLabel: sameDay
-        ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
         : dt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
     };
   });
@@ -342,12 +342,12 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
-                    <Bar dataKey="sleepHours" fill="#5D5CFF" radius={[4, 4, 0, 0]} name="Sleep Hours" activeBar={false} />
+                    <Bar dataKey="sleepHours" fill="#5D5CFF" radius={[4, 4, 0, 0]} name="Sleep Hours" activeBar={false} key={(entry) => entry.id} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -368,12 +368,12 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
-                    <Bar dataKey="screenTime" fill="#8127CF" radius={[4, 4, 0, 0]} name="Screen Hours" activeBar={false} />
+                    <Bar dataKey="screenTime" fill="#8127CF" radius={[4, 4, 0, 0]} name="Screen Hours" activeBar={false} key={(entry) => entry.id} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

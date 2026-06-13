@@ -56,8 +56,17 @@ const mapAssessmentToRecommendationSnapshot = (assessment: any): AssessmentReque
   screenTime: assessment.screenTime,
 });
 
-const sortByPriority = <T extends { priority: RecommendationPriority; createdAt?: Date | string }>(items: T[]): T[] => {
+const sortByPriority = <T extends { priority: RecommendationPriority; createdAt?: Date | string; followedStatus?: string }>(items: T[]): T[] => {
   return [...items].sort((left, right) => {
+    // First: check if either has feedback (followedStatus !== "none")
+    const leftHasFeedback = left.followedStatus && left.followedStatus !== "none";
+    const rightHasFeedback = right.followedStatus && right.followedStatus !== "none";
+    
+    if (leftHasFeedback !== rightHasFeedback) {
+      // Move feedbacked ones to last
+      return leftHasFeedback ? 1 : -1;
+    }
+    
     const priorityDelta = RECOMMENDATION_PRIORITY_ORDER[left.priority] - RECOMMENDATION_PRIORITY_ORDER[right.priority];
 
     if (priorityDelta !== 0) {
@@ -247,19 +256,19 @@ export const generateAndStoreRecommendations = async (
           title: recommendation.title,
         },
         update: {
-          $set: {
-            priority: recommendation.priority,
-            message: recommendation.message,
-            source: recommendation.source ?? "rules",
-            approved: recommendation.source === "AI" ? false : true,
+            $set: {
+              priority: recommendation.priority,
+              message: recommendation.message,
+              source: recommendation.source ?? "rules",
+              approved: true,
+            },
+            $setOnInsert: {
+              userId: toObjectId(userId),
+              assessmentId: toObjectId(assessmentId),
+              category: recommendation.category,
+              title: recommendation.title,
+            },
           },
-          $setOnInsert: {
-            userId: toObjectId(userId),
-            assessmentId: toObjectId(assessmentId),
-            category: recommendation.category,
-            title: recommendation.title,
-          },
-        },
         upsert: true,
       },
     })),

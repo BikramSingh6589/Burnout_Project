@@ -63,7 +63,10 @@ export const Navbar: React.FC = () => {
     navigate('/');
   };
 
-  const isLinkActive = (path: string) => {
+  const isLinkActive = (path: string, hash?: string) => {
+    if (hash) {
+      return location.pathname === path && location.hash === hash;
+    }
     return location.pathname === path;
   };
 
@@ -84,7 +87,7 @@ export const Navbar: React.FC = () => {
             <Link
               to="/home"
               className={`transition-colors duration-200 hover:text-primary ${
-                isLinkActive('/home') ? 'text-primary border-b-2 border-primary py-5' : 'text-text-secondary'
+                isLinkActive('/home') && !location.hash ? 'text-primary border-b-2 border-primary py-5' : 'text-text-secondary'
               }`}
             >
               Home
@@ -100,7 +103,9 @@ export const Navbar: React.FC = () => {
                   }, 100);
                 }
               }}
-              className="text-text-secondary transition-colors duration-200 hover:text-primary"
+              className={`transition-colors duration-200 hover:text-primary ${
+                isLinkActive('/home', '#about') ? 'text-primary border-b-2 border-primary py-5' : 'text-text-secondary'
+              }`}
             >
               About Us
             </a>
@@ -122,8 +127,8 @@ export const Navbar: React.FC = () => {
             {isAuthenticated && user?.role === 'student' && (
               <Link
                 to="/journal-ai"
-                className={`transition-colors duration-200 hover:text-primary ${
-                  isLinkActive('/journal-ai') ? 'text-primary border-b-2 border-primary py-5' : 'text-text-secondary'
+                className={`bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent duration-200 ${
+                  isLinkActive('/journal-ai') ? 'bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent border-b-2 border-primary py-5' : 'text-text-secondary hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:bg-clip-text hover:text-transparent'
                 }`}
               >
                 AI Journal
@@ -376,7 +381,7 @@ export const Navbar: React.FC = () => {
                 to="/journal-ai"
                 onClick={() => setMobileMenuOpen(false)}
                 className={`block px-3 py-2 rounded-md text-base font-medium ${
-                  isLinkActive('/journal-ai') ? 'bg-primary/10 text-primary' : 'text-text-primary'
+                  isLinkActive('/journal-ai') ? 'bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent bg-primary/10' : 'text-text-primary hover:bg-gradient-to-r hover:from-primary hover:to-secondary hover:bg-clip-text hover:text-transparent'
                 }`}
               >
                 AI Journal

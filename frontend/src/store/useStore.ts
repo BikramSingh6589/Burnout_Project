@@ -534,6 +534,7 @@ export const useStore = create<AppState>((set, get) => ({
       ]);
 
       const initialHistory = initialResponse.data.history.map((h) => ({
+        id: h._id || h.id || crypto.randomUUID(),
         date: (h.completedAt ?? h.createdAt).split('T')[0],
         timestamp: new Date(h.completedAt ?? h.createdAt).getTime(),
         burnoutScore: h.burnoutScore,
@@ -545,6 +546,7 @@ export const useStore = create<AppState>((set, get) => ({
       }));
 
       const weeklyHistory = weeklyResponse.data.history.map((h) => ({
+        id: h._id || h.id || crypto.randomUUID(),
         date: (h.completedAt ?? h.createdAt).split('T')[0],
         timestamp: new Date(h.completedAt ?? h.createdAt).getTime(),
         burnoutScore: h.burnoutScore,
@@ -558,6 +560,7 @@ export const useStore = create<AppState>((set, get) => ({
 
       const mapped = [...initialHistory, ...weeklyHistory]
         .sort((a, b) => a.timestamp - b.timestamp);
+      
       set({ trackerHistory: mapped, trackerHistoryLoading: false });
     } catch (err) {
       console.error('[Store] Failed to fetch tracker history:', err);

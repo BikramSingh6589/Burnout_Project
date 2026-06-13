@@ -53,7 +53,7 @@ export const HistoryTrends: React.FC = () => {
     const dateLabel = sameDay
       ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) +
         ' ' +
-        dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
     return {
       ...item,
@@ -83,7 +83,7 @@ export const HistoryTrends: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 animate-in fade-in duration-300">
+      <div className="space-y-8">
         
         {/* Header Block */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 border-b border-slate-100 dark:border-[#334155]">
@@ -198,7 +198,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <defs>
                       <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#433FE5" stopOpacity={0.2}/>
@@ -232,7 +232,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
                     <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
@@ -259,7 +259,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
                     <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
@@ -286,7 +286,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <defs>
                       <linearGradient id="colorProcr" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#EF4444" stopOpacity={0.15}/>
