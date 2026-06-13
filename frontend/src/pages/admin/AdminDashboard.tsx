@@ -22,6 +22,9 @@ export const AdminDashboard: React.FC = () => {
     approveAiRecommendation,
     editApproveAiRecommendation,
     rejectAiRecommendation,
+    fetchAdminStudents,
+    fetchAdminHighRisk,
+    sendWellnessEmail,
   } = useStore();
 
   const navigate = useNavigate();
@@ -49,6 +52,10 @@ export const AdminDashboard: React.FC = () => {
   const [editFields, setEditFields] = useState({ title: '', message: '', priority: '' });
   const [queueError, setQueueError] = useState<string | null>(null);
   const [queueSuccess, setQueueSuccess] = useState<string | null>(null);
+  const [emailModal, setEmailModal] = useState<{ studentId: string; studentName: string } | null>(null);
+  const [emailForm, setEmailForm] = useState({ subject: '', message: '' });
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -62,6 +69,12 @@ export const AdminDashboard: React.FC = () => {
       setIsDark(true);
     }
   };
+
+  // Fetch admin data on component mount
+  useEffect(() => {
+    fetchAdminStudents();
+    fetchAdminHighRisk();
+  }, []);
 
   // Fetch pending AI recommendations when tab is opened
   useEffect(() => {
@@ -118,6 +131,24 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailModal || !emailForm.subject || !emailForm.message) return;
+    
+    setEmailLoading(true);
+    setEmailError(null);
+    try {
+      await sendWellnessEmail(emailModal.studentId, emailForm.subject, emailForm.message);
+      setEmailModal(null);
+      setEmailForm({ subject: '', message: '' });
+      setNotifSuccess(true);
+      setTimeout(() => setNotifSuccess(false), 2500);
+    } catch (err) {
+      setEmailError(err instanceof Error ? err.message : 'Failed to send email');
+    } finally {
+      setEmailLoading(false);
+    }
+  };
 
   // Calculations
   const totalStudentsCount = adminStudents.length;
@@ -422,10 +453,10 @@ export const AdminDashboard: React.FC = () => {
                           <td className="p-4 text-[10px]">{student.journalSentimentSummary}</td>
                           <td className="p-4 text-center">
                             <button
-                              onClick={() => triggerDirectAlert(student.email)}
+                              onClick={() => setEmailModal({ studentId: student.id, studentName: student.name })}
                               className="text-[10px] text-secondary border border-secondary/20 hover:bg-secondary/15 font-bold px-2 py-1 rounded transition-colors duration-200"
                             >
-                              Dispatch Alert
+                              Send Email
                             </button>
                           </td>
                         </tr>
@@ -953,6 +984,69 @@ export const AdminDashboard: React.FC = () => {
 
         </div>
       </main>
+
+      {/* Email Modal */}
+      {emailModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">Send Wellness Email</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">To: <span className="font-semibold">{emailModal.studentName}</span></p>
+            
+            {emailError && (
+              <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-lg text-sm text-red-800">
+                {emailError}
+              </div>
+            )}
+
+            <form onSubmit={handleSendEmail} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Subject</label>
+                <input
+                  type="text"
+                  value={emailForm.subject}
+                  onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                  placeholder="Email subject..."
+                  className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-secondary dark:focus:border-secondary focus:ring-2 focus:ring-secondary/10"
+                  disabled={emailLoading}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Message</label>
+                <textarea
+                  value={emailForm.message}
+                  onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
+                  placeholder="Wellness message..."
+                  rows={4}
+                  className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-secondary dark:focus:border-secondary focus:ring-2 focus:ring-secondary/10"
+                  disabled={emailLoading}
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmailModal(null);
+                    setEmailForm({ subject: '', message: '' });
+                    setEmailError(null);
+                  }}
+                  disabled={emailLoading}
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={emailLoading}
+                  className="flex-1 px-4 py-2 bg-secondary text-white rounded-lg text-sm font-semibold hover:bg-secondary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                >
+                  {emailLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  Send
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

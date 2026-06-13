@@ -76,6 +76,7 @@ export var NotificationType;
     NotificationType["RiskAlert"] = "risk_alert";
     NotificationType["Recommendation"] = "recommendation";
     NotificationType["System"] = "system";
+    NotificationType["AIAlert"] = "ai_alert";
 })(NotificationType || (NotificationType = {}));
 export var NotificationChannel;
 (function (NotificationChannel) {

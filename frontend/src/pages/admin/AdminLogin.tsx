@@ -10,13 +10,16 @@ export const AdminLogin: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setIsLoading(true);
 
     if (!username || !password) {
       setError('Please fill in both fields.');
+      setIsLoading(false);
       return;
     }
 
@@ -27,6 +30,7 @@ export const AdminLogin: React.FC = () => {
     } else {
       setError('Invalid admin credentials.');
     }
+    setIsLoading(false);
   };
 
   return (
@@ -58,9 +62,10 @@ export const AdminLogin: React.FC = () => {
               id="admin-username"
               type="text"
               required
+              disabled={isLoading}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 rounded-lg px-3 py-2 text-xs transition duration-200 focus:border-secondary/80 focus:bg-white dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-secondary/25 hover:border-secondary/60"
+              className="w-full border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 rounded-lg px-3 py-2 text-xs transition duration-200 focus:border-secondary/80 focus:bg-white dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-secondary/25 hover:border-secondary/60 disabled:opacity-50"
               placeholder="admin"
             />
           </div>
@@ -71,18 +76,20 @@ export const AdminLogin: React.FC = () => {
               id="admin-password"
               type="password"
               required
+              disabled={isLoading}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 rounded-lg px-3 py-2 text-xs transition duration-200 focus:border-secondary/80 focus:bg-white dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-secondary/25 hover:border-secondary/60"
+              className="w-full border border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 rounded-lg px-3 py-2 text-xs transition duration-200 focus:border-secondary/80 focus:bg-white dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-secondary/25 hover:border-secondary/60 disabled:opacity-50"
               placeholder="••••••••"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-secondary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-secondary/90 transition-all duration-200 shadow-sm shadow-secondary/20 text-xs focus:outline-none focus:ring-2 focus:ring-secondary/35 hover:shadow-lg"
+            disabled={isLoading}
+            className="w-full bg-secondary text-white py-2.5 rounded-lg font-semibold flex items-center justify-center space-x-2 hover:bg-secondary/90 transition-all duration-200 shadow-sm shadow-secondary/20 text-xs focus:outline-none focus:ring-2 focus:ring-secondary/35 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span>Administrator Login</span>
+            <span>{isLoading ? 'Logging in...' : 'Administrator Login'}</span>
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>

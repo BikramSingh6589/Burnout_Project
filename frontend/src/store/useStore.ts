@@ -219,6 +219,8 @@ interface AppState {
   // Admin Portal State
   adminStudents: AdminStudent[];
   adminSettings: AdminSettings;
+  adminStudentDetail: any | null;
+  adminStudentLoading: boolean;
 
   // Fetch actions
   fetchTrackerHistory: () => Promise<void>;
@@ -232,6 +234,10 @@ interface AppState {
   fetchAIHistory: () => Promise<void>;
   clearAIHistory: () => Promise<void>;
   fetchAdminSettings: () => Promise<void>;
+  fetchAdminStudents: (page?: number, limit?: number) => Promise<void>;
+  fetchAdminHighRisk: (page?: number, limit?: number) => Promise<void>;
+  fetchAdminStudentDetail: (studentId: string) => Promise<void>;
+  sendWellnessEmail: (studentId: string, subject: string, message: string) => Promise<void>;
 
   // Actions
   login: (email: string, password: string, forceRole?: 'student' | 'admin') => Promise<boolean>;
@@ -505,6 +511,8 @@ export const useStore = create<AppState>((set, get) => ({
     emailNotificationsEnabled: true,
     inAppNotificationsEnabled: true,
   },
+  adminStudentDetail: null,
+  adminStudentLoading: false,
   pendingAiRecommendations: [],
   pendingAiLoading: false,
 
@@ -716,28 +724,144 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  fetchAdminStudents: async (page = 1, limit = 20) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: Array<{
+          id: string;
+          name: string;
+          email: string;
+          burnoutScore: number;
+          riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+          lastAssessmentDate?: string;
+        }>;
+      }>(`/admin/students?page=${page}&limit=${limit}`, { token });
+      
+      const mapped: AdminStudent[] = response.data.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        phone: '',
+        age: 0,
+        gender: 'Other',
+        burnoutScore: s.burnoutScore,
+        riskLevel: s.riskLevel === 'HIGH' ? 'High' : s.riskLevel === 'MEDIUM' ? 'Moderate' : 'Low',
+        lastAssessmentDate: s.lastAssessmentDate ? new Date(s.lastAssessmentDate).toISOString().split('T')[0] : '',
+        sleepHoursAvg: 0,
+        stressLevelAvg: 0,
+        journalSentimentSummary: '',
+      }));
+      
+      set({ adminStudents: mapped });
+    } catch (err) {
+      console.error('[Store] Failed to fetch admin students:', err);
+    }
+  },
+
+  fetchAdminHighRisk: async (page = 1, limit = 20) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: Array<{
+          id: string;
+          name: string;
+          email: string;
+          burnoutScore: number;
+          riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+          lastAssessmentDate?: string;
+        }>;
+      }>(`/admin/high-risk?page=${page}&limit=${limit}`, { token });
+      
+      const mapped: AdminStudent[] = response.data.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        phone: '',
+        age: 0,
+        gender: 'Other',
+        burnoutScore: s.burnoutScore,
+        riskLevel: 'High',
+        lastAssessmentDate: s.lastAssessmentDate ? new Date(s.lastAssessmentDate).toISOString().split('T')[0] : '',
+        sleepHoursAvg: 0,
+        stressLevelAvg: 0,
+        journalSentimentSummary: '',
+      }));
+      
+      set({ adminStudents: mapped });
+    } catch (err) {
+      console.error('[Store] Failed to fetch high-risk students:', err);
+    }
+  },
+
+  fetchAdminStudentDetail: async (studentId) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    set({ adminStudentLoading: true });
+    try {
+      const response = await apiRequest<{ success: boolean; data: any }>(`/admin/student/${studentId}`, { token });
+      set({ adminStudentDetail: response.data, adminStudentLoading: false });
+    } catch (err) {
+      console.error('[Store] Failed to fetch student detail:', err);
+      set({ adminStudentLoading: false });
+    }
+  },
+
+  sendWellnessEmail: async (studentId, subject, message) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest('/admin/send-email', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ studentId, subject, message }),
+      });
+    } catch (err) {
+      console.error('[Store] Failed to send wellness email:', err);
+      throw err;
+    }
+  },
+
   // Actions
   login: async (email, password, forceRole) => {
     set({ authError: null });
-    // Admin override
-    if (forceRole === 'admin' || email.includes('admin')) {
-      set({
-        user: {
-          name: 'System Admin',
-          email: email,
-          phone: '+1 555-9999',
-          gender: 'Agnostic',
-          age: 35,
-          assessmentCompleted: true,
-          role: 'admin',
-        },
-        isAuthenticated: true,
-        otpVerified: true,
-      });
-      await get().fetchAdminSettings();
-      return true;
+    
+    // Admin login
+    if (forceRole === 'admin') {
+      try {
+        const data = await apiRequest<{ success: boolean; token: string; admin: { id: string; username: string } }>('/admin/login', {
+          method: 'POST',
+          body: JSON.stringify({ username: email, password }),
+        });
+
+        storeSession(data.token);
+        set({
+          user: {
+            name: data.admin.username,
+            email: email,
+            phone: '',
+            gender: 'Agnostic',
+            age: 0,
+            assessmentCompleted: true,
+            role: 'admin',
+          },
+          authToken: data.token,
+          isAuthenticated: true,
+          otpVerified: true,
+        });
+        await get().fetchAdminSettings();
+        return true;
+      } catch (error) {
+        set({ authError: error instanceof Error ? error.message : 'Admin login failed' });
+        return false;
+      }
     }
 
+    // Student login
     try {
       const data = await apiRequest<AuthResponse>('/auth/login', {
         method: 'POST',
