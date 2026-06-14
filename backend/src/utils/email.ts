@@ -93,6 +93,85 @@ export type ContactFormPayload = {
   message: string;
 };
 
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const buildContactFormEmailHtml = (payload: ContactFormPayload, submittedAt: string): string => {
+  const safeName = escapeHtml(payload.name);
+  const safeEmail = escapeHtml(payload.email);
+  const safeMessage = escapeHtml(payload.message).replace(/\n/g, "<br />");
+  const safeSubmittedAt = escapeHtml(submittedAt);
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>New Contact Form Submission</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0F172A;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0F172A;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background-color:#1E293B;border-radius:16px;overflow:hidden;border:1px solid #334155;">
+          <tr>
+            <td style="background:linear-gradient(135deg,#4338CA 0%,#5B5CF6 100%);padding:28px 32px;text-align:center;">
+              <p style="margin:0 0 6px;color:#C7D2FE;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;">BurnoutGuard</p>
+              <h1 style="margin:0;color:#FFFFFF;font-size:24px;font-weight:700;line-height:1.3;">New Contact Form Submission</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px 32px 8px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                <tr>
+                  <td style="padding-bottom:20px;border-bottom:1px solid #334155;">
+                    <p style="margin:0 0 6px;color:#94A3B8;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Name</p>
+                    <p style="margin:0;color:#F8FAFC;font-size:16px;font-weight:600;line-height:1.5;">${safeName}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px 0;border-bottom:1px solid #334155;">
+                    <p style="margin:0 0 6px;color:#94A3B8;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Email</p>
+                    <p style="margin:0;color:#5B5CF6;font-size:16px;font-weight:600;line-height:1.5;">
+                      <a href="mailto:${safeEmail}" style="color:#5B5CF6;text-decoration:none;">${safeEmail}</a>
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px 0;border-bottom:1px solid #334155;">
+                    <p style="margin:0 0 6px;color:#94A3B8;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Message</p>
+                    <p style="margin:0;color:#E2E8F0;font-size:15px;line-height:1.7;white-space:pre-wrap;">${safeMessage}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px 0 8px;">
+                    <p style="margin:0 0 6px;color:#94A3B8;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">Submitted At</p>
+                    <p style="margin:0;color:#F8FAFC;font-size:15px;font-weight:600;line-height:1.5;">${safeSubmittedAt}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 32px 28px;background-color:#0F172A;border-top:1px solid #334155;">
+              <p style="margin:0;color:#64748B;font-size:12px;line-height:1.6;text-align:center;">
+                This message was submitted through the BurnoutGuard Contact Form.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+};
+
 export const sendContactFormEmail = async (payload: ContactFormPayload): Promise<void> => {
   const submittedAt = formatContactSubmittedAt(new Date());
   const text = [
@@ -113,5 +192,6 @@ export const sendContactFormEmail = async (payload: ContactFormPayload): Promise
     replyTo: payload.email,
     subject: "New Contact Form Submission",
     text,
+    html: buildContactFormEmailHtml(payload, submittedAt),
   });
 };
