@@ -8,6 +8,7 @@ import { MessageSquare, X, Send, Bot, Trash2 } from 'lucide-react';
 export const AIWidget: React.FC = () => {
   const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory, fetchNotifications, clearAIHistory } = useStore();
   const [isClearing, setIsClearing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [inputMsg, setInputMsg] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -81,18 +82,9 @@ export const AIWidget: React.FC = () => {
                 {getRiskLabel(currentScore)}
               </span>
               <button
-                onClick={async () => {
-                  const ok = window.confirm('Clear chat history? This will delete your AI conversation and cannot be undone.');
-                  if (!ok) return;
-                  setIsClearing(true);
-                  try {
-                    await clearAIHistory();
-                  } finally {
-                    setIsClearing(false);
-                  }
-                }}
+                onClick={() => setShowClearConfirm(true)}
                 title="Clear Chat"
-                className="p-1.5 rounded-lg hover:bg-surface-elevated/50 text-text-secondary hover:text-text-primary dark:hover:text-[#F8FAFC] transition-colors"
+                className="p-1.5 rounded-lg hover:bg-error/10 text-error hover:text-red-700 transition-colors"
                 disabled={isClearing}
               >
                 <Trash2 className="h-4 w-4" />
