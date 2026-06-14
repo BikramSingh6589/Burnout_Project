@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
-import { ShieldCheck, Users, AlertTriangle, Send, Settings, LogOut, Search, ShieldAlert, Moon, Sun, CheckCircle2, XCircle, RefreshCw } from 'lucide-react';
+import { ShieldCheck, Users, AlertTriangle, Send, LogOut, Search, ShieldAlert, Moon, Sun } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -9,11 +9,8 @@ export const AdminDashboard: React.FC = () => {
     user,
     logout,
     adminStudents,
-    adminHighRiskStudents,
     adminDashboardMetrics,
     adminSettings,
-    adminUpdateSettings,
-    adminSendNotification,
     fetchAdminStudents,
     fetchAdminHighRisk,
     fetchAdminDashboardMetrics,
@@ -36,21 +33,11 @@ export const AdminDashboard: React.FC = () => {
 
   // Internal component states
   const [searchQuery, setSearchQuery] = useState('');
-  const [dispatchNotif, setDispatchNotif] = useState({ target: 'all', message: '', category: 'General' as 'General' | 'Assessment' | 'Risk' | 'Recommendation' });
   const [notifSuccess, setNotifSuccess] = useState(false);
   const [notificationError, setNotificationError] = useState<string | null>(null);
-  const [settingsSuccess, setSettingsSuccess] = useState(false);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
-  const [emailModal, setEmailModal] = useState<{ studentId: string; studentName: string } | null>(null);
-  const [emailForm, setEmailForm] = useState({ subject: '', message: '' });
   const [emailLoading, setEmailLoading] = useState(false);
-  const [emailError, setEmailError] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [bulkModal, setBulkModal] = useState<{
-    type: 'high' | 'moderate' | 'low' | null;
-    subject: string;
-    message: string;
-  } | null>(null);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -78,24 +65,7 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [activeSection]);
 
-  const handleSendEmail = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!emailModal || !emailForm.subject || !emailForm.message) return;
-    
-    setEmailLoading(true);
-    setEmailError(null);
-    try {
-      await sendWellnessEmail(emailModal.studentId, emailForm.subject, emailForm.message);
-      setEmailModal(null);
-      setEmailForm({ subject: '', message: '' });
-      setNotifSuccess(true);
-      setTimeout(() => setNotifSuccess(false), 2500);
-    } catch (err) {
-      setEmailError(err instanceof Error ? err.message : 'Failed to send email');
-    } finally {
-      setEmailLoading(false);
-    }
-  };
+  // Automated send uses `sendWellnessEmail` directly from buttons.
 
   // Calculations
   const totalStudentsCount = adminDashboardMetrics?.totalStudents ?? adminStudents.length;
@@ -121,34 +91,54 @@ export const AdminDashboard: React.FC = () => {
     return b.burnoutScore - a.burnoutScore;
   });
 
-  const handleSendNotification = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!dispatchNotif.message) return;
-
+  const sendRiskGroupEmail = async (group: 'high' | 'moderate' | 'low') => {
     setNotificationError(null);
+    setEmailLoading(true);
+
+    const high = adminSettings.highRiskThreshold ?? 70;
+    const med = adminSettings.moderateRiskThreshold ?? 40;
+
+    const targets = adminStudents.filter((student) =>
+      group === 'high'
+        ? student.burnoutScore >= high
+        : group === 'moderate'
+        ? student.burnoutScore >= med && student.burnoutScore < high
+        : student.burnoutScore < med
+    );
+
+    if (targets.length === 0) {
+      setNotificationError('No students found for the selected risk group.');
+      setEmailLoading(false);
+      return;
+    }
+
+    const subject =
+      group === 'high'
+        ? 'Urgent: High Burnout Risk Support'
+        : group === 'moderate'
+        ? 'Notice: Moderate Burnout Risk'
+        : 'Good progress: Low Burnout Risk';
+
+    const message =
+      group === 'high'
+        ? 'Our records indicate your recent assessments show a high burnout score. We recommend you contact the wellness center, review personalized recommendations, and consider scheduling time for rest and counseling. If you need immediate assistance, please reach out to your counselor.'
+        : group === 'moderate'
+        ? 'Your recent assessments show a moderate burnout score. Keep an eye on sleep, stress management and study balance. Try small adjustments such as short breaks, a sleep routine, and review your recommendations in the app.'
+        : 'Nice work — your recent assessments indicate a low burnout score. Keep maintaining healthy habits. If anything changes, remember the app is here for support and recommendations.';
+
     try {
-      await adminSendNotification(dispatchNotif.target, dispatchNotif.message, dispatchNotif.category);
-      setDispatchNotif({ target: 'all', message: '', category: 'General' });
+      for (const student of targets) {
+        // sequential send reduces rate-limit risk and preserves template behavior.
+        // eslint-disable-next-line no-await-in-loop
+        await sendWellnessEmail(student.id, subject, message);
+      }
       setNotifSuccess(true);
       setTimeout(() => setNotifSuccess(false), 2500);
     } catch (err) {
-      setNotificationError(err instanceof Error ? err.message : 'Failed to send notification');
+      setNotificationError(err instanceof Error ? err.message : 'Failed to send group emails.');
+    } finally {
+      setEmailLoading(false);
     }
-  };
-
-  const handleUpdateSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSettingsSuccess(true);
-    setTimeout(() => setSettingsSuccess(false), 2500);
-  };
-
-  const triggerDirectAlert = (studentId: string) => {
-    setDispatchNotif({
-      target: studentId,
-      message: 'Urgent care alert: your recent burnout score is critically high. Please connect with the wellness center or academic support team.',
-      category: 'Risk'
-    });
-    setActiveSection('notifications');
   };
 
   return (
@@ -363,10 +353,39 @@ export const AdminDashboard: React.FC = () => {
                               </button>
 
                               <button
-                                onClick={() => setEmailModal({ studentId: student.id, studentName: student.name })}
+                                onClick={async () => {
+                                  setNotificationError(null);
+                                  setEmailLoading(true);
+                                  try {
+                                    const score = Number(student.burnoutScore || 0);
+                                    const high = adminSettings.highRiskThreshold ?? 70;
+                                    const med = adminSettings.moderateRiskThreshold ?? 40;
+                                    let subject = 'Wellness Support Message';
+                                    let message = '';
+
+                                    if (score >= high) {
+                                      subject = 'Urgent: High Burnout Risk Support';
+                                      message = `Our records indicate your recent assessments show a high burnout score (${score}). We recommend you contact the wellness center, review personalized recommendations, and consider scheduling time for rest and counseling. If you need immediate assistance, please reach out to your counselor.`;
+                                    } else if (score >= med) {
+                                      subject = 'Notice: Moderate Burnout Risk';
+                                      message = `Your recent assessments show a moderate burnout score (${score}). Keep an eye on sleep, stress management and study balance. Try small adjustments (short breaks, sleep routine) and check your recommendations in the app.`;
+                                    } else {
+                                      subject = 'Good Progress: Low Burnout Risk';
+                                      message = `Nice work — your recent assessments indicate a low burnout score (${score}). Keep maintaining healthy habits. If anything changes, remember the app is here for support and recommendations.`;
+                                    }
+
+                                    await sendWellnessEmail(student.id, subject, message);
+                                    setNotifSuccess(true);
+                                    setTimeout(() => setNotifSuccess(false), 2500);
+                                  } catch (err) {
+                                    setNotificationError(err instanceof Error ? err.message : 'Failed to send automated email');
+                                  } finally {
+                                    setEmailLoading(false);
+                                  }
+                                }}
                                 className="text-[10px] text-secondary border border-secondary/20 hover:bg-secondary/15 font-bold px-2 py-1 rounded transition-colors duration-200"
                               >
-                                Send Email
+                                {emailLoading ? 'Sending…' : 'Send Email'}
                               </button>
                             </div>
                           </td>
@@ -385,14 +404,14 @@ export const AdminDashboard: React.FC = () => {
           {/* Section 5: Send notifications (Individual/Bulk) */}
           {activeSection === 'notifications' && (
             <div className="space-y-6 animate-in fade-in duration-200">
-              <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">System Notification Dispatcher</h2>
+              <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Risk-Targeted Email Dispatch</h2>
               
               <div className="max-w-xl bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-2">Broadcast Settings</h3>
-                
+                <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-2">Send to Students by Risk Group</h3>
+
                 {notifSuccess && (
                   <div className="bg-success/10 border border-success/20 text-success p-2.5 rounded-lg text-xs font-semibold text-center">
-                    Alert dispatch instructions queued successfully.
+                    Group emails sent successfully.
                   </div>
                 )}
                 {notificationError && (
@@ -401,82 +420,36 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 )}
 
-                <form onSubmit={handleSendNotification} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold" htmlFor="dispatch-target">Alert Target User</label>
-                    <select
-                      id="dispatch-target"
-                      value={dispatchNotif.target}
-                      onChange={(e) => setDispatchNotif({ ...dispatchNotif, target: e.target.value })}
-                      className="w-full border border-slate-200 dark:border-[#334155] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B]"
-                    >
-                      <option value="all">Broadcast: All Students</option>
-                      {adminStudents.map(student => (
-                        <option key={student.id} value={student.id}>
-                          Student: {student.name} ({student.email})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Use the controls below to send pre-defined support emails only to the selected risk tier. Manual broadcast composition is disabled to keep dispatching consistent with the current risk targeting strategy.
+                </p>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold" htmlFor="dispatch-category">Notification Category</label>
-                    <select
-                      id="dispatch-category"
-                      value={dispatchNotif.category}
-                      onChange={(e) => setDispatchNotif({ ...dispatchNotif, category: e.target.value as any })}
-                      className="w-full border border-slate-200 dark:border-[#334155] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B]"
-                    >
-                      <option value="General">General Platform Info</option>
-                      <option value="Assessment">Assessment Reminder</option>
-                      <option value="Risk">High Stress Warning</option>
-                      <option value="Recommendation">Intervention Update</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold" htmlFor="dispatch-msg">Alert Message Body</label>
-                    <textarea
-                      id="dispatch-msg"
-                      rows={4}
-                      required
-                      value={dispatchNotif.message}
-                      onChange={(e) => setDispatchNotif({ ...dispatchNotif, message: e.target.value })}
-                      className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] placeholder:text-neutral-outline dark:placeholder:text-[#64748B] rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-secondary dark:focus:border-[#2DD4BF]"
-                      placeholder="Write your alert details here..."
-                    />
-                  </div>
-
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <button
-                    type="submit"
-                    className="w-full bg-secondary text-white font-semibold py-2.5 rounded-lg text-xs flex items-center justify-center space-x-1.5 hover:bg-secondary/95 transition-all shadow-sm"
-                  >
-                    <Send className="h-4 w-4" />
-                    <span>Dispatch Alert Message</span>
-                  </button>
-                </form>
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <button
-                    onClick={() => setBulkModal({ type: 'high', subject: 'Wellness Support Reminder', message: `Your recent assessments indicate a high burnout risk.\n\nWe recommend reviewing your recommendations, improving sleep habits, reducing stress where possible, and engaging with the AI Assistant for personalized guidance.` })}
-                    className="w-full bg-error text-white py-2 rounded-lg text-xs font-bold hover:opacity-95"
+                    onClick={() => sendRiskGroupEmail('high')}
+                    className="w-full bg-error text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
                   >
                     Send High Risk Alert
                   </button>
 
                   <button
-                    onClick={() => setBulkModal({ type: 'moderate', subject: 'Wellness Progress Reminder', message: `Your burnout indicators are currently moderate.\n\nYou are making progress, but there is still room for improvement through better balance, stress management, and consistent healthy habits.` })}
-                    className="w-full bg-amber-500 text-white py-2 rounded-lg text-xs font-bold hover:opacity-95"
+                    onClick={() => sendRiskGroupEmail('moderate')}
+                    className="w-full bg-amber-500 text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
                   >
                     Send Moderate Reminder
                   </button>
 
                   <button
-                    onClick={() => setBulkModal({ type: 'low', subject: 'Congratulations on Your Progress', message: `Your recent assessments indicate a healthy wellness status.\n\nKeep maintaining your positive habits and continue monitoring your wellbeing through the platform.` })}
-                    className="w-full bg-success text-white py-2 rounded-lg text-xs font-bold hover:opacity-95"
+                    onClick={() => sendRiskGroupEmail('low')}
+                    className="w-full bg-success text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
                   >
                     Send Low Risk Appreciation
                   </button>
                 </div>
+
+                {emailLoading && (
+                  <div className="text-xs text-slate-500 dark:text-slate-400">Sending emails to the selected group. This may take a moment.</div>
+                )}
               </div>
             </div>
           )}
@@ -487,68 +460,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </main>
 
-      {/* Email Modal */}
-      {emailModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-xl">
-            <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">Send Wellness Email</h3>
-            <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">To: <span className="font-semibold">{emailModal.studentName}</span></p>
-            
-            {emailError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-lg text-sm text-red-800">
-                {emailError}
-              </div>
-            )}
-
-            <form onSubmit={handleSendEmail} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Subject</label>
-                <input
-                  type="text"
-                  value={emailForm.subject}
-                  onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
-                  placeholder="Email subject..."
-                  className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-secondary dark:focus:border-secondary focus:ring-2 focus:ring-secondary/10"
-                  disabled={emailLoading}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Message</label>
-                <textarea
-                  value={emailForm.message}
-                  onChange={(e) => setEmailForm({ ...emailForm, message: e.target.value })}
-                  placeholder="Wellness message..."
-                  rows={4}
-                  className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-secondary dark:focus:border-secondary focus:ring-2 focus:ring-secondary/10"
-                  disabled={emailLoading}
-                />
-              </div>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmailModal(null);
-                    setEmailForm({ subject: '', message: '' });
-                    setEmailError(null);
-                  }}
-                  disabled={emailLoading}
-                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={emailLoading}
-                  className="flex-1 px-4 py-2 bg-secondary text-white rounded-lg text-sm font-semibold hover:bg-secondary/90 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
-                >
-                  {emailLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  Send
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Manual email compose modal removed — automated sends only */}
 
       {/* Student Detail Modal */}
       {detailModalOpen && (
@@ -593,65 +505,6 @@ export const AdminDashboard: React.FC = () => {
             ) : (
               <p className="text-sm text-slate-500">No details available.</p>
             )}
-          </div>
-        </div>
-      )}
-      {/* Bulk Email Modal */}
-      {bulkModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 max-w-md w-full shadow-xl">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{bulkModal.type === 'high' ? 'High Risk Alert' : bulkModal.type === 'moderate' ? 'Moderate Risk Reminder' : 'Low Risk Appreciation'}</h3>
-              <button className="text-sm text-slate-500" onClick={() => setBulkModal(null)}>Close</button>
-            </div>
-
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              if (!bulkModal) return;
-              const subject = bulkModal.subject;
-              const message = bulkModal.message;
-              setNotificationError(null);
-              try {
-                const targets = adminStudents.filter(s =>
-                  bulkModal.type === 'high' ? s.burnoutScore >= adminSettings.highRiskThreshold :
-                  bulkModal.type === 'moderate' ? (s.burnoutScore >= adminSettings.moderateRiskThreshold && s.burnoutScore < adminSettings.highRiskThreshold) :
-                  s.burnoutScore < adminSettings.moderateRiskThreshold
-                );
-
-                if (targets.length === 0) {
-                  setNotificationError('No target students for selected risk group');
-                  return;
-                }
-
-                for (const student of targets) {
-                  // send directly so subject can be included
-                  // eslint-disable-next-line no-await-in-loop
-                  await sendWellnessEmail(student.id, subject, message);
-                }
-
-                setNotifSuccess(true);
-                setTimeout(() => setNotifSuccess(false), 2500);
-                setBulkModal(null);
-              } catch (err) {
-                setNotificationError(err instanceof Error ? err.message : 'Failed sending bulk emails');
-              }
-            }} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Subject</label>
-                <input value={bulkModal.subject} onChange={(e) => setBulkModal({ ...bulkModal, subject: e.target.value })} className="w-full border rounded px-3 py-2" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Message</label>
-                <textarea rows={6} value={bulkModal.message} onChange={(e) => setBulkModal({ ...bulkModal, message: e.target.value })} className="w-full border rounded px-3 py-2" />
-              </div>
-
-              {notificationError && <div className="text-sm text-red-600">{notificationError}</div>}
-
-              <div className="flex gap-3">
-                <button type="button" onClick={() => setBulkModal(null)} className="flex-1 px-4 py-2 border rounded">Cancel</button>
-                <button type="submit" className="flex-1 px-4 py-2 bg-secondary text-white rounded">Send to Group</button>
-              </div>
-            </form>
           </div>
         </div>
       )}

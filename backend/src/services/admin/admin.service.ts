@@ -6,8 +6,11 @@ import { BurnoutPrediction } from "../../models/BurnoutPrediction.js";
 import { Assessment } from "../../models/Assessment.js";
 import { WeeklyAssessment } from "../../models/WeeklyAssessment.js";
 import { Journal } from "../../models/Journal.js";
+import { Recommendation } from "../../models/Recommendation.js";
 import { config } from "../../config/env.js";
+import { sendSupportEmail } from "../../utils/email.js";
 import { Types } from "mongoose";
+import { RiskLevel } from "../../types/common.types.js";
 
 export interface AdminLoginRequest {
   username: string;
@@ -38,6 +41,9 @@ export interface StudentInfo {
   email: string;
   burnoutScore: number;
   riskLevel: "LOW" | "MEDIUM" | "HIGH";
+  sleepHoursAvg?: number;
+  stressLevelAvg?: number;
+  moodTrend?: "Positive" | "Neutral" | "Negative";
   lastAssessmentDate?: Date;
 }
 
@@ -71,10 +77,30 @@ export const loginAdmin = async (credentials: AdminLoginRequest): Promise<AdminL
 };
 
 export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
-  const [totalStudents, totalAssessments, allPredictions] = await Promise.all([
+  const [totalStudents, totalAssessments, riskCountsResult, avgScoreResult] = await Promise.all([
     Student.countDocuments({}),
     Assessment.countDocuments({}),
-    BurnoutPrediction.find({}).lean(),
+    Student.aggregate([
+      {
+        $group: {
+          _id: "$currentRiskLevel",
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+    Student.aggregate([
+      {
+        $match: {
+          currentBurnoutScore: { $exists: true, $ne: null },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          averageBurnoutScore: { $avg: "$currentBurnoutScore" },
+        },
+      },
+    ]),
   ]);
 
   const riskCounts = {
@@ -83,23 +109,15 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
     HIGH: 0,
   };
 
-  let totalScore = 0;
-
-  allPredictions.forEach((pred: any) => {
-    const score = pred.predictedScore || 0;
-    totalScore += score;
-
-    if (score >= 70) {
-      riskCounts.HIGH++;
-    } else if (score >= 40) {
-      riskCounts.MEDIUM++;
-    } else {
-      riskCounts.LOW++;
-    }
+  riskCountsResult.forEach((item: any) => {
+    const key = (item._id || "").toString().toLowerCase();
+    if (key === RiskLevel.High) riskCounts.HIGH = item.count;
+    else if (key === RiskLevel.Moderate) riskCounts.MEDIUM = item.count;
+    else riskCounts.LOW = item.count;
   });
 
   const averageBurnoutScore =
-    allPredictions.length > 0 ? Math.round(totalScore / allPredictions.length) : 0;
+    avgScoreResult.length > 0 ? Math.round(avgScoreResult[0].averageBurnoutScore) : 0;
   // Compute weekly active students (students with at least one assessment or weekly assessment in last 7 days)
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -130,11 +148,11 @@ export const getAllStudents = async (
   const total = await Student.countDocuments({});
 
   const studentIds = students.map((s: any) => new Types.ObjectId(s._id));
-  const predictions = await BurnoutPrediction.find({ studentId: { $in: studentIds } })
+  const predictions = await BurnoutPrediction.find({ student: { $in: studentIds } })
     .sort({ createdAt: -1 })
     .lean();
 
-  const assessments = await Assessment.find({ studentId: { $in: studentIds } })
+  const assessments = await Assessment.find({ student: { $in: studentIds } })
     .sort({ createdAt: -1 })
     .lean();
 
@@ -146,15 +164,15 @@ export const getAllStudents = async (
 
   const predictionMap = new Map();
   predictions.forEach((p: any) => {
-    if (!predictionMap.has(p.studentId.toString())) {
-      predictionMap.set(p.studentId.toString(), p);
+    if (!predictionMap.has(p.student.toString())) {
+      predictionMap.set(p.student.toString(), p);
     }
   });
 
   const assessmentMap = new Map();
   assessments.forEach((a: any) => {
-    if (!assessmentMap.has(a.studentId.toString())) {
-      assessmentMap.set(a.studentId.toString(), a);
+    if (!assessmentMap.has(a.student.toString())) {
+      assessmentMap.set(a.student.toString(), a);
     }
   });
 
@@ -261,9 +279,9 @@ export const getHighRiskStudents = async (
   });
 
   const studentInfos: StudentInfo[] = highRiskPredictions.map((pred: any) => {
-    const student = studentMap.get(pred.studentId.toString());
+    const student = studentMap.get(pred.student.toString());
     return {
-      id: pred.studentId.toString(),
+      id: pred.student.toString(),
       name: student?.fullName || "Unknown",
       email: student?.email || "unknown@example.com",
       burnoutScore: Math.round(pred.predictedScore),
@@ -280,9 +298,9 @@ export const getStudentDetail = async (studentId: string) => {
     throw new Error("Student not found");
   }
 
-  const prediction = await BurnoutPrediction.findOne({ studentId }).sort({ createdAt: -1 }).lean();
+  const prediction = await BurnoutPrediction.findOne({ student: studentId }).sort({ createdAt: -1 }).lean();
 
-  const assessments = await Assessment.find({ studentId }).sort({ createdAt: -1 }).lean();
+  const assessments = await Assessment.find({ student: studentId }).sort({ createdAt: -1 }).lean();
 
   const score = prediction?.predictedScore ?? 0;
   const riskLevel =
@@ -315,37 +333,7 @@ export const sendWellnessEmail = async (studentId: string, subject: string, mess
     throw new Error("Student not found");
   }
 
-  if (!config.emailUser || !config.emailPassword) {
-    throw new Error("Email service not configured");
-  }
-
-  const nodemailer = await import("nodemailer").then((m) => m.default);
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: config.emailUser,
-      pass: config.emailPassword,
-    },
-  });
-
-  const htmlContent = `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #4CAF50;">Wellness Support Message</h2>
-      <p>Dear ${student.fullName},</p>
-      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-        <p style="margin: 0; white-space: pre-wrap;">${message}</p>
-      </div>
-      <p>Remember, your well-being is important. If you need additional support, please reach out to your counselor or support services.</p>
-      <p>Best regards,<br/>Burnout Management System</p>
-    </div>
-  `;
-
-  await transporter.sendMail({
-    from: config.emailUser,
-    to: student.email,
-    subject: subject,
-    html: htmlContent,
-  });
+  await sendSupportEmail(student.email, student.fullName, subject, message);
 };
 
 export const seedDefaultAdmin = async (): Promise<void> => {

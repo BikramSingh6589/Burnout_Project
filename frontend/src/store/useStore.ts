@@ -292,7 +292,6 @@ interface AppState {
   sendChatMessage: (text: string) => void;
 
   // Admin actions
-  adminSendNotification: (studentId: string | 'all', message: string, category: string) => Promise<void>;
   adminCreateRecommendation: (rec: Omit<Recommendation, 'id' | 'followedStatus' | 'rating' | 'feedbackText' | 'dateGenerated'>) => void;
   adminDeleteRecommendation: (id: string) => void;
   adminUpdateSettings: (settings: Partial<AdminSettings>) => void;
@@ -1612,24 +1611,6 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   // Admin Actions
-  adminSendNotification: async (studentId, message, _category) => {
-    const token = get().authToken ?? getStoredAuthToken();
-    if (!token) return;
-    if (studentId === 'all') {
-      const students = get().adminStudents;
-      if (students.length === 0) {
-        throw new Error('No students are loaded for bulk dispatch');
-      }
-      await Promise.all(
-        students.map((student) =>
-          get().sendWellnessEmail(student.id, 'Platform Notification', message),
-        ),
-      );
-    } else {
-      await get().sendWellnessEmail(studentId, 'Platform Notification', message);
-    }
-  },
-
   adminCreateRecommendation: (rec) => {
     const newRec: Recommendation = {
       ...rec,

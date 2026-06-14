@@ -1,7 +1,10 @@
 import dotenv from 'dotenv';
 import nodemailer from 'nodemailer';
+import path from 'path';
 
-dotenv.config();
+// Explicitly load backend/.env regardless of current working dir
+const envPath = path.resolve(__dirname, '..', '.env');
+dotenv.config({ path: envPath });
 
 const { EMAIL_USER, EMAIL_PASSWORD, TEST_EMAIL_RECIPIENT } = process.env;
 
