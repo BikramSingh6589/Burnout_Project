@@ -1,14 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { apiRequest } from '../lib/api';
+import { hasReachedWeeklyAssessmentLimit, type WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
 import { CheckCircle2, ArrowRight, ArrowLeft, ClipboardList } from 'lucide-react';
 
 export const Assessment: React.FC = () => {
-  const { submitAssessment, isAuthenticated } = useStore();
+  const { submitAssessment, isAuthenticated, authToken, fetchAdminSettings } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const isWeekly = location.pathname.includes('weekly');
   const showDashboardRedirectMessage = !isWeekly && new URLSearchParams(location.search).get('from') === 'dashboard';
+
+  useEffect(() => {
+    if (!isWeekly || !isAuthenticated || !authToken) return;
+
+    let cancelled = false;
+
+    const enforceWeeklyLimit = async () => {
+      try {
+        await fetchAdminSettings();
+        const { adminSettings: settings } = useStore.getState();
+        const historyResponse = await apiRequest<{
+          success: boolean;
+          data: { history: WeeklyAssessmentRecord[] };
+        }>('/weekly-assessment/history', { token: authToken });
+
+        if (cancelled) return;
+
+        if (hasReachedWeeklyAssessmentLimit(historyResponse.data.history, settings.maxWeeklyAssessmentsPerStudent)) {
+          navigate('/dashboard', { replace: true });
+        }
+      } catch {
+        // Backend still enforces the limit on submit if this check fails.
+      }
+    };
+
+    void enforceWeeklyLimit();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isWeekly, isAuthenticated, authToken, fetchAdminSettings, navigate]);
 
   // Guard: Must be logged in
   if (!isAuthenticated) {

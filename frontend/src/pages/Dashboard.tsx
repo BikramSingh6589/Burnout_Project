@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { apiRequest } from '../lib/api';
+import { hasReachedWeeklyAssessmentLimit, type WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Customized } from 'recharts';
 import { Sparkles, Calendar, Moon, Compass, ArrowRight, Loader2 } from 'lucide-react';
@@ -73,10 +75,25 @@ const BarHoverTimeLabel: React.FC<BarHoverTimeLabelProps> = ({
 };
 
 export const Dashboard: React.FC = () => {
-  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk, analyticsLoading, trackerHistoryLoading, burnoutRiskLoading, recommendationsLoading } = useStore();
+  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk, analyticsLoading, trackerHistoryLoading, burnoutRiskLoading, recommendationsLoading, adminSettings, fetchAdminSettings, authToken } = useStore();
   const navigate = useNavigate();
   const [sleepHoveredIndex, setSleepHoveredIndex] = useState<number | null>(null);
   const [screenHoveredIndex, setScreenHoveredIndex] = useState<number | null>(null);
+  const [weeklyAssessmentHistory, setWeeklyAssessmentHistory] = useState<WeeklyAssessmentRecord[]>([]);
+
+  const fetchWeeklyAssessmentHistory = useCallback(async () => {
+    if (!authToken) return;
+
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: { history: WeeklyAssessmentRecord[] };
+      }>('/weekly-assessment/history', { token: authToken });
+      setWeeklyAssessmentHistory(response.data.history);
+    } catch {
+      setWeeklyAssessmentHistory([]);
+    }
+  }, [authToken]);
 
   useEffect(() => {
     fetchTrackerHistory();
@@ -84,7 +101,17 @@ export const Dashboard: React.FC = () => {
     fetchNotifications();
     fetchAnalytics();
     fetchBurnoutRisk();
-  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics, fetchBurnoutRisk]);
+    fetchAdminSettings();
+  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics, fetchBurnoutRisk, fetchAdminSettings]);
+
+  useEffect(() => {
+    void fetchWeeklyAssessmentHistory();
+  }, [fetchWeeklyAssessmentHistory, trackerHistory]);
+
+  const isWeeklyLimitReached = useMemo(
+    () => hasReachedWeeklyAssessmentLimit(weeklyAssessmentHistory, adminSettings.maxWeeklyAssessmentsPerStudent),
+    [weeklyAssessmentHistory, adminSettings.maxWeeklyAssessmentsPerStudent],
+  );
 
   // Guard checks handled in DashboardLayout, but let's read the latest values
   const latestTracker = trackerHistory.length > 0 ? trackerHistory[trackerHistory.length - 1] : null;
@@ -201,12 +228,29 @@ export const Dashboard: React.FC = () => {
             >
               History & Trends
             </button>
-            <button
-              onClick={() => navigate('/assessment/weekly')}
-              className="bg-primary text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm hover:bg-[#4338CA] hover:shadow-md "
-            >
-              Take Assessment
-            </button>
+            <div className="relative group">
+              <button
+                type="button"
+                disabled={isWeeklyLimitReached}
+                onClick={() => {
+                  if (!isWeeklyLimitReached) {
+                    navigate('/assessment/weekly');
+                  }
+                }}
+                className={`bg-primary text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm ${
+                  isWeeklyLimitReached
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-[#4338CA] hover:shadow-md'
+                }`}
+              >
+                Take Assessment
+              </button>
+              {isWeeklyLimitReached && (
+                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-xs -translate-x-1/2 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs font-medium text-[#CBD5E1] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  Weekly assessment limit reached. Try again when the new week begins.
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
