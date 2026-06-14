@@ -77,99 +77,103 @@ export const HistoryTrends: React.FC = () => {
       <div className="space-y-8">
         
         {/* Header Block */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 border-b border-slate-100 dark:border-[#334155]">
-          <div>
-            <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">History & Wellness Trends</h2>
-            <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">Monitor progress trends and behavior correlations</p>
-          </div>
+        <div className="space-y-4 pb-4 border-b border-slate-100 dark:border-[#334155]">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="lg:flex-1">
+              <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">History & Wellness Trends</h2>
+              <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">Monitor progress trends and behavior correlations</p>
+            </div>
 
-          {/* Backend Analytics Cards */}
-          <div className="flex gap-4">
-            {analyticsSummary?.currentTrend && (
-              <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
-                <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Overall Trend</span>
-                <span className={`font-semibold text-sm ${
-                  analyticsSummary.currentTrend === 'IMPROVING' ? 'text-success' : 
-                  analyticsSummary.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
-                }`}>
-                  {analyticsSummary.currentTrend}
-                </span>
-              </div>
-            )}
-            
-            {analyticsSummary?.baselineComparison && (
-              <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
-                <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Baseline Shift</span>
-                <div className="flex items-center gap-2">
+            {/* Backend Analytics Cards */}
+            <div className="flex flex-wrap gap-4 lg:ml-auto lg:mr-6 xl:mr-10">
+              {analyticsSummary?.currentTrend && (
+                <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
+                  <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Overall Trend</span>
                   <span className={`font-semibold text-sm ${
-                    analyticsSummary.baselineComparison.status === 'IMPROVED' ? 'text-success' : 
-                    analyticsSummary.baselineComparison.status === 'WORSENED' ? 'text-error' : 'text-primary'
+                    analyticsSummary.currentTrend === 'IMPROVING' ? 'text-success' : 
+                    analyticsSummary.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
                   }`}>
-                    {analyticsSummary.baselineComparison.status}
-                  </span>
-                  <span className="text-xs text-text-secondary">
-                    ({analyticsSummary.baselineComparison.difference > 0 ? '+' : ''}{analyticsSummary.baselineComparison.difference} pts)
+                    {analyticsSummary.currentTrend}
                   </span>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Filters */}
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-neutral-outline dark:text-[#CBD5E1] shrink-0" />
-            <div className="inline-flex rounded-lg border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#1E293B] p-0.5 shadow-sm text-xs font-semibold">
-              <button
-                onClick={() => { setFilterDays(7); setStartDate(''); setEndDate(''); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 7 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
-              >
-                7 Days
-              </button>
-              <button
-                onClick={() => { setFilterDays(30); setStartDate(''); setEndDate(''); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 30 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
-              >
-                30 Days
-              </button>
-              <button
-                onClick={() => { setFilterDays(90); setStartDate(''); setEndDate(''); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 90 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
-              >
-                90 Days
-              </button>
+              )}
+              
+              {analyticsSummary?.baselineComparison && (
+                <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
+                  <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Baseline Shift</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-semibold text-sm ${
+                      analyticsSummary.baselineComparison.status === 'IMPROVED' ? 'text-success' : 
+                      analyticsSummary.baselineComparison.status === 'WORSENED' ? 'text-error' : 'text-primary'
+                    }`}>
+                      {analyticsSummary.baselineComparison.status}
+                    </span>
+                    <span className="text-xs text-text-secondary">
+                      ({analyticsSummary.baselineComparison.difference > 0 ? '+' : ''}{analyticsSummary.baselineComparison.difference} pts)
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Custom Date Range Picker */}
-        <div className="bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm border border-slate-100 dark:border-[#334155] rounded-xl p-4 flex flex-wrap gap-4 items-center shadow-sm">
-          <span className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC] flex items-center">
-            <Calendar className="h-4 w-4 mr-1 text-primary dark:text-[#4F46E5]" />
-            Custom Range:
-          </span>
-          <div className="flex items-center space-x-2 text-xs">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border border-slate-200 dark:border-[#334155] rounded-lg px-2 py-1.5 bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary dark:focus:border-[#4F46E5]"
-            />
-            <span className="text-neutral-outline dark:text-[#CBD5E1]">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border border-slate-200 dark:border-[#334155] rounded-lg px-2 py-1.5 bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary dark:focus:border-[#4F46E5]"
-            />
+          {/* Custom Date Range Picker */}
+          <div className="bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm border border-slate-100 dark:border-[#334155] rounded-xl p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-4 min-w-0">
+              <span className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC] flex items-center">
+                <Calendar className="h-4 w-4 mr-1 text-primary dark:text-[#4F46E5]" />
+                Custom Range:
+              </span>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border border-slate-200 dark:border-[#334155] rounded-lg px-2 py-1.5 bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary dark:focus:border-[#4F46E5]"
+                />
+                <span className="text-neutral-outline dark:text-[#CBD5E1]">to</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border border-slate-200 dark:border-[#334155] rounded-lg px-2 py-1.5 bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary dark:focus:border-[#4F46E5]"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button
+                  onClick={() => { setStartDate(''); setEndDate(''); setFilterDays(30); }}
+                  className="text-xs text-error font-semibold hover:underline"
+                >
+                  Clear Custom Range
+                </button>
+              )}
+            </div>
+
+            {/* Quick Filters */}
+            <div className="flex items-center space-x-2 sm:ml-auto shrink-0">
+              <Filter className="h-4 w-4 text-neutral-outline dark:text-[#CBD5E1] shrink-0" />
+              <div className="inline-flex rounded-lg border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#1E293B] p-0.5 shadow-sm text-xs font-semibold">
+                <button
+                  onClick={() => { setFilterDays(7); setStartDate(''); setEndDate(''); }}
+                  className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 7 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
+                >
+                  7 Days
+                </button>
+                <button
+                  onClick={() => { setFilterDays(30); setStartDate(''); setEndDate(''); }}
+                  className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 30 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
+                >
+                  30 Days
+                </button>
+                <button
+                  onClick={() => { setFilterDays(90); setStartDate(''); setEndDate(''); }}
+                  className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 90 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
+                >
+                  90 Days
+                </button>
+              </div>
+            </div>
           </div>
-          {(startDate || endDate) && (
-            <button
-              onClick={() => { setStartDate(''); setEndDate(''); setFilterDays(30); }}
-              className="text-xs text-error font-semibold hover:underline"
-            >
-              Clear Custom Range
-            </button>
-          )}
         </div>
 
         {/* Graphs Grid */}
