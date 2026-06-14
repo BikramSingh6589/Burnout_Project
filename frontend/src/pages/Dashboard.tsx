@@ -384,13 +384,13 @@ export const Dashboard: React.FC = () => {
                       type="category"
                       interval={0}
                       tickFormatter={(value) => chartData[Number(value)]?.dateLabel ?? ''}
-                      tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }}
                       stroke="#334155"
                       tickLine={false}
                       axisLine={false}
                       dy={10}
                     />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip
                       labelFormatter={tooltipTimeLabel}
                       contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', padding: '12px' }}
@@ -492,13 +492,13 @@ export const Dashboard: React.FC = () => {
                       type="category"
                       interval={0}
                       tickFormatter={(value) => behaviorChartData[Number(value)]?.dateLabel ?? ''}
-                      tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }}
                       stroke="#334155"
                       tickLine={false}
                       axisLine={false}
                       dy={10}
                     />
-                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
                     <Customized
                       component={(props: BarHoverTimeLabelProps) => (
@@ -546,13 +546,13 @@ export const Dashboard: React.FC = () => {
                       type="category"
                       interval={0}
                       tickFormatter={(value) => behaviorChartData[Number(value)]?.dateLabel ?? ''}
-                      tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }}
                       stroke="#334155"
                       tickLine={false}
                       axisLine={false}
                       dy={10}
                     />
-                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
                     <Customized
                       component={(props: BarHoverTimeLabelProps) => (

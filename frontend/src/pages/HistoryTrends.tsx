@@ -206,13 +206,13 @@ export const HistoryTrends: React.FC = () => {
                       type="category"
                       interval={0}
                       tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
-                      tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }}
                       stroke="#334155"
                       tickLine={false}
                       axisLine={false}
                       dy={5}
                     />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#433FE5', strokeWidth: 1, strokeDasharray: '4 4' }} />
                     <Area type="monotone" dataKey="burnoutScore" stroke="#433FE5" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" activeDot={false} name="Burnout" />
                   </AreaChart>
@@ -244,13 +244,13 @@ export const HistoryTrends: React.FC = () => {
                       type="category"
                       interval={0}
                       tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
-                      tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }}
                       stroke="#334155"
                       tickLine={false}
                       axisLine={false}
                       dy={5}
                     />
-                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
                     <Line type="monotone" dataKey="sleepHours" stroke="#5D5CFF" strokeWidth={2} name="Sleep Hours" dot={{ r: 2 }} activeDot={false} />
@@ -281,13 +281,13 @@ export const HistoryTrends: React.FC = () => {
                       type="category"
                       interval={0}
                       tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
-                      tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }}
                       stroke="#334155"
                       tickLine={false}
                       axisLine={false}
                       dy={5}
                     />
-                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
                     <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} activeDot={false} />
@@ -324,13 +324,13 @@ export const HistoryTrends: React.FC = () => {
                       type="category"
                       interval={0}
                       tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
-                      tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }}
                       stroke="#334155"
                       tickLine={false}
                       axisLine={false}
                       dy={5}
                     />
-                    <YAxis domain={[0, 10]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#EF4444', strokeWidth: 1, strokeDasharray: '4 4' }} />
                     <Area type="monotone" dataKey="procrastination" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorProcr)" activeDot={false} name="Procrastination" />
                   </AreaChart>
