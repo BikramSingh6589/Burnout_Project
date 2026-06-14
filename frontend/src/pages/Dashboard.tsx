@@ -5,7 +5,7 @@ import { apiRequest } from '../lib/api';
 import { hasReachedWeeklyAssessmentLimit, type WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Customized } from 'recharts';
-import { Sparkles, Calendar, Moon, Compass, ArrowRight, Loader2 } from 'lucide-react';
+import { Sparkles, Calendar, Moon, Compass, ArrowRight, Loader2, Info } from 'lucide-react';
 
 const formatDDMM = (timestamp: number) => {
   const dt = new Date(timestamp);
@@ -415,7 +415,18 @@ export const Dashboard: React.FC = () => {
           {/* Right: Recommendation Analytics Pie Chart */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between space-y-6">
             <div className="flex justify-between items-end pb-4 border-b border-border">
-              <h3 className="text-base font-semibold tracking-tight text-text-primary">Interventions</h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-base font-semibold tracking-tight text-text-primary">Interventions</h3>
+                <div className="relative group">
+                  <Info
+                    className="h-4 w-4 text-text-secondary cursor-help"
+                    aria-label="Interventions information"
+                  />
+                  <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs font-medium leading-relaxed text-[#CBD5E1] opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                    Interventions are your personalized wellness recommendations.
+                  </div>
+                </div>
+              </div>
               <span className="text-xs text-text-secondary font-medium">Status</span>
             </div>
             
