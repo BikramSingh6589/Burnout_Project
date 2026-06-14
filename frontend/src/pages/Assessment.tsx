@@ -4,6 +4,7 @@ import { useStore } from '../store/useStore';
 import { apiRequest } from '../lib/api';
 import { hasReachedWeeklyAssessmentLimit, type WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
 import { CheckCircle2, ArrowRight, ArrowLeft, ClipboardList } from 'lucide-react';
+import { InfoPopover } from '../components/ui/InfoPopover';
 
 export const Assessment: React.FC = () => {
   const { submitAssessment, isAuthenticated, authToken, fetchAdminSettings } = useStore();
@@ -170,7 +171,13 @@ export const Assessment: React.FC = () => {
               {/* Stress Level Slider */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold">
-                  <label className="text-text-primary" htmlFor="stress-slider">Stress Level (1–10)</label>
+                  <label className="flex items-center gap-2 text-text-primary" htmlFor="stress-slider">
+                    <span>Stress Level (1–10)</span>
+                    <InfoPopover
+                      title="Stress Level"
+                      description={`Measures how stressed you felt during the last week.\n\n1 = Very Relaxed\n\n10 = Extremely Stressed`}
+                    />
+                  </label>
                   <span className="text-primary">{formData.stressLevel} / 10</span>
                 </div>
                 <input
@@ -187,7 +194,13 @@ export const Assessment: React.FC = () => {
               {/* Academic Satisfaction Slider */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold">
-                  <label className="text-text-primary" htmlFor="satisfaction-slider">Academic Satisfaction (1–10)</label>
+                  <label className="flex items-center gap-2 text-text-primary" htmlFor="satisfaction-slider">
+                    <span>Academic Satisfaction (1–10)</span>
+                    <InfoPopover
+                      title="Academic Satisfaction"
+                      description={`Measures how satisfied you are with your academic performance and progress.\n\n1 = Very Unsatisfied\n\n10 = Very Satisfied`}
+                    />
+                  </label>
                   <span className="text-primary">{formData.academicSatisfaction} / 10</span>
                 </div>
                 <input
@@ -204,7 +217,13 @@ export const Assessment: React.FC = () => {
               {/* Procrastination Slider */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold">
-                  <label className="text-text-primary" htmlFor="procrastination-slider">Procrastination Level (1–10)</label>
+                  <label className="flex items-center gap-2 text-text-primary" htmlFor="procrastination-slider">
+                    <span>Procrastination Level (1–10)</span>
+                    <InfoPopover
+                      title="Procrastination Level"
+                      description={`Measures how often you delay important academic tasks.\n\n1 = Rarely Procrastinate\n\n10 = Procrastinate Frequently`}
+                    />
+                  </label>
                   <span className="text-primary">{formData.procrastination} / 10</span>
                 </div>
                 <input
@@ -221,7 +240,13 @@ export const Assessment: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 {/* Study Hours Input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-text-primary" htmlFor="study-hours-input">Average Study Hours / Day</label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-text-primary" htmlFor="study-hours-input">
+                    <span>Average Study Hours / Day</span>
+                    <InfoPopover
+                      title="Average Study Hours Per Day"
+                      description="Enter the average number of hours you spend studying each day. Include lectures, self-study, revision, and academic work."
+                    />
+                  </label>
                   <input
                     id="study-hours-input"
                     type="number"
@@ -235,7 +260,13 @@ export const Assessment: React.FC = () => {
 
                 {/* Assignment Backlog Input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-text-primary" htmlFor="backlog-input">Assignment Backlog (Count)</label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-text-primary" htmlFor="backlog-input">
+                    <span>Assignment Backlog (Count)</span>
+                    <InfoPopover
+                      title="Assignment Backlog"
+                      description="Enter the number of unfinished assignments, projects, or academic tasks currently pending."
+                    />
+                  </label>
                   <input
                     id="backlog-input"
                     type="number"
@@ -270,7 +301,13 @@ export const Assessment: React.FC = () => {
               {/* Motivation Level Slider */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold">
-                  <label className="text-text-primary" htmlFor="motivation-slider">Motivation Level (1–10)</label>
+                  <label className="flex items-center gap-2 text-text-primary" htmlFor="motivation-slider">
+                    <span>Motivation Level (1–10)</span>
+                    <InfoPopover
+                      title="Motivation Level"
+                      description="Measures how motivated you feel to begin and complete your academic tasks."
+                    />
+                  </label>
                   <span className="text-primary">{formData.motivationLevel} / 10</span>
                 </div>
                 <input
@@ -287,7 +324,13 @@ export const Assessment: React.FC = () => {
               {/* Energy Level Slider */}
               <div className="space-y-2">
                 <div className="flex justify-between text-xs font-bold">
-                  <label className="text-text-primary" htmlFor="energy-slider">Energy Level (1–10)</label>
+                  <label className="flex items-center gap-2 text-text-primary" htmlFor="energy-slider">
+                    <span>Energy Level (1–10)</span>
+                    <InfoPopover
+                      title="Energy Level"
+                      description="Measures how energetic and alert you felt during the last week."
+                    />
+                  </label>
                   <span className="text-primary">{formData.energyLevel} / 10</span>
                 </div>
                 <input
@@ -304,7 +347,13 @@ export const Assessment: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 {/* Sleep Hours Input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-text-primary" htmlFor="sleep-hours-input">Average Sleep Hours / Night</label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-text-primary" htmlFor="sleep-hours-input">
+                    <span>Average Sleep Hours / Night</span>
+                    <InfoPopover
+                      title="Sleep Hours"
+                      description="Enter the average number of hours you slept each night during the last week."
+                    />
+                  </label>
                   <input
                     id="sleep-hours-input"
                     type="number"
@@ -319,7 +368,13 @@ export const Assessment: React.FC = () => {
 
                 {/* Screen Time Input */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-text-primary" htmlFor="screen-time-input">Daily Screen Time (Hours)</label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-text-primary" htmlFor="screen-time-input">
+                    <span>Daily Screen Time (Hours)</span>
+                    <InfoPopover
+                      title="Screen Time"
+                      description="Enter how many hours per day you typically spend using screens for study, social apps, and entertainment."
+                    />
+                  </label>
                   <input
                     id="screen-time-input"
                     type="number"
