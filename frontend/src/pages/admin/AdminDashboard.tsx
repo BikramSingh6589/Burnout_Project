@@ -372,11 +372,11 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Section 5: Send notifications (Individual/Bulk) */}
           {activeSection === 'notifications' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Risk-Targeted Email Dispatch</h2>
+            <div className="space-y-6 animate-in fade-in duration-200 w-full flex flex-col items-center">
+              <h2 className="text-center font-display font-bold text-[32px] md:text-[36px] tracking-tight text-neutral-slate dark:text-[#F8FAFC] mb-8 w-full">Risk-Targeted Email Dispatch</h2>
               
-              <div className="max-w-xl bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-2">Send to Students by Risk Group</h3>
+              <div className="w-full max-w-[1200px] mx-auto bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-6">
+                <h3 className="text-[22px] md:text-[24px] font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-4 mb-4">Send to Students by Risk Group</h3>
 
                 {notifSuccess && (
                   <div className="bg-success/10 border border-success/20 text-success p-2.5 rounded-lg text-xs font-semibold text-center">
@@ -389,35 +389,42 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 )}
 
-                <p className="text-sm text-slate-600 dark:text-slate-300">
-                  Use the controls below to send pre-defined support emails only to the selected risk tier. Manual broadcast composition is disabled to keep dispatching consistent with the current risk targeting strategy.
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Use the controls below to automatically send predefined support and wellness emails to students based on their current burnout risk classification. Each button targets a specific risk group and delivers tailored communication designed to provide guidance, encouragement, or intervention where appropriate. This process helps maintain consistent outreach and ensures that students receive support aligned with their current wellbeing status.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-[12px] border p-4 my-5" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#FFFFFF' }}>
+                  <div className="font-bold text-sm mb-1 text-white">NOTE:</div>
+                  <div className="text-xs leading-relaxed text-white">
+                    Clicking any of the buttons below will immediately send email notifications to all students belonging to the selected risk tier. Please ensure that the appropriate risk group is selected before dispatching communications.
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-5">
                   <button
                     onClick={() => sendRiskGroupEmail('high')}
-                    className="w-full bg-error text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-error text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
                   >
                     Send High Risk Alert
                   </button>
 
                   <button
                     onClick={() => sendRiskGroupEmail('moderate')}
-                    className="w-full bg-amber-500 text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-amber-500 text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
                   >
                     Send Moderate Reminder
                   </button>
 
                   <button
                     onClick={() => sendRiskGroupEmail('low')}
-                    className="w-full bg-success text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-success text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
                   >
                     Send Low Risk Appreciation
                   </button>
                 </div>
 
                 {emailLoading && (
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Sending emails to the selected group. This may take a moment.</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 pt-2">Sending emails to the selected group. This may take a moment.</div>
                 )}
               </div>
             </div>
