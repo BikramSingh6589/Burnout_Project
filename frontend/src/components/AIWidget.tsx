@@ -9,6 +9,7 @@ export const AIWidget: React.FC = () => {
   const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory, fetchNotifications, clearAIHistory } = useStore();
   const [isClearing, setIsClearing] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [inputMsg, setInputMsg] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -26,6 +27,13 @@ export const AIWidget: React.FC = () => {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [chatMessages, isOpen]);
+
+  // Auto-fade toast notifications
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // If not authenticated or not a student, do not render the AI Widget
   if (!isAuthenticated || user?.role !== 'student') return null;
@@ -65,7 +73,54 @@ export const AIWidget: React.FC = () => {
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
       {/* Expanded Chat Window */}
       {isOpen && (
-        <div className="w-[440px] h-[550px] bg-surface backdrop-blur-xl rounded-2xl border border-border/60 shadow-2xl flex flex-col overflow-hidden mb-5 animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="relative w-[440px] h-[550px] bg-surface backdrop-blur-xl rounded-2xl border border-border/60 shadow-2xl flex flex-col overflow-hidden mb-5 animate-in fade-in slide-in-from-bottom-5 duration-300">
+          {/* Toast Notification */}
+          {toast && (
+            <div className={`absolute top-16 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-xl text-xs font-semibold shadow-md z-20 transition-all duration-300 animate-in fade-in slide-in-from-top-2 ${
+              toast.type === 'success' ? 'bg-success text-white' : 'bg-error text-white'
+            }`}>
+              {toast.message}
+            </div>
+          )}
+
+          {/* Confirmation Dialog Overlay */}
+          {showClearConfirm && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-6 z-10 animate-in fade-in duration-200">
+              <div className="bg-surface-elevated border border-border/80 rounded-2xl p-5 max-w-[85%] space-y-4 shadow-xl text-center">
+                <h5 className="font-bold text-sm text-text-primary">Clear Chat History</h5>
+                <p className="text-xs text-text-secondary leading-relaxed">
+                  Are you sure you want to delete all chat messages? This action cannot be undone.
+                </p>
+                <div className="flex space-x-3 justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowClearConfirm(false)}
+                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-surface border border-border text-text-primary hover:bg-surface-elevated/80 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setShowClearConfirm(false);
+                      setIsClearing(true);
+                      try {
+                        await clearAIHistory();
+                        setToast({ type: 'success', message: 'Chat history cleared successfully.' });
+                      } catch (err) {
+                        setToast({ type: 'error', message: 'Unable to clear chat history. Please try again.' });
+                      } finally {
+                        setIsClearing(false);
+                      }
+                    }}
+                    className="px-4 py-2 text-xs font-semibold rounded-lg bg-error text-white hover:bg-red-700 transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Header */}
           <div className="bg-background-secondary/80 backdrop-blur-sm p-4 flex justify-between items-center border-b border-border/60">
             <div className="flex items-center space-x-3">
