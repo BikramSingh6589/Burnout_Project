@@ -127,7 +127,7 @@ export const getWeeklyAssessmentHistory = async (userId: string): Promise<IWeekl
     throw new AppError("Invalid user identifier", 400);
   }
 
-  return WeeklyAssessment.find({ student: new Types.ObjectId(userId) }).sort({ weekStartDate: -1, completedAt: -1, createdAt: -1 });
+  return WeeklyAssessment.find({ student: new Types.ObjectId(userId) }).sort({ weekStartDate: -1, completedAt: -1, createdAt: -1 }).limit(10);
 };
 
 export const getLatestWeeklyAssessment = async (userId: string): Promise<IWeeklyAssessment | null> => {

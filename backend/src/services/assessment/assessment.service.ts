@@ -75,7 +75,7 @@ export const getAssessmentHistory = async (userId: string): Promise<IAssessment[
     throw new AppError("Invalid user identifier", 400);
   }
 
-  return Assessment.find({ student: new Types.ObjectId(userId) }).sort({ createdAt: -1 });
+  return Assessment.find({ student: new Types.ObjectId(userId) }).sort({ createdAt: -1 }).limit(10);
 };
 
 export const getLatestAssessment = async (userId: string): Promise<IAssessment | null> => {
