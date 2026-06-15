@@ -203,7 +203,7 @@ export const AdminDashboard: React.FC = () => {
                     <span className="text-xs uppercase font-bold tracking-wider">Total Registered</span>
                     <Users className="h-5 w-5 text-indigo-500" />
                   </div>
-                  <p className="text-3xl font-extrabold text-neutral-slate">{totalStudentsCount}</p>
+                  <p className="text-3xl font-extrabold text-neutral-slate dark:text-white">{totalStudentsCount}</p>
                   <p className="text-[10px] text-neutral-outline">Academic wellness database</p>
                 </div>
 
@@ -212,7 +212,7 @@ export const AdminDashboard: React.FC = () => {
                     <span className="text-xs uppercase font-bold tracking-wider">Average Burnout</span>
                     <ShieldCheck className="h-5 w-5 text-success" />
                   </div>
-                  <p className="text-3xl font-extrabold text-neutral-slate">{averageBurnoutScore}</p>
+                  <p className="text-3xl font-extrabold text-neutral-slate dark:text-white">{averageBurnoutScore}</p>
                   <p className="text-[10px] text-neutral-outline">Platform-wide burnout average</p>
                 </div>
 
@@ -299,7 +299,7 @@ export const AdminDashboard: React.FC = () => {
                       {sortedStudents.map((student) => (
                         <tr key={student.id} className="transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-700/90">
                           <td className="p-4 font-bold text-slate-900 dark:text-slate-100">{student.name}</td>
-                          <td className="p-4 text-[10px] text-slate-300">{student.email}</td>
+                          <td className="student-email p-4 text-[10px] text-[#374151] dark:text-slate-300">{student.email}</td>
                           <td className="p-4 font-extrabold">{student.burnoutScore}/100</td>
                           <td className="p-4">
                             <span className={`px-2.5 py-0.5 rounded-full border text-[9px] font-bold ${
@@ -333,7 +333,7 @@ export const AdminDashboard: React.FC = () => {
                                     // ignore - store handles errors
                                   }
                                 }}
-                                className="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 font-bold px-2 py-1 rounded transition-colors duration-200"
+                                className="view-details-btn text-[10px] bg-white border border-slate-200 hover:bg-slate-100 font-bold px-2 py-1 rounded transition-colors duration-200 dark:bg-white/12 dark:text-white dark:border-white/20 dark:hover:bg-white/20"
                               >
                                 View Details
                               </button>
