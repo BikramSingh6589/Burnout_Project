@@ -17,6 +17,7 @@ export const AdminDashboard: React.FC = () => {
     fetchAdminDashboardMetrics,
     fetchAdminSettings,
     sendWellnessEmail,
+    sendBulkWellnessEmail,
     fetchAdminStudentDetail,
     adminStudentDetail,
     adminStudentLoading,
@@ -38,6 +39,7 @@ export const AdminDashboard: React.FC = () => {
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
   const [emailLoading, setEmailLoading] = useState(false);
+  const [sendingEmailStudentId, setSendingEmailStudentId] = useState<string | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const toggleTheme = () => {
@@ -96,42 +98,11 @@ export const AdminDashboard: React.FC = () => {
     setNotificationError(null);
     setEmailLoading(true);
 
-    const high = adminSettings.highRiskThreshold ?? 70;
-    const med = adminSettings.moderateRiskThreshold ?? 40;
-
-    const targets = adminStudents.filter((student) =>
-      group === 'high'
-        ? student.burnoutScore >= high
-        : group === 'moderate'
-        ? student.burnoutScore >= med && student.burnoutScore < high
-        : student.burnoutScore < med
-    );
-
-    if (targets.length === 0) {
-      setNotificationError('No students found for the selected risk group.');
-      setEmailLoading(false);
-      return;
-    }
-
-    const subject =
-      group === 'high'
-        ? 'Urgent: High Burnout Risk Support'
-        : group === 'moderate'
-        ? 'Notice: Moderate Burnout Risk'
-        : 'Good progress: Low Burnout Risk';
-
-    const message =
-      group === 'high'
-        ? 'Our records indicate your recent assessments show a high burnout score. We recommend you contact the wellness center, review personalized recommendations, and consider scheduling time for rest and counseling. If you need immediate assistance, please reach out to your counselor.'
-        : group === 'moderate'
-        ? 'Your recent assessments show a moderate burnout score. Keep an eye on sleep, stress management and study balance. Try small adjustments such as short breaks, a sleep routine, and review your recommendations in the app.'
-        : 'Nice work — your recent assessments indicate a low burnout score. Keep maintaining healthy habits. If anything changes, remember the app is here for support and recommendations.';
-
     try {
-      for (const student of targets) {
-        // sequential send reduces rate-limit risk and preserves template behavior.
-        // eslint-disable-next-line no-await-in-loop
-        await sendWellnessEmail(student.id, subject, message);
+      const result = await sendBulkWellnessEmail(group);
+      if (result.sent === 0) {
+        setNotificationError(`No students found in the ${group} risk group.`);
+        return;
       }
       setNotifSuccess(true);
       setTimeout(() => setNotifSuccess(false), 2500);
@@ -315,9 +286,12 @@ export const AdminDashboard: React.FC = () => {
                       <tr>
                         <th className="p-4">Name</th>
                         <th className="p-4">Email</th>
-                        <th className="p-4">Burnout</th>
+                        <th className="p-4">Burnout Score</th>
                         <th className="p-4">Risk Level</th>
-                        <th className="p-4">Last Assessment</th>
+                        <th className="p-4">Average Sleep</th>
+                        <th className="p-4">Average Stress</th>
+                        <th className="p-4">Mood Trend</th>
+                        <th className="p-4">Last Assessment Date</th>
                         <th className="p-4 text-center">Action</th>
                       </tr>
                     </thead>
@@ -329,11 +303,22 @@ export const AdminDashboard: React.FC = () => {
                           <td className="p-4 font-extrabold">{student.burnoutScore}/100</td>
                           <td className="p-4">
                             <span className={`px-2.5 py-0.5 rounded-full border text-[9px] font-bold ${
-                              student.burnoutScore >= adminSettings.highRiskThreshold ? 'bg-error/10 text-error border-error/15' :
-                              student.burnoutScore >= adminSettings.moderateRiskThreshold ? 'bg-amber-500/10 text-amber-600 border-amber-500/15' :
+                              student.riskLevel === 'High' ? 'bg-error/10 text-error border-error/15' :
+                              student.riskLevel === 'Moderate' ? 'bg-amber-500/10 text-amber-600 border-amber-500/15' :
                               'bg-success/10 text-success border-success/15'
                             }`}>
-                              {student.riskLevel}
+                              {student.riskLevel.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="p-4">{student.sleepHoursAvg > 0 ? `${student.sleepHoursAvg}h` : '—'}</td>
+                          <td className="p-4">{student.stressLevelAvg > 0 ? student.stressLevelAvg : '—'}</td>
+                          <td className="p-4">
+                            <span className={`px-2 py-0.5 rounded text-[9px] font-bold ${
+                              student.moodTrend === 'Positive' ? 'text-success' :
+                              student.moodTrend === 'Negative' ? 'text-error' :
+                              'text-slate-500'
+                            }`}>
+                              {student.moodTrend}
                             </span>
                           </td>
                           <td className="p-4 text-[10px] text-slate-500">{student.lastAssessmentDate || 'N/A'}</td>
@@ -356,37 +341,20 @@ export const AdminDashboard: React.FC = () => {
                               <button
                                 onClick={async () => {
                                   setNotificationError(null);
-                                  setEmailLoading(true);
+                                  setSendingEmailStudentId(student.id);
                                   try {
-                                    const score = Number(student.burnoutScore || 0);
-                                    const high = adminSettings.highRiskThreshold ?? 70;
-                                    const med = adminSettings.moderateRiskThreshold ?? 40;
-                                    let subject = 'Wellness Support Message';
-                                    let message = '';
-
-                                    if (score >= high) {
-                                      subject = 'Urgent: High Burnout Risk Support';
-                                      message = `Our records indicate your recent assessments show a high burnout score (${score}). We recommend you contact the wellness center, review personalized recommendations, and consider scheduling time for rest and counseling. If you need immediate assistance, please reach out to your counselor.`;
-                                    } else if (score >= med) {
-                                      subject = 'Notice: Moderate Burnout Risk';
-                                      message = `Your recent assessments show a moderate burnout score (${score}). Keep an eye on sleep, stress management and study balance. Try small adjustments (short breaks, sleep routine) and check your recommendations in the app.`;
-                                    } else {
-                                      subject = 'Good Progress: Low Burnout Risk';
-                                      message = `Nice work — your recent assessments indicate a low burnout score (${score}). Keep maintaining healthy habits. If anything changes, remember the app is here for support and recommendations.`;
-                                    }
-
-                                    await sendWellnessEmail(student.id, subject, message);
+                                    await sendWellnessEmail(student.id);
                                     setNotifSuccess(true);
                                     setTimeout(() => setNotifSuccess(false), 2500);
                                   } catch (err) {
-                                    setNotificationError(err instanceof Error ? err.message : 'Failed to send automated email');
+                                    setNotificationError(err instanceof Error ? err.message : 'Failed to send email');
                                   } finally {
-                                    setEmailLoading(false);
+                                    setSendingEmailStudentId(null);
                                   }
                                 }}
                                 className="text-[10px] text-secondary border border-secondary/20 hover:bg-secondary/15 font-bold px-2 py-1 rounded transition-colors duration-200"
                               >
-                                {emailLoading ? 'Sending…' : 'Send Email'}
+                                {sendingEmailStudentId === student.id ? 'Sending…' : 'Send Email'}
                               </button>
                             </div>
                           </td>

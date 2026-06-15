@@ -97,6 +97,109 @@ export const sendSupportEmail = async (to: string, name: string, subject: string
   });
 };
 
+export type WellnessRiskTier = "high" | "moderate" | "low";
+
+export interface WellnessEmailTemplate {
+  subject: string;
+  text: string;
+  html: string;
+}
+
+const wellnessEmailShell = (subject: string, studentName: string, bodyHtml: string): string => `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${subject}</title>
+    </head>
+    <body style="margin:0;padding:0;background:#e0f2fe;font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e0f2fe;padding:32px 16px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #bae6fd;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(14,116,144,0.12);">
+              <tr>
+                <td style="background:linear-gradient(135deg,#38bdf8 0%,#0ea5e9 100%);padding:24px 28px;">
+                  <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e0f2fe;">Student Wellness Platform</p>
+                  <h1 style="margin:8px 0 0;font-size:24px;line-height:1.3;color:#ffffff;font-weight:700;">${subject}</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:28px;color:#0f172a;font-size:16px;line-height:1.7;">
+                  <p style="margin:0 0 16px;">Hello ${studentName},</p>
+                  ${bodyHtml}
+                  <p style="margin:24px 0 0;color:#475569;font-size:14px;">Student Wellness Platform</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  </html>
+`;
+
+export const getWellnessEmailTemplate = (
+  tier: WellnessRiskTier,
+  studentName: string
+): WellnessEmailTemplate => {
+  if (tier === "high") {
+    const subject = "Wellness Support Reminder";
+    const paragraphs = [
+      "Your recent wellness assessments indicate a high burnout risk level.",
+      "We encourage you to review your recommendations, improve sleep quality, reduce academic stress where possible, and regularly use the Wellness Assistant for guidance.",
+      "Small consistent improvements can significantly improve your wellbeing.",
+      "Please take care of yourself and reach out when needed.",
+    ];
+    const bodyHtml = paragraphs
+      .map((p) => `<p style="margin:0 0 16px;color:#334155;">${p}</p>`)
+      .join("");
+    const text = `Hello ${studentName},\n\n${paragraphs.join("\n\n")}\n\nStudent Wellness Platform`;
+    return { subject, text, html: wellnessEmailShell(subject, studentName, bodyHtml) };
+  }
+
+  if (tier === "moderate") {
+    const subject = "Wellness Progress Reminder";
+    const paragraphs = [
+      "Your current burnout indicators fall within the moderate range.",
+      "You are making progress, but there is still room for improvement.",
+      "Maintaining healthy study habits, managing stress, and following platform recommendations can help improve your wellbeing further.",
+      "Keep moving forward consistently.",
+    ];
+    const bodyHtml = paragraphs
+      .map((p) => `<p style="margin:0 0 16px;color:#334155;">${p}</p>`)
+      .join("");
+    const text = `Hello ${studentName},\n\n${paragraphs.join("\n\n")}\n\nStudent Wellness Platform`;
+    return { subject, text, html: wellnessEmailShell(subject, studentName, bodyHtml) };
+  }
+
+  const subject = "Congratulations on Your Progress";
+  const paragraphs = [
+    "Your recent assessments indicate a healthy wellness status.",
+    "You are maintaining positive habits and managing your academic wellbeing effectively.",
+    "Continue following your current routine and regularly monitor your wellness progress.",
+    "Keep up the excellent work.",
+  ];
+  const bodyHtml = paragraphs
+    .map((p) => `<p style="margin:0 0 16px;color:#334155;">${p}</p>`)
+    .join("");
+  const text = `Hello ${studentName},\n\n${paragraphs.join("\n\n")}\n\nStudent Wellness Platform`;
+  return { subject, text, html: wellnessEmailShell(subject, studentName, bodyHtml) };
+};
+
+export const sendWellnessTemplateEmail = async (
+  to: string,
+  template: WellnessEmailTemplate
+): Promise<void> => {
+  await getTransporter().sendMail({
+    from: fromAddress(),
+    to,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  });
+};
+
 export interface ContactFormPayload {
   name: string;
   email: string;

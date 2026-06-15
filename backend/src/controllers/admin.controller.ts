@@ -96,26 +96,54 @@ export const getStudentDetail = async (
 };
 
 export const sendWellnessEmail = async (
-  req: Request<Record<string, never>, unknown, { studentId: string; subject: string; message: string }>,
+  req: Request<Record<string, never>, unknown, { studentId: string }>,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { studentId, subject, message } = req.body;
+    const { studentId } = req.body;
 
-    if (!studentId || !subject || !message) {
+    if (!studentId) {
       res.status(400).json({
         success: false,
-        error: "studentId, subject, and message are required",
+        error: "studentId is required",
       });
       return;
     }
 
-    await adminService.sendWellnessEmail(studentId, subject, message);
+    await adminService.sendWellnessEmail(studentId);
 
     res.status(200).json({
       success: true,
       message: "Email sent successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendBulkWellnessEmail = async (
+  req: Request<Record<string, never>, unknown, { riskGroup: "high" | "moderate" | "low" }>,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { riskGroup } = req.body;
+
+    if (!riskGroup || !["high", "moderate", "low"].includes(riskGroup)) {
+      res.status(400).json({
+        success: false,
+        error: "riskGroup must be one of: high, moderate, low",
+      });
+      return;
+    }
+
+    const result = await adminService.sendBulkWellnessEmail(riskGroup);
+
+    res.status(200).json({
+      success: true,
+      message: `Sent ${result.sent} email(s) to ${riskGroup} risk students`,
+      data: result,
     });
   } catch (error) {
     next(error);

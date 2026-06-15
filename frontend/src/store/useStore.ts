@@ -174,7 +174,7 @@ export interface AdminStudent {
   lastAssessmentDate: string;
   sleepHoursAvg: number;
   stressLevelAvg: number;
-  journalSentimentSummary: string; // e.g., "Mostly Negative", "Neutral"
+  moodTrend: 'Positive' | 'Neutral' | 'Negative';
 }
 
 export interface AdminSettings {
@@ -249,7 +249,8 @@ interface AppState {
   fetchAdminStudents: (page?: number, limit?: number) => Promise<void>;
   fetchAdminHighRisk: (page?: number, limit?: number) => Promise<void>;
   fetchAdminStudentDetail: (studentId: string) => Promise<void>;
-  sendWellnessEmail: (studentId: string, subject: string, message: string) => Promise<void>;
+  sendWellnessEmail: (studentId: string) => Promise<void>;
+  sendBulkWellnessEmail: (riskGroup: 'high' | 'moderate' | 'low') => Promise<{ sent: number }>;
 
   // Actions
   login: (email: string, password: string, forceRole?: 'student' | 'admin') => Promise<boolean>;
@@ -751,7 +752,7 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  fetchAdminStudents: async (page = 1, limit = 20) => {
+  fetchAdminStudents: async (page = 1, limit = 500) => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
     try {
@@ -766,7 +767,7 @@ export const useStore = create<AppState>((set, get) => ({
           lastAssessmentDate?: string;
           sleepHoursAvg?: number;
           stressLevelAvg?: number;
-          journalSentimentSummary?: string;
+          moodTrend?: 'Positive' | 'Neutral' | 'Negative';
         }>;
       }>(`/admin/students?page=${page}&limit=${limit}`, { token });
       
@@ -782,7 +783,7 @@ export const useStore = create<AppState>((set, get) => ({
         lastAssessmentDate: s.lastAssessmentDate ? new Date(s.lastAssessmentDate).toISOString().split('T')[0] : '',
         sleepHoursAvg: typeof s.sleepHoursAvg === 'number' ? s.sleepHoursAvg : 0,
         stressLevelAvg: typeof s.stressLevelAvg === 'number' ? s.stressLevelAvg : 0,
-        journalSentimentSummary: s.journalSentimentSummary ?? '',
+        moodTrend: s.moodTrend ?? 'Neutral',
       }));
       
       set({ adminStudents: mapped });
@@ -819,7 +820,7 @@ export const useStore = create<AppState>((set, get) => ({
         lastAssessmentDate: s.lastAssessmentDate ? new Date(s.lastAssessmentDate).toISOString().split('T')[0] : '',
         sleepHoursAvg: 0,
         stressLevelAvg: 0,
-        journalSentimentSummary: '',
+        moodTrend: 'Neutral',
       }));
       
       set({ adminHighRiskStudents: mapped });
@@ -841,17 +842,36 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  sendWellnessEmail: async (studentId, subject, message) => {
+  sendWellnessEmail: async (studentId) => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
     try {
       await apiRequest('/admin/send-email', {
         method: 'POST',
         token,
-        body: JSON.stringify({ studentId, subject, message }),
+        body: JSON.stringify({ studentId }),
       });
     } catch (err) {
       console.error('[Store] Failed to send wellness email:', err);
+      throw err;
+    }
+  },
+
+  sendBulkWellnessEmail: async (riskGroup) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return { sent: 0 };
+    try {
+      const response = await apiRequest<{ success: boolean; data: { sent: number } }>(
+        '/admin/send-bulk-email',
+        {
+          method: 'POST',
+          token,
+          body: JSON.stringify({ riskGroup }),
+        }
+      );
+      return { sent: response.data?.sent ?? 0 };
+    } catch (err) {
+      console.error('[Store] Failed to send bulk wellness email:', err);
       throw err;
     }
   },
