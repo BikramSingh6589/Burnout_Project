@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, Legend } from 'recharts';
@@ -25,7 +25,7 @@ export const HistoryTrends: React.FC = () => {
     fetchAnalytics();
   }, [fetchTrackerHistory, fetchAnalytics]);
 
-  const [filterDays, setFilterDays] = useState<7 | 30 | 90>(30);
+  const [filterDays, setFilterDays] = useState<7 | 30 | 90>(7);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -44,15 +44,15 @@ export const HistoryTrends: React.FC = () => {
     return data.slice(-filterDays);
   };
 
-  const filteredData = getFilteredData();
+  const filteredData = useMemo(() => getFilteredData(), [trackerHistory, filterDays, startDate, endDate]);
 
-  const formattedChartData = filteredData.map((item, index) => ({
+  const formattedChartData = useMemo(() => filteredData.map((item, index) => ({
     ...item,
     index,
     dateLabel: formatDDMM(item.timestamp),
     hoverTimeLabel: formatAssessmentTime(item.timestamp),
     satisfaction: 10 - item.procrastination,
-  }));
+  })), [filteredData]);
 
   const EmptyState = ({ title }: { title: string }) => (
     <div className="flex items-center justify-center h-56 bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-[#334155]">
@@ -141,7 +141,7 @@ export const HistoryTrends: React.FC = () => {
               </div>
               {(startDate || endDate) && (
                 <button
-                  onClick={() => { setStartDate(''); setEndDate(''); setFilterDays(30); }}
+                  onClick={() => { setStartDate(''); setEndDate(''); setFilterDays(7); }}
                   className="text-xs text-error font-semibold hover:underline"
                 >
                   Clear Custom Range
@@ -193,7 +193,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={false}>
                     <defs>
                       <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#433FE5" stopOpacity={0.2}/>
@@ -237,7 +237,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={false}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis
                       dataKey="index"
@@ -274,7 +274,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={false}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis
                       dataKey="index"
@@ -311,7 +311,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={false}>
                     <defs>
                       <linearGradient id="colorProcr" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#EF4444" stopOpacity={0.15}/>

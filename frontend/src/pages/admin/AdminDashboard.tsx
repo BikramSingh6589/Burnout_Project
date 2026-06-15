@@ -171,9 +171,9 @@ export const AdminDashboard: React.FC = () => {
         <div className="p-4 border-t border-slate-200 dark:border-slate-800">
           <button
             onClick={() => { logout(); navigate('/'); }}
-            className="w-full flex items-center space-x-3 px-4 py-2.5 rounded-lg text-slate-600 transition-colors duration-200 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-700/90 dark:hover:border dark:hover:border-slate-700 font-semibold text-xs"
+            className="group w-full flex items-center space-x-3 rounded-[12px] p-[12px_16px] text-slate-700 dark:text-[#E5E7EB] font-semibold text-xs border border-[rgba(239,68,68,0.15)] border-l-[3px] border-l-[#EF4444] bg-[rgba(239,68,68,0.08)] hover:bg-[rgba(239,68,68,0.15)] transition-all duration-200 ease-out"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-4 w-4 text-[#EF4444] group-hover:text-[#F87171] transition-colors duration-200" />
             <span>Exit Admin Panel</span>
           </button>
         </div>
@@ -203,7 +203,7 @@ export const AdminDashboard: React.FC = () => {
                     <span className="text-xs uppercase font-bold tracking-wider">Total Registered</span>
                     <Users className="h-5 w-5 text-indigo-500" />
                   </div>
-                  <p className="text-3xl font-extrabold text-neutral-slate">{totalStudentsCount}</p>
+                  <p className="text-3xl font-extrabold text-neutral-slate dark:text-white">{totalStudentsCount}</p>
                   <p className="text-[10px] text-neutral-outline">Academic wellness database</p>
                 </div>
 
@@ -212,7 +212,7 @@ export const AdminDashboard: React.FC = () => {
                     <span className="text-xs uppercase font-bold tracking-wider">Average Burnout</span>
                     <ShieldCheck className="h-5 w-5 text-success" />
                   </div>
-                  <p className="text-3xl font-extrabold text-neutral-slate">{averageBurnoutScore}</p>
+                  <p className="text-3xl font-extrabold text-neutral-slate dark:text-white">{averageBurnoutScore}</p>
                   <p className="text-[10px] text-neutral-outline">Platform-wide burnout average</p>
                 </div>
 
@@ -299,7 +299,7 @@ export const AdminDashboard: React.FC = () => {
                       {sortedStudents.map((student) => (
                         <tr key={student.id} className="transition-colors hover:bg-slate-100/80 dark:hover:bg-slate-700/90">
                           <td className="p-4 font-bold text-slate-900 dark:text-slate-100">{student.name}</td>
-                          <td className="p-4 text-[10px] text-slate-300">{student.email}</td>
+                          <td className="student-email p-4 text-[10px] text-[#374151] dark:text-slate-300">{student.email}</td>
                           <td className="p-4 font-extrabold">{student.burnoutScore}/100</td>
                           <td className="p-4">
                             <span className={`px-2.5 py-0.5 rounded-full border text-[9px] font-bold ${
@@ -333,7 +333,7 @@ export const AdminDashboard: React.FC = () => {
                                     // ignore - store handles errors
                                   }
                                 }}
-                                className="text-[10px] bg-white border border-slate-200 hover:bg-slate-100 font-bold px-2 py-1 rounded transition-colors duration-200"
+                                className="view-details-btn text-[10px] bg-white border border-slate-200 hover:bg-slate-100 font-bold px-2 py-1 rounded transition-colors duration-200 dark:bg-white/12 dark:text-white dark:border-white/20 dark:hover:bg-white/20"
                               >
                                 View Details
                               </button>
@@ -372,11 +372,11 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Section 5: Send notifications (Individual/Bulk) */}
           {activeSection === 'notifications' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Risk-Targeted Email Dispatch</h2>
+            <div className="space-y-6 animate-in fade-in duration-200 w-full flex flex-col items-center">
+              <h2 className="text-center font-display font-bold text-[32px] md:text-[36px] tracking-tight text-neutral-slate dark:text-[#F8FAFC] mb-8 w-full">Risk-Targeted Email Dispatch</h2>
               
-              <div className="max-w-xl bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-2">Send to Students by Risk Group</h3>
+              <div className="w-full max-w-[1200px] mx-auto bg-white dark:bg-[#1E293B] p-8 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-6">
+                <h3 className="text-[22px] md:text-[24px] font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-4 mb-4">Send to Students by Risk Group</h3>
 
                 {notifSuccess && (
                   <div className="bg-success/10 border border-success/20 text-success p-2.5 rounded-lg text-xs font-semibold text-center">
@@ -389,35 +389,42 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 )}
 
-                <p className="text-sm text-slate-600 dark:text-slate-300">
-                  Use the controls below to send pre-defined support emails only to the selected risk tier. Manual broadcast composition is disabled to keep dispatching consistent with the current risk targeting strategy.
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Use the controls below to automatically send predefined support and wellness emails to students based on their current burnout risk classification. Each button targets a specific risk group and delivers tailored communication designed to provide guidance, encouragement, or intervention where appropriate. This process helps maintain consistent outreach and ensures that students receive support aligned with their current wellbeing status.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="rounded-[12px] border p-4 my-5" style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: 'rgba(239, 68, 68, 0.4)', color: '#FFFFFF' }}>
+                  <div className="font-bold text-sm mb-1 text-white">NOTE:</div>
+                  <div className="text-xs leading-relaxed text-white">
+                    Clicking any of the buttons below will immediately send email notifications to all students belonging to the selected risk tier. Please ensure that the appropriate risk group is selected before dispatching communications.
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-5">
                   <button
                     onClick={() => sendRiskGroupEmail('high')}
-                    className="w-full bg-error text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-error text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
                   >
                     Send High Risk Alert
                   </button>
 
                   <button
                     onClick={() => sendRiskGroupEmail('moderate')}
-                    className="w-full bg-amber-500 text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-amber-500 text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
                   >
                     Send Moderate Reminder
                   </button>
 
                   <button
                     onClick={() => sendRiskGroupEmail('low')}
-                    className="w-full bg-success text-white py-3 rounded-lg text-xs font-bold hover:opacity-95 transition"
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-success text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
                   >
                     Send Low Risk Appreciation
                   </button>
                 </div>
 
                 {emailLoading && (
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Sending emails to the selected group. This may take a moment.</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 pt-2">Sending emails to the selected group. This may take a moment.</div>
                 )}
               </div>
             </div>

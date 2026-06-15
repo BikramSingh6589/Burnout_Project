@@ -573,7 +573,8 @@ export const useStore = create<AppState>((set, get) => ({
       }));
 
       const mapped = [...initialHistory, ...weeklyHistory]
-        .sort((a, b) => a.timestamp - b.timestamp);
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .slice(-10); // Take last 10 entries max
       
       set({ trackerHistory: mapped, trackerHistoryLoading: false });
     } catch (err) {
@@ -595,7 +596,6 @@ export const useStore = create<AppState>((set, get) => ({
       if (analyticsResponse?.success) {
         set({
           analyticsSummary: analyticsResponse.data,
-          recommendations: analyticsResponse.data.recommendations ?? get().recommendations,
         });
       }
 

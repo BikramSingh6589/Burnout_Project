@@ -143,7 +143,7 @@ export const Dashboard: React.FC = () => {
   const averageSleep = trackerHistory.length > 0 
     ? (trackerHistory.reduce((sum, h) => sum + h.sleepHours, 0) / trackerHistory.length).toFixed(1) 
     : '0.0';
-  const dashboardRecommendations = analyticsSummary?.recommendations ?? recommendations;
+  const dashboardRecommendations = recommendations;
 
   // Pie Chart Data: Recommendation Followed status
   const followStats = dashboardRecommendations.reduce(
@@ -175,12 +175,12 @@ export const Dashboard: React.FC = () => {
   );
 
   const sleepChartData = useMemo(
-    () => buildChartData(trackerHistory, sleepTimeframe, 'all'),
+    () => buildChartData(trackerHistory, sleepTimeframe, 'last7'),
     [trackerHistory, sleepTimeframe],
   );
 
   const screenChartData = useMemo(
-    () => buildChartData(trackerHistory, screenTimeframe, 'all'),
+    () => buildChartData(trackerHistory, screenTimeframe, 'last7'),
     [trackerHistory, screenTimeframe],
   );
 
@@ -235,103 +235,121 @@ export const Dashboard: React.FC = () => {
 
         {/* Analytics Summary Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Circular Burnout Score Gauge Card */}
-          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
-            <span className="text-xs text-text-secondary font-semibold tracking-tight">Burnout Score</span>
-            <div className="flex items-center space-x-5 py-3">
-              <div className="relative flex items-center justify-center h-20 w-20">
+          {/* Circular Burnout Score Gauge Card (Primary Card) */}
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 sm:col-span-2 lg:col-span-2 p-6 rounded-2xl border-2 border-indigo-200 dark:border-indigo-500/30 shadow-xl shadow-indigo-200/50 dark:shadow-indigo-900/50 hover:shadow-2xl dark:hover:shadow-indigo-900/70 transition-all duration-300 flex flex-col justify-between group">
+            <div className="flex items-center space-x-8 py-3">
+              <div className="relative flex items-center justify-center h-32 w-32">
                 <svg className="absolute w-full h-full transform -rotate-90" viewBox="0 0 80 80">
-                  <circle cx="40" cy="40" r="34" stroke="#F1F5F9" strokeWidth="8" fill="transparent" />
+                  <circle cx="40" cy="40" r="34" stroke="#F1F5F9" strokeWidth="10" fill="transparent" />
                   <circle
                     cx="40"
                     cy="40"
                     r="34"
                     stroke={currentScore >= 70 ? '#EF4444' : currentScore >= 40 ? '#F59E0B' : '#433FE5'}
-                    strokeWidth="8"
+                    strokeWidth="10"
                     fill="transparent"
                     strokeDasharray={213}
                     strokeDashoffset={213 - (213 * currentScore) / 100}
                     strokeLinecap="round"
                   />
                 </svg>
-                <span className="text-2xl font-extrabold text-text-primary z-10">{currentScore}</span>
+                <span className="text-4xl font-extrabold text-indigo-900 dark:text-white z-10">{currentScore}</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-text-primary tracking-tight">Burnout Index</p>
-                <p className="text-xs text-text-secondary mt-0.5">Cumulative score</p>
+                <p className="text-xl font-bold text-indigo-900 dark:text-indigo-100 tracking-tight">Burnout Index</p>
+                <p className="text-sm text-indigo-600 dark:text-indigo-300 mt-2">Cumulative score based on all assessments</p>
               </div>
             </div>
           </div>
 
           {/* Risk Level status Card */}
-          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
-            <span className="text-xs text-text-secondary font-semibold tracking-tight">Risk Level</span>
-            <div className="py-2 space-y-1">
-              <div className={`text-sm font-semibold px-3 py-1 rounded-lg border w-fit ${getRiskBadgeStyles(currentScore)}`}>
-                {getRiskLabel(currentScore)}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+            <div className="flex flex-col h-full">
+              <span className="text-sm text-text-secondary font-semibold tracking-tight mb-3 pb-1 border-b border-indigo-200 dark:border-indigo-500/30">Risk Level</span>
+              <div className="space-y-3 flex-1 flex flex-col justify-center">
+                <div className={`text-lg font-semibold px-4 py-1.5 rounded-full border w-fit whitespace-nowrap ${getRiskBadgeStyles(currentScore)}`}>
+                  {getRiskLabel(currentScore)}
+                </div>
+                <p className="text-sm text-text-secondary">Current burnout risk status calculated from your last assessment</p>
               </div>
-              <p className="text-xs text-text-secondary mt-2">Based on cognitive stress factors</p>
             </div>
           </div>
 
           {/* AI Journal Burnout Risk Card */}
-          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
-            <span className="text-xs text-text-secondary font-semibold tracking-tight flex items-center">
-              <Sparkles className="h-3 w-3 mr-1 text-primary" />
-              AI Journal Risk
-            </span>
-            <div className="py-2 space-y-1">
-              {burnoutRisk ? (
-                <>
-                  <div className={`text-sm font-semibold px-3 py-1 rounded-lg border w-fit ${getBurnoutRiskBadgeStyles(burnoutRisk.riskLevel)}`}>
-                    {getBurnoutRiskLabel(burnoutRisk.riskLevel)}
-                  </div>
-                  <p className="text-xs text-text-secondary mt-2">
-                    {burnoutRisk.negativeRatio}% negative ({burnoutRisk.period})
-                  </p>
-                </>
-              ) : (
-                <p className="text-xs text-text-secondary mt-2">Loading...</p>
-              )}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+            <div className="flex flex-col h-full">
+              <span className="text-sm text-text-secondary font-semibold tracking-tight flex items-center mb-3 pb-1 border-b border-indigo-200 dark:border-indigo-500/30">
+                <Sparkles className="h-4 w-4 mr-1 text-primary" />
+                AI Journal Risk
+              </span>
+              <div className="space-y-3 flex-1 flex flex-col justify-center">
+                {burnoutRisk ? (
+                  <>
+                    <div className={`text-lg font-semibold px-4 py-1.5 rounded-full border w-fit whitespace-nowrap ${getBurnoutRiskBadgeStyles(burnoutRisk.riskLevel)}`}>
+                      {getBurnoutRiskLabel(burnoutRisk.riskLevel)}
+                    </div>
+                    <p className="text-sm text-text-secondary">Analyzed from your journal entries with sentiment detection</p>
+                  </>
+                ) : (
+                  <p className="text-sm text-text-secondary">Analyzing your journal entries to detect burnout risk</p>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Average Score Card */}
-          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
-            <span className="text-xs text-text-secondary font-semibold tracking-tight">Average Score</span>
-            <div className="py-2">
-              <div className="flex items-baseline space-x-1">
-                <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">
-                  {analyticsSummary ? Math.round(analyticsSummary.averageScore) : '--'}
-                </span>
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+            <div className="flex flex-col h-full">
+              <span className="text-sm text-text-secondary font-semibold tracking-tight mb-3 pb-1 border-b border-indigo-200 dark:border-indigo-500/30">Average Score</span>
+              <div className="space-y-2 flex-1 flex flex-col justify-center">
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">
+                    {analyticsSummary ? Math.round(analyticsSummary.averageScore) : '--'}
+                  </span>
+                </div>
+                <p className="text-sm text-text-secondary">Average burnout score across all your assessments</p>
               </div>
-              <p className="text-xs text-text-secondary mt-1">Based on {analyticsSummary?.assessmentCount || 0} assessments</p>
             </div>
           </div>
 
-          {/* Average Sleep Hours Card */}
-          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
-            <span className="text-xs text-text-secondary font-semibold tracking-tight">Sleep Average</span>
-            <div className="py-2">
-              <div className="flex items-baseline space-x-1">
-                <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">{averageSleep}</span>
-                <span className="text-sm text-text-secondary font-medium">h</span>
+          {/* Sleep Average Card */}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+            <div className="flex flex-col h-full">
+              <span className="text-sm text-text-secondary font-semibold tracking-tight mb-3 pb-1 border-b border-indigo-200 dark:border-indigo-500/30">Sleep Average</span>
+              <div className="space-y-2 flex-1 flex flex-col justify-center">
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">{averageSleep}</span>
+                  <span className="text-sm text-text-secondary font-medium">h</span>
+                </div>
+                <p className="text-sm text-text-secondary">Tracks your sleep patterns from daily assessments</p>
               </div>
-              <p className="text-xs text-text-secondary mt-1">Recommended target: 7.5+ Hrs</p>
             </div>
           </div>
 
-          {/* Latest Mood Sentiment Card */}
-          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between group">
-            <span className="text-xs text-text-secondary font-semibold tracking-tight">Latest Risk Level</span>
-            <div className="py-2">
-              <div className="text-xl font-semibold tracking-tight text-primary  flex items-center space-x-2">
-                <Sparkles className="h-5 w-5 text-secondary dark:text-secondary shrink-0" />
-                <span>{latestAssessment ? latestAssessment.riskLevel : 'Unknown'}</span>
+          {/* Latest Risk Level Card */}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+            <div className="flex flex-col h-full">
+              <span className="text-sm text-text-secondary font-semibold tracking-tight mb-3 pb-1 border-b border-indigo-200 dark:border-indigo-500/30">Latest Risk Level</span>
+              <div className="space-y-2 flex-1 flex flex-col justify-center">
+                <div className="text-2xl font-semibold tracking-tight text-primary flex items-center space-x-2">
+                  <Sparkles className="h-6 w-6 text-secondary dark:text-secondary shrink-0" />
+                  <span>{latestAssessment ? latestAssessment.riskLevel : 'Unknown'}</span>
+                </div>
+                <p className="text-sm text-text-secondary">Your most recent burnout risk score from last assessment</p>
               </div>
-              <p className="text-xs text-text-secondary mt-2">
-                Highest: {analyticsSummary?.highestScore || 0} / Lowest: {analyticsSummary?.lowestScore || 0}
-              </p>
+            </div>
+          </div>
+
+          {/* New Card: Assessment Count */}
+          <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between group min-h-[180px]">
+            <div className="flex flex-col h-full">
+              <span className="text-sm text-text-secondary font-semibold tracking-tight mb-3 pb-1 border-b border-indigo-200 dark:border-indigo-500/30">Total Assessments</span>
+              <div className="space-y-2 flex-1 flex flex-col justify-center">
+                <div className="flex items-baseline space-x-1">
+                  <span className="text-3xl font-display font-semibold tracking-tight text-text-primary">{analyticsSummary?.assessmentCount || 0}</span>
+                </div>
+                <p className="text-sm text-text-secondary">Complete assessments to receive personalized wellness insights</p>
+              </div>
             </div>
           </div>
         </div>
@@ -350,7 +368,7 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={burnoutChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <AreaChart data={burnoutChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }} isAnimationActive={false}>
                     <defs>
                       <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25}/>
@@ -464,7 +482,7 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sleepChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <BarChart data={sleepChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={false}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis
                       dataKey="index"
@@ -518,7 +536,7 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={screenChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
+                  <BarChart data={screenChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={false}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis
                       dataKey="index"
