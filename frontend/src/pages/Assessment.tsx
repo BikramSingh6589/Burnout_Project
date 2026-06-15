@@ -5,6 +5,7 @@ import { apiRequest } from '../lib/api';
 import { hasReachedWeeklyAssessmentLimit, type WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
 import { CheckCircle2, ArrowRight, ArrowLeft, ClipboardList } from 'lucide-react';
 import { InfoPopover } from '../components/ui/InfoPopover';
+import { HelpPopover } from '../components/ui/HelpPopover';
 
 export const Assessment: React.FC = () => {
   const { submitAssessment, isAuthenticated, authToken, fetchAdminSettings } = useStore();
@@ -130,18 +131,21 @@ export const Assessment: React.FC = () => {
         {/* Step 1 & 2 Headers */}
         {step < 3 && (
           <div className="space-y-6 mb-8">
-            <div className="flex items-center space-x-3">
-              <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
-                <ClipboardList className="h-6 w-6" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
+                  <ClipboardList className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-display font-extrabold text-text-primary">
+                    {isWeekly ? 'Weekly Wellness Reassessment' : 'Initial Burnout Assessment'}
+                  </h2>
+                  <p className="text-xs text-text-secondary">
+                    {isWeekly ? 'Track changes from your baseline wellness' : 'Complete to generate your first burnout score'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-2xl font-display font-extrabold text-text-primary">
-                  {isWeekly ? 'Weekly Wellness Reassessment' : 'Initial Burnout Assessment'}
-                </h2>
-                <p className="text-xs text-text-secondary">
-                  {isWeekly ? 'Track changes from your baseline wellness' : 'Complete to generate your first burnout score'}
-                </p>
-              </div>
+              <HelpPopover />
             </div>
 
             {/* Progress Bar indicator */}
@@ -173,10 +177,6 @@ export const Assessment: React.FC = () => {
                 <div className="flex justify-between text-xs font-bold">
                   <label className="flex items-center gap-2 text-text-primary" htmlFor="stress-slider">
                     <span>Stress Level (1–10)</span>
-                    <InfoPopover
-                      title="Stress Level"
-                      description={`Measures how stressed you felt during the last week.\n\n1 = Very Relaxed\n\n10 = Extremely Stressed`}
-                    />
                   </label>
                   <span className="text-primary">{formData.stressLevel} / 10</span>
                 </div>
@@ -196,10 +196,6 @@ export const Assessment: React.FC = () => {
                 <div className="flex justify-between text-xs font-bold">
                   <label className="flex items-center gap-2 text-text-primary" htmlFor="satisfaction-slider">
                     <span>Academic Satisfaction (1–10)</span>
-                    <InfoPopover
-                      title="Academic Satisfaction"
-                      description={`Measures how satisfied you are with your academic performance and progress.\n\n1 = Very Unsatisfied\n\n10 = Very Satisfied`}
-                    />
                   </label>
                   <span className="text-primary">{formData.academicSatisfaction} / 10</span>
                 </div>
@@ -219,10 +215,6 @@ export const Assessment: React.FC = () => {
                 <div className="flex justify-between text-xs font-bold">
                   <label className="flex items-center gap-2 text-text-primary" htmlFor="procrastination-slider">
                     <span>Procrastination Level (1–10)</span>
-                    <InfoPopover
-                      title="Procrastination Level"
-                      description={`Measures how often you delay important academic tasks.\n\n1 = Rarely Procrastinate\n\n10 = Procrastinate Frequently`}
-                    />
                   </label>
                   <span className="text-primary">{formData.procrastination} / 10</span>
                 </div>
@@ -244,7 +236,7 @@ export const Assessment: React.FC = () => {
                     <span>Average Study Hours / Day</span>
                     <InfoPopover
                       title="Average Study Hours Per Day"
-                      description="Enter the average number of hours you spend studying each day. Include lectures, self-study, revision, and academic work."
+                      description="Count only personal self-study hours outside regular school, college, university, classroom, coaching, or lecture sessions. Include revision, assignments, projects, and independent learning."
                     />
                   </label>
                   <input
@@ -264,7 +256,7 @@ export const Assessment: React.FC = () => {
                     <span>Assignment Backlog (Count)</span>
                     <InfoPopover
                       title="Assignment Backlog"
-                      description="Enter the number of unfinished assignments, projects, or academic tasks currently pending."
+                      description="Enter the number of assignments, projects, reports, submissions, or academic tasks that are currently pending or overdue. Do not include completed work."
                     />
                   </label>
                   <input
@@ -303,10 +295,6 @@ export const Assessment: React.FC = () => {
                 <div className="flex justify-between text-xs font-bold">
                   <label className="flex items-center gap-2 text-text-primary" htmlFor="motivation-slider">
                     <span>Motivation Level (1–10)</span>
-                    <InfoPopover
-                      title="Motivation Level"
-                      description="Measures how motivated you feel to begin and complete your academic tasks."
-                    />
                   </label>
                   <span className="text-primary">{formData.motivationLevel} / 10</span>
                 </div>
@@ -326,10 +314,6 @@ export const Assessment: React.FC = () => {
                 <div className="flex justify-between text-xs font-bold">
                   <label className="flex items-center gap-2 text-text-primary" htmlFor="energy-slider">
                     <span>Energy Level (1–10)</span>
-                    <InfoPopover
-                      title="Energy Level"
-                      description="Measures how energetic and alert you felt during the last week."
-                    />
                   </label>
                   <span className="text-primary">{formData.energyLevel} / 10</span>
                 </div>
@@ -351,7 +335,7 @@ export const Assessment: React.FC = () => {
                     <span>Average Sleep Hours / Night</span>
                     <InfoPopover
                       title="Sleep Hours"
-                      description="Enter the average number of hours you slept each night during the last week."
+                      description="Enter your average daily sleep duration over the last 7 days. Include nighttime sleep and regular naps if they contribute to your normal sleep pattern."
                     />
                   </label>
                   <input
@@ -372,7 +356,7 @@ export const Assessment: React.FC = () => {
                     <span>Daily Screen Time (Hours)</span>
                     <InfoPopover
                       title="Screen Time"
-                      description="Enter how many hours per day you typically spend using screens for study, social apps, and entertainment."
+                      description="Enter the average number of hours spent using phones, tablets, computers, televisions, or other digital devices each day during the last 7 days. Include both academic and personal usage."
                     />
                   </label>
                   <input

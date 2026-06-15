@@ -595,7 +595,6 @@ export const useStore = create<AppState>((set, get) => ({
       if (analyticsResponse?.success) {
         set({
           analyticsSummary: analyticsResponse.data,
-          recommendations: analyticsResponse.data.recommendations ?? get().recommendations,
         });
       }
 
