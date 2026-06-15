@@ -76,10 +76,7 @@ const NotificationSchema = new Schema<INotification>(
 );
 
 // Required indexes
-NotificationSchema.index({ student: 1 });
-NotificationSchema.index({ isRead: 1 });
 NotificationSchema.index({ createdAt: -1 });
-NotificationSchema.index({ type: 1 });
 
 NotificationSchema.index({ student: 1, status: 1, createdAt: -1 });
 NotificationSchema.index({ status: 1, scheduledFor: 1 });
