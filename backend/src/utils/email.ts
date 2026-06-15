@@ -105,7 +105,78 @@ export interface WellnessEmailTemplate {
   html: string;
 }
 
-const wellnessEmailShell = (subject: string, studentName: string, bodyHtml: string): string => `
+interface WellnessEmailTheme {
+  outerBg: string;
+  borderColor: string;
+  headerGradient: string;
+  headerSubtitleColor: string;
+  guidanceBg: string;
+  guidanceBorder: string;
+  buttonBg: string;
+  boxShadow: string;
+}
+
+const wellnessEmailThemes: Record<WellnessRiskTier, WellnessEmailTheme> = {
+  high: {
+    outerBg: "#FEE2E2",
+    borderColor: "#FECACA",
+    headerGradient: "linear-gradient(135deg,#EF4444 0%,#DC2626 100%)",
+    headerSubtitleColor: "#FEE2E2",
+    guidanceBg: "#FEE2E2",
+    guidanceBorder: "#FECACA",
+    buttonBg: "#DC2626",
+    boxShadow: "0 8px 24px rgba(220,38,38,0.14)",
+  },
+  moderate: {
+    outerBg: "#FEF3C7",
+    borderColor: "#FDE68A",
+    headerGradient: "linear-gradient(135deg,#FBBF24 0%,#F59E0B 100%)",
+    headerSubtitleColor: "#FEF3C7",
+    guidanceBg: "#FEF3C7",
+    guidanceBorder: "#FDE68A",
+    buttonBg: "#F59E0B",
+    boxShadow: "0 8px 24px rgba(245,158,11,0.14)",
+  },
+  low: {
+    outerBg: "#D1FAE5",
+    borderColor: "#A7F3D0",
+    headerGradient: "linear-gradient(135deg,#34D399 0%,#10B981 100%)",
+    headerSubtitleColor: "#D1FAE5",
+    guidanceBg: "#D1FAE5",
+    guidanceBorder: "#A7F3D0",
+    buttonBg: "#10B981",
+    boxShadow: "0 8px 24px rgba(16,185,129,0.14)",
+  },
+};
+
+const getDashboardUrl = (): string => {
+  const base = (process.env.FRONTEND_URL || process.env.APP_URL || "").replace(/\/$/, "");
+  return base ? `${base}/dashboard` : "";
+};
+
+const wellnessEmailShell = (
+  tier: WellnessRiskTier,
+  subject: string,
+  studentName: string,
+  messageHtml: string,
+  guidanceHtml: string
+): string => {
+  const theme = wellnessEmailThemes[tier];
+  const dashboardUrl = getDashboardUrl();
+  const dashboardButtonHtml = dashboardUrl
+    ? `
+                  <table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px auto 0;">
+                    <tr>
+                      <td align="center" style="border-radius:10px;background:${theme.buttonBg};">
+                        <a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;background:${theme.buttonBg};">
+                          View My Dashboard
+                        </a>
+                      </td>
+                    </tr>
+                  </table>`
+    : "";
+
+  return `
   <!DOCTYPE html>
   <html>
     <head>
@@ -113,22 +184,28 @@ const wellnessEmailShell = (subject: string, studentName: string, bodyHtml: stri
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>${subject}</title>
     </head>
-    <body style="margin:0;padding:0;background:#e0f2fe;font-family:Arial,Helvetica,sans-serif;">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#e0f2fe;padding:32px 16px;">
+    <body style="margin:0;padding:0;background:${theme.outerBg};font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${theme.outerBg};padding:32px 16px;">
         <tr>
           <td align="center">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #bae6fd;border-radius:16px;overflow:hidden;box-shadow:0 8px 24px rgba(14,116,144,0.12);">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid ${theme.borderColor};border-radius:16px;overflow:hidden;box-shadow:${theme.boxShadow};">
               <tr>
-                <td style="background:linear-gradient(135deg,#38bdf8 0%,#0ea5e9 100%);padding:24px 28px;">
-                  <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#e0f2fe;">Student Wellness Platform</p>
+                <td style="background:${theme.headerGradient};padding:24px 28px;">
+                  <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${theme.headerSubtitleColor};">Student Wellness Platform</p>
                   <h1 style="margin:8px 0 0;font-size:24px;line-height:1.3;color:#ffffff;font-weight:700;">${subject}</h1>
                 </td>
               </tr>
               <tr>
                 <td style="padding:28px;color:#0f172a;font-size:16px;line-height:1.7;">
-                  <p style="margin:0 0 16px;">Hello ${studentName},</p>
-                  ${bodyHtml}
-                  <p style="margin:24px 0 0;color:#475569;font-size:14px;">Student Wellness Platform</p>
+                  <p style="margin:0 0 16px;color:#334155;">Hello ${studentName},</p>
+                  ${messageHtml}
+                  <div style="margin:20px 0 0;padding:18px 20px;background:${theme.guidanceBg};border:1px solid ${theme.guidanceBorder};border-radius:12px;">
+                    ${guidanceHtml}
+                  </div>
+                  ${dashboardButtonHtml}
+                  <p style="margin:28px 0 0;padding-top:20px;border-top:1px solid #e2e8f0;color:#64748b;font-size:13px;text-align:center;">
+                    Student Wellness Platform
+                  </p>
                 </td>
               </tr>
             </table>
@@ -138,53 +215,84 @@ const wellnessEmailShell = (subject: string, studentName: string, bodyHtml: stri
     </body>
   </html>
 `;
+};
+
+const paragraphHtml = (text: string): string =>
+  `<p style="margin:0 0 12px;color:#334155;">${text}</p>`;
+
+const guidanceParagraphHtml = (text: string, isLast = false): string =>
+  `<p style="margin:0${isLast ? "" : " 0 10px"};color:#334155;font-size:15px;line-height:1.6;">${text}</p>`;
 
 export const getWellnessEmailTemplate = (
   tier: WellnessRiskTier,
   studentName: string
 ): WellnessEmailTemplate => {
+  const dashboardUrl = getDashboardUrl();
+  const dashboardText = dashboardUrl ? `\n\nView your dashboard: ${dashboardUrl}` : "";
+
   if (tier === "high") {
     const subject = "Wellness Support Reminder";
-    const paragraphs = [
+    const messageParagraphs = [
       "Your recent wellness assessments indicate a high burnout risk level.",
       "We encourage you to review your recommendations, improve sleep quality, reduce academic stress where possible, and regularly use the Wellness Assistant for guidance.",
+    ];
+    const guidanceParagraphs = [
       "Small consistent improvements can significantly improve your wellbeing.",
       "Please take care of yourself and reach out when needed.",
     ];
-    const bodyHtml = paragraphs
-      .map((p) => `<p style="margin:0 0 16px;color:#334155;">${p}</p>`)
+    const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+    const guidanceHtml = guidanceParagraphs
+      .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
       .join("");
-    const text = `Hello ${studentName},\n\n${paragraphs.join("\n\n")}\n\nStudent Wellness Platform`;
-    return { subject, text, html: wellnessEmailShell(subject, studentName, bodyHtml) };
+    const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+    return {
+      subject,
+      text,
+      html: wellnessEmailShell(tier, subject, studentName, messageHtml, guidanceHtml),
+    };
   }
 
   if (tier === "moderate") {
     const subject = "Wellness Progress Reminder";
-    const paragraphs = [
+    const messageParagraphs = [
       "Your current burnout indicators fall within the moderate range.",
       "You are making progress, but there is still room for improvement.",
+    ];
+    const guidanceParagraphs = [
       "Maintaining healthy study habits, managing stress, and following platform recommendations can help improve your wellbeing further.",
       "Keep moving forward consistently.",
     ];
-    const bodyHtml = paragraphs
-      .map((p) => `<p style="margin:0 0 16px;color:#334155;">${p}</p>`)
+    const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+    const guidanceHtml = guidanceParagraphs
+      .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
       .join("");
-    const text = `Hello ${studentName},\n\n${paragraphs.join("\n\n")}\n\nStudent Wellness Platform`;
-    return { subject, text, html: wellnessEmailShell(subject, studentName, bodyHtml) };
+    const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+    return {
+      subject,
+      text,
+      html: wellnessEmailShell(tier, subject, studentName, messageHtml, guidanceHtml),
+    };
   }
 
   const subject = "Congratulations on Your Progress";
-  const paragraphs = [
+  const messageParagraphs = [
     "Your recent assessments indicate a healthy wellness status.",
     "You are maintaining positive habits and managing your academic wellbeing effectively.",
+  ];
+  const guidanceParagraphs = [
     "Continue following your current routine and regularly monitor your wellness progress.",
     "Keep up the excellent work.",
   ];
-  const bodyHtml = paragraphs
-    .map((p) => `<p style="margin:0 0 16px;color:#334155;">${p}</p>`)
+  const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+  const guidanceHtml = guidanceParagraphs
+    .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
     .join("");
-  const text = `Hello ${studentName},\n\n${paragraphs.join("\n\n")}\n\nStudent Wellness Platform`;
-  return { subject, text, html: wellnessEmailShell(subject, studentName, bodyHtml) };
+  const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+  return {
+    subject,
+    text,
+    html: wellnessEmailShell(tier, subject, studentName, messageHtml, guidanceHtml),
+  };
 };
 
 export const sendWellnessTemplateEmail = async (
