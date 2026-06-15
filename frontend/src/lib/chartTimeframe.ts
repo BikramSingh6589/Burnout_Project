@@ -64,7 +64,26 @@ const toChartPoint = (
 });
 
 const buildDailyData = (history: TrackerEntry[], dailyMode: DailyMode): ChartDataPoint[] => {
-  const entries = dailyMode === 'last7' ? getSortedEntries(history).slice(-7) : getSortedEntries(history);
+  // Sort by timestamp descending to inspect the latest entries first
+  const sortedDesc = [...history].sort((a, b) => b.timestamp - a.timestamp);
+
+  // Filter to keep only the latest entry per unique date
+  const uniqueDateEntries: TrackerEntry[] = [];
+  const seenDates = new Set<string>();
+
+  for (const entry of sortedDesc) {
+    const dateStr = entry.date || new Date(entry.timestamp).toISOString().split('T')[0];
+    if (!seenDates.has(dateStr)) {
+      seenDates.add(dateStr);
+      uniqueDateEntries.push(entry);
+    }
+  }
+
+  // Slice only the latest 7 entries (or fewer if less than 7 are available)
+  const latest7 = uniqueDateEntries.slice(0, 7);
+
+  // Reverse to restore chronological order (ascending time) for chart rendering
+  const entries = latest7.reverse();
 
   return entries.map((entry, index) =>
     toChartPoint(entry, index, formatDDMM(entry.timestamp), formatAssessmentTime(entry.timestamp)),

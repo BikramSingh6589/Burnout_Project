@@ -175,12 +175,12 @@ export const Dashboard: React.FC = () => {
   );
 
   const sleepChartData = useMemo(
-    () => buildChartData(trackerHistory, sleepTimeframe, 'all'),
+    () => buildChartData(trackerHistory, sleepTimeframe, 'last7'),
     [trackerHistory, sleepTimeframe],
   );
 
   const screenChartData = useMemo(
-    () => buildChartData(trackerHistory, screenTimeframe, 'all'),
+    () => buildChartData(trackerHistory, screenTimeframe, 'last7'),
     [trackerHistory, screenTimeframe],
   );
 
