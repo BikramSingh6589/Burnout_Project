@@ -66,7 +66,7 @@ export const JournalAI: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-300">
       {/* Header Block */}
       <div className="pb-4 border-b border-slate-200 dark:border-[#334155] flex items-center space-x-3">
         <div className="p-2.5 bg-primary/10 text-primary rounded-xl">
@@ -81,7 +81,7 @@ export const JournalAI: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         {/* Left: Input reflection section */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-5 space-y-6">
           <div className="bg-white dark:bg-[#1E293B] rounded-xl border border-slate-100 dark:border-[#334155] p-6 shadow-sm space-y-4">
             <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC]">Express Your Thoughts</h3>
             
@@ -150,23 +150,24 @@ export const JournalAI: React.FC = () => {
         </div>
 
         {/* Right: History Timeline reflections */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="lg:col-span-7 space-y-4">
           <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC] flex items-center">
             <Calendar className="h-4 w-4 mr-1.5 text-neutral-outline dark:text-[#CBD5E1]" />
             <span>Journal Timeline History</span>
           </h3>
 
-          <div className="space-y-4 max-h-[550px] overflow-y-auto pr-1">
+          <div className="max-h-[550px] overflow-y-auto pr-1">
             {journalAiEntries.length === 0 ? (
               <div className="bg-white dark:bg-[#1E293B] rounded-xl border border-slate-100 dark:border-[#334155] p-6 text-center text-xs text-neutral-outline dark:text-[#CBD5E1]">
                 No entries saved yet. Share your first wellness thought above!
               </div>
             ) : (
-              journalAiEntries.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="bg-white dark:bg-[#1E293B] rounded-xl border border-slate-100 dark:border-[#334155] p-5 shadow-sm space-y-3 relative group animate-in slide-in-from-bottom-3 duration-200 hover:shadow-md dark:hover:shadow-xl transition-all"
-                >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {journalAiEntries.map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="bg-white dark:bg-[#1E293B] rounded-xl border border-slate-100 dark:border-[#334155] p-5 shadow-sm space-y-3 relative group animate-in slide-in-from-bottom-3 duration-200 hover:shadow-md dark:hover:shadow-xl transition-all h-fit"
+                  >
                   <div className="flex justify-between items-start">
                     <span className="text-[10px] text-neutral-outline dark:text-[#CBD5E1] font-semibold flex items-center">
                       <Calendar className="h-3 w-3 mr-1" />
@@ -192,8 +193,9 @@ export const JournalAI: React.FC = () => {
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                </div>
-              ))
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

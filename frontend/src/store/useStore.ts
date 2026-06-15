@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { apiRequest } from '../lib/api';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5001/api';
+
 type AssessmentFormData = {
   stressLevel: number;
   academicSatisfaction: number;
@@ -172,7 +174,7 @@ export interface AdminStudent {
   lastAssessmentDate: string;
   sleepHoursAvg: number;
   stressLevelAvg: number;
-  journalSentimentSummary: string; // e.g., "Mostly Negative", "Neutral"
+  moodTrend: 'Positive' | 'Neutral' | 'Negative';
 }
 
 export interface AdminSettings {
@@ -182,6 +184,15 @@ export interface AdminSettings {
   maxWeeklyAssessmentsPerStudent: number;
   emailNotificationsEnabled: boolean;
   inAppNotificationsEnabled: boolean;
+}
+
+export interface AdminDashboardMetrics {
+  totalStudents: number;
+  totalAssessments: number;
+  lowRiskStudents: number;
+  mediumRiskStudents: number;
+  highRiskStudents: number;
+  averageBurnoutScore: number;
 }
 
 interface AppState {
@@ -216,10 +227,15 @@ interface AppState {
 
   // Admin Portal State
   adminStudents: AdminStudent[];
+  adminHighRiskStudents: AdminStudent[];
+  adminDashboardMetrics: AdminDashboardMetrics | null;
   adminSettings: AdminSettings;
+  adminStudentDetail: any | null;
+  adminStudentLoading: boolean;
 
   // Fetch actions
   fetchTrackerHistory: () => Promise<void>;
+  fetchAdminDashboardMetrics: () => Promise<void>;
   fetchAnalytics: () => Promise<void>;
   fetchJournalEntries: () => Promise<void>;
   fetchJournalAiEntries: () => Promise<void>;
@@ -228,7 +244,13 @@ interface AppState {
   fetchRecommendationHistory: () => Promise<void>;
   fetchNotifications: () => Promise<void>;
   fetchAIHistory: () => Promise<void>;
+  clearAIHistory: () => Promise<void>;
   fetchAdminSettings: () => Promise<void>;
+  fetchAdminStudents: (page?: number, limit?: number) => Promise<void>;
+  fetchAdminHighRisk: (page?: number, limit?: number) => Promise<void>;
+  fetchAdminStudentDetail: (studentId: string) => Promise<void>;
+  sendWellnessEmail: (studentId: string) => Promise<void>;
+  sendBulkWellnessEmail: (riskGroup: 'high' | 'moderate' | 'low') => Promise<{ sent: number }>;
 
   // Actions
   login: (email: string, password: string, forceRole?: 'student' | 'admin') => Promise<boolean>;
@@ -271,7 +293,6 @@ interface AppState {
   sendChatMessage: (text: string) => void;
 
   // Admin actions
-  adminSendNotification: (studentId: string | 'all', message: string, type: Notification['type']) => void;
   adminCreateRecommendation: (rec: Omit<Recommendation, 'id' | 'followedStatus' | 'rating' | 'feedbackText' | 'dateGenerated'>) => void;
   adminDeleteRecommendation: (id: string) => void;
   adminUpdateSettings: (settings: Partial<AdminSettings>) => void;
@@ -493,7 +514,9 @@ export const useStore = create<AppState>((set, get) => ({
   ],
 
   // Admin Portal State
-  adminStudents: mockAdminStudents,
+  adminStudents: [],
+  adminHighRiskStudents: [],
+  adminDashboardMetrics: null,
   adminSettings: {
     highRiskThreshold: 70,
     moderateRiskThreshold: 40,
@@ -502,6 +525,8 @@ export const useStore = create<AppState>((set, get) => ({
     emailNotificationsEnabled: true,
     inAppNotificationsEnabled: true,
   },
+  adminStudentDetail: null,
+  adminStudentLoading: false,
   pendingAiRecommendations: [],
   pendingAiLoading: false,
 
@@ -523,6 +548,7 @@ export const useStore = create<AppState>((set, get) => ({
       ]);
 
       const initialHistory = initialResponse.data.history.map((h) => ({
+        id: h._id || h.id || crypto.randomUUID(),
         date: (h.completedAt ?? h.createdAt).split('T')[0],
         timestamp: new Date(h.completedAt ?? h.createdAt).getTime(),
         burnoutScore: h.burnoutScore,
@@ -534,6 +560,7 @@ export const useStore = create<AppState>((set, get) => ({
       }));
 
       const weeklyHistory = weeklyResponse.data.history.map((h) => ({
+        id: h._id || h.id || crypto.randomUUID(),
         date: (h.completedAt ?? h.createdAt).split('T')[0],
         timestamp: new Date(h.completedAt ?? h.createdAt).getTime(),
         burnoutScore: h.burnoutScore,
@@ -547,6 +574,7 @@ export const useStore = create<AppState>((set, get) => ({
 
       const mapped = [...initialHistory, ...weeklyHistory]
         .sort((a, b) => a.timestamp - b.timestamp);
+      
       set({ trackerHistory: mapped, trackerHistoryLoading: false });
     } catch (err) {
       console.error('[Store] Failed to fetch tracker history:', err);
@@ -679,6 +707,31 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  clearAIHistory: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+
+    // Optimistically remove messages from the frontend immediately
+    set({
+      chatMessages: [
+        {
+          id: 'm-0',
+          sender: 'ai',
+          text: "Hi there! I'm your Wellness Assistant. I analyze your journal entries and weekly assessments to offer suggestions and monitor burnout. How are you feeling today?",
+          timestamp: Date.now(),
+        },
+      ],
+    });
+
+    try {
+      await apiRequest('/ai/clear', { method: 'DELETE', token });
+      // Re-sync with server state (will return default greeting if cleared)
+      await get().fetchAIHistory();
+    } catch (err) {
+      console.error('[Store] Failed to clear AI history:', err);
+    }
+  },
+
   fetchAdminSettings: async () => {
     try {
       const response = await apiRequest<SettingsResponse>('/settings');
@@ -688,28 +741,177 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
+  fetchAdminDashboardMetrics: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{ success: boolean; data: AdminDashboardMetrics }>('/admin/dashboard', { token });
+      set({ adminDashboardMetrics: response.data });
+    } catch (err) {
+      console.error('[Store] Failed to fetch admin dashboard metrics:', err);
+    }
+  },
+
+  fetchAdminStudents: async (page = 1, limit = 500) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: Array<{
+          id: string;
+          name: string;
+          email: string;
+          burnoutScore: number;
+          riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+          lastAssessmentDate?: string;
+          sleepHoursAvg?: number;
+          stressLevelAvg?: number;
+          moodTrend?: 'Positive' | 'Neutral' | 'Negative';
+        }>;
+      }>(`/admin/students?page=${page}&limit=${limit}`, { token });
+      
+      const mapped: AdminStudent[] = response.data.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        phone: '',
+        age: 0,
+        gender: 'Other',
+        burnoutScore: s.burnoutScore,
+        riskLevel: s.riskLevel === 'HIGH' ? 'High' : s.riskLevel === 'MEDIUM' ? 'Moderate' : 'Low',
+        lastAssessmentDate: s.lastAssessmentDate ? new Date(s.lastAssessmentDate).toISOString().split('T')[0] : '',
+        sleepHoursAvg: typeof s.sleepHoursAvg === 'number' ? s.sleepHoursAvg : 0,
+        stressLevelAvg: typeof s.stressLevelAvg === 'number' ? s.stressLevelAvg : 0,
+        moodTrend: s.moodTrend ?? 'Neutral',
+      }));
+      
+      set({ adminStudents: mapped });
+    } catch (err) {
+      console.error('[Store] Failed to fetch admin students:', err);
+    }
+  },
+
+  fetchAdminHighRisk: async (page = 1, limit = 20) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: Array<{
+          id: string;
+          name: string;
+          email: string;
+          burnoutScore: number;
+          riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+          lastAssessmentDate?: string;
+        }>;
+      }>(`/admin/high-risk?page=${page}&limit=${limit}`, { token });
+      
+      const mapped: AdminStudent[] = response.data.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        phone: '',
+        age: 0,
+        gender: 'Other',
+        burnoutScore: s.burnoutScore,
+        riskLevel: 'High',
+        lastAssessmentDate: s.lastAssessmentDate ? new Date(s.lastAssessmentDate).toISOString().split('T')[0] : '',
+        sleepHoursAvg: 0,
+        stressLevelAvg: 0,
+        moodTrend: 'Neutral',
+      }));
+      
+      set({ adminHighRiskStudents: mapped });
+    } catch (err) {
+      console.error('[Store] Failed to fetch high-risk students:', err);
+    }
+  },
+
+  fetchAdminStudentDetail: async (studentId) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    set({ adminStudentLoading: true });
+    try {
+      const response = await apiRequest<{ success: boolean; data: any }>(`/admin/student/${studentId}`, { token });
+      set({ adminStudentDetail: response.data, adminStudentLoading: false });
+    } catch (err) {
+      console.error('[Store] Failed to fetch student detail:', err);
+      set({ adminStudentLoading: false });
+    }
+  },
+
+  sendWellnessEmail: async (studentId) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    try {
+      await apiRequest('/admin/send-email', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ studentId }),
+      });
+    } catch (err) {
+      console.error('[Store] Failed to send wellness email:', err);
+      throw err;
+    }
+  },
+
+  sendBulkWellnessEmail: async (riskGroup) => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return { sent: 0 };
+    try {
+      const response = await apiRequest<{ success: boolean; data: { sent: number } }>(
+        '/admin/send-bulk-email',
+        {
+          method: 'POST',
+          token,
+          body: JSON.stringify({ riskGroup }),
+        }
+      );
+      return { sent: response.data?.sent ?? 0 };
+    } catch (err) {
+      console.error('[Store] Failed to send bulk wellness email:', err);
+      throw err;
+    }
+  },
+
   // Actions
   login: async (email, password, forceRole) => {
     set({ authError: null });
-    // Admin override
-    if (forceRole === 'admin' || email.includes('admin')) {
-      set({
-        user: {
-          name: 'System Admin',
-          email: email,
-          phone: '+1 555-9999',
-          gender: 'Agnostic',
-          age: 35,
-          assessmentCompleted: true,
-          role: 'admin',
-        },
-        isAuthenticated: true,
-        otpVerified: true,
-      });
-      await get().fetchAdminSettings();
-      return true;
+    
+    // Admin login
+    if (forceRole === 'admin') {
+      try {
+        const data = await apiRequest<{ success: boolean; token: string; admin: { id: string; username: string } }>('/admin/login', {
+          method: 'POST',
+          body: JSON.stringify({ username: email, password }),
+        });
+
+        storeSession(data.token);
+        set({
+          user: {
+            name: data.admin.username,
+            email: email,
+            phone: '',
+            gender: 'Agnostic',
+            age: 0,
+            assessmentCompleted: true,
+            role: 'admin',
+          },
+          authToken: data.token,
+          isAuthenticated: true,
+          otpVerified: true,
+        });
+        await get().fetchAdminSettings();
+        return true;
+      } catch (error) {
+        set({ authError: error instanceof Error ? error.message : 'Admin login failed' });
+        return false;
+      }
     }
 
+    // Student login
     try {
       const data = await apiRequest<AuthResponse>('/auth/login', {
         method: 'POST',
@@ -1304,55 +1506,131 @@ export const useStore = create<AppState>((set, get) => ({
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
 
-    // Optimistically add user message
     const userMsg = {
       id: `m-usr-${Date.now()}`,
       sender: 'user' as const,
       text,
       timestamp: Date.now(),
     };
+
+    const aiMsgId = `m-ai-${Date.now() + 1}`;
+    const aiMessage = {
+      id: aiMsgId,
+      sender: 'ai' as const,
+      text: '',
+      timestamp: Date.now() + 1,
+    };
+
     set((state) => ({
-      chatMessages: [...state.chatMessages, userMsg],
+      chatMessages: [...state.chatMessages, userMsg, aiMessage],
     }));
 
     try {
-      const response = await apiRequest<{
-        success: boolean;
-        data: {
-          userMessage: any;
-          aiMessage: any;
-        };
-      }>('/ai/chat', {
+      const response = await fetch(`${API_BASE_URL}/ai/chat/stream`, {
         method: 'POST',
-        token,
+        credentials: 'include',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ message: text }),
       });
 
-      // Update state with AI response
-      set((state) => ({
-        chatMessages: [
-          ...state.chatMessages.filter((m) => m.id !== userMsg.id),
-          response.data.userMessage,
-          response.data.aiMessage,
-        ],
-      }));
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => 'AI request failed.');
+        let errorMessage = 'AI request failed.';
 
-      // Refresh notification count after AI response
-      await get().fetchNotifications();
+        try {
+          const parsed = JSON.parse(errorText);
+          errorMessage = parsed?.message || errorMessage;
+        } catch {
+          if (errorText) errorMessage = errorText;
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('AI stream unavailable.');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let currentEvent = 'message';
+      let currentData = '';
+
+      const flushEvent = () => {
+        if (!currentData) return;
+        if (currentEvent === 'message') {
+          let parsed = currentData;
+          try {
+            parsed = JSON.parse(currentData);
+          } catch {
+            // keep raw string
+          }
+
+          const chunk = typeof parsed === 'string'
+            ? parsed
+            : parsed?.delta ?? '';
+
+          if (typeof chunk === 'string' && chunk) {
+            set((state) => ({
+              chatMessages: state.chatMessages.map((msg) =>
+                msg.id === aiMsgId ? { ...msg, text: msg.text + chunk } : msg,
+              ),
+            }));
+          }
+        }
+
+        currentEvent = 'message';
+        currentData = '';
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() ?? '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) {
+            flushEvent();
+            continue;
+          }
+
+          if (trimmed.startsWith('event:')) {
+            currentEvent = trimmed.slice(6).trim();
+            continue;
+          }
+
+          if (trimmed.startsWith('data:')) {
+            const content = trimmed.slice(5).trim();
+            if (content === '[DONE]') {
+              flushEvent();
+              continue;
+            }
+            currentData += content;
+          }
+        }
+      }
+
+      flushEvent();
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unable to reach the assistant.';
+      set((state) => ({
+        chatMessages: state.chatMessages.map((msg) =>
+          msg.id === aiMsgId ? { ...msg, text: `⚠️ ${errorMessage}` } : msg,
+        ),
+      }));
       console.error('[Store] Failed to send chat message:', err);
     }
   },
 
   // Admin Actions
-  adminSendNotification: (studentId, message, _type) => {
-    if (studentId === 'all') {
-      console.log(`Sending notification to all: ${message}`);
-    } else {
-      console.log(`Sending notification to student ${studentId}: ${message}`);
-    }
-  },
-
   adminCreateRecommendation: (rec) => {
     const newRec: Recommendation = {
       ...rec,

@@ -1,11 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import { useStore } from '../store/useStore';
-import { MessageSquare, X, Send, Bot } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Trash2 } from 'lucide-react';
 
 export const AIWidget: React.FC = () => {
-  const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory, fetchNotifications } = useStore();
+  const { isAuthenticated, user, chatMessages, sendChatMessage, trackerHistory, fetchAIHistory, fetchNotifications, clearAIHistory } = useStore();
+  const [isClearing, setIsClearing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [inputMsg, setInputMsg] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,8 +52,13 @@ export const AIWidget: React.FC = () => {
     if (!inputMsg.trim()) return;
     const text = inputMsg.trim();
     setInputMsg('');
-    await sendChatMessage(text);
-    fetchNotifications();
+    setIsTyping(true);
+    try {
+      await sendChatMessage(text);
+    } finally {
+      setIsTyping(false);
+      fetchNotifications();
+    }
   };
 
   return (
@@ -71,6 +82,14 @@ export const AIWidget: React.FC = () => {
                 {getRiskLabel(currentScore)}
               </span>
               <button
+                onClick={() => setShowClearConfirm(true)}
+                title="Clear Chat"
+                className="p-1.5 rounded-lg hover:bg-error/10 text-error hover:text-red-700 transition-colors"
+                disabled={isClearing}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+              <button
                 onClick={() => setIsOpen(false)}
                 className="p-1.5 rounded-lg hover:bg-surface-elevated/50 text-text-secondary hover:text-text-primary dark:hover:text-[#F8FAFC] transition-colors"
               >
@@ -93,7 +112,26 @@ export const AIWidget: React.FC = () => {
                       : 'bg-surface-elevated text-text-primary border border-border/50 rounded-bl-sm'
                   }`}
                 >
-                  <p className="whitespace-pre-line tracking-tight">{msg.text}</p>
+                  <div className="text-[13px] leading-relaxed tracking-tight break-words">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      rehypePlugins={[rehypeSanitize]}
+                      components={{
+                        code({ inline, className, children, ...props }: any) {
+                          return (
+                            <code
+                              className={`${className ?? ''} ${inline ? 'px-1 py-[0.15rem] rounded bg-surface border border-border/50 text-[12px] font-mono' : 'block rounded-xl bg-surface-elevated border border-border/50 p-3 text-[12px] font-mono overflow-x-auto'}`}
+                              {...props}
+                            >
+                              {children}
+                            </code>
+                          );
+                        },
+                      }}
+                    >
+                      {msg.text}
+                    </ReactMarkdown>
+                  </div>
                   <span
                     className={`block text-[9px] text-right mt-2 ${
                       msg.sender === 'user' ? 'text-white/70' : 'text-text-secondary'
@@ -104,6 +142,17 @@ export const AIWidget: React.FC = () => {
                 </div>
               </div>
             ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="max-w-[65%] p-3.5 rounded-2xl bg-surface-elevated text-text-primary border border-border/50 rounded-bl-sm">
+                  <div className="flex items-center space-x-2">
+                    <span className="h-2 w-2 rounded-full bg-text-secondary animate-pulse" />
+                    <span className="h-2 w-2 rounded-full bg-text-secondary animate-pulse" />
+                    <span className="h-2 w-2 rounded-full bg-text-secondary animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 

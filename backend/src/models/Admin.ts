@@ -2,11 +2,12 @@ import { Schema, model, type Document, type Model } from "mongoose";
 import { AccountStatus, AdminRole } from "../types/common.types.js";
 
 export interface IAdmin extends Document {
-  fullName: string;
-  email: string;
+  username: string;
+  fullName?: string;
+  email?: string;
   password: string;
-  role: AdminRole;
-  accountStatus: AccountStatus;
+  role?: AdminRole;
+  accountStatus?: AccountStatus;
   lastLoginAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -14,17 +15,22 @@ export interface IAdmin extends Document {
 
 const AdminSchema = new Schema<IAdmin>(
   {
-    fullName: {
+    username: {
       type: String,
       required: true,
+      unique: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 50,
+    },
+    fullName: {
+      type: String,
       trim: true,
       minlength: 2,
       maxlength: 120,
     },
     email: {
       type: String,
-      required: true,
-      unique: true,
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Invalid email address"],

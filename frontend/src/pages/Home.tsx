@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { apiRequest } from '../lib/api';
 import { ArrowRight, Activity, Moon, Shield, Award, Sparkles, Send, Mail, Phone, MapPin } from 'lucide-react';
 
 export const Home: React.FC = () => {
   const { isAuthenticated, user, burnoutRisk, fetchBurnoutRisk, trackerHistory, fetchTrackerHistory } = useStore();
   const navigate = useNavigate();
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [contactSending, setContactSending] = useState(false);
+  const [contactToast, setContactToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -15,6 +17,12 @@ export const Home: React.FC = () => {
       fetchTrackerHistory();
     }
   }, [isAuthenticated, fetchBurnoutRisk, fetchTrackerHistory]);
+
+  useEffect(() => {
+    if (!contactToast) return;
+    const timer = setTimeout(() => setContactToast(null), 5000);
+    return () => clearTimeout(timer);
+  }, [contactToast]);
 
   // Calculate average sleep and study hours from tracker history
   const averageSleep = trackerHistory.length > 0 
@@ -52,13 +60,36 @@ export const Home: React.FC = () => {
     return "Your journal sentiment is positive. Keep up the good work with your wellness routine!";
   };
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!contactForm.name || !contactForm.email || !contactForm.message) return;
-    console.log('Contact form submitted:', contactForm);
-    setFormSubmitted(true);
-    setContactForm({ name: '', email: '', message: '' });
-    setTimeout(() => setFormSubmitted(false), 5000);
+
+    const name = contactForm.name.trim();
+    const email = contactForm.email.trim();
+    const message = contactForm.message.trim();
+
+    if (!name || !email || !message || contactSending) return;
+
+    setContactSending(true);
+    setContactToast(null);
+
+    try {
+      await apiRequest<{ success: boolean }>('/contact', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, message }),
+      });
+      setContactForm({ name: '', email: '', message: '' });
+      setContactToast({
+        type: 'success',
+        message: 'Message sent successfully. We will get back to you soon.',
+      });
+    } catch {
+      setContactToast({
+        type: 'error',
+        message: 'Failed to send message. Please try again later.',
+      });
+    } finally {
+      setContactSending(false);
+    }
   };
 
   return (
@@ -252,7 +283,7 @@ export const Home: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[10px] text-text-muted  uppercase tracking-wider font-semibold">Email Us</p>
-                  <p className="text-sm font-semibold text-text-primary ">support@burnoutguard.edu</p>
+                  <p className="text-sm font-semibold text-text-primary ">burnoutguard123@gmail.com</p>
                 </div>
               </div>
 
@@ -262,7 +293,7 @@ export const Home: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-[10px] text-text-muted  uppercase tracking-wider font-semibold">Call Us</p>
-                  <p className="text-sm font-semibold text-text-primary ">+1 (555) 309-8800</p>
+                  <p className="text-sm font-semibold text-text-primary ">+91 5684987585</p>
                 </div>
               </div>
 
@@ -282,13 +313,20 @@ export const Home: React.FC = () => {
           <div className="lg:col-span-7">
             <div className="bg-surface dark:bg-[#1E293B] p-8 rounded-2xl border border-border  shadow-card">
               <h3 className="text-xl font-bold mb-6 ">Send Us a Message</h3>
-              
-              {formSubmitted ? (
-                <div className="bg-success/10 border border-success/20 text-success p-4 rounded-xl text-center text-sm font-semibold animate-in zoom-in duration-200">
-                  Your message has been sent successfully. We will get back to you shortly!
+
+              {contactToast && (
+                <div
+                  className={`mb-4 p-4 rounded-xl text-center text-sm font-semibold animate-in zoom-in duration-200 ${
+                    contactToast.type === 'success'
+                      ? 'bg-success/10 border border-success/20 text-success'
+                      : 'bg-error/10 border border-error/20 text-error'
+                  }`}
+                >
+                  {contactToast.message}
                 </div>
-              ) : (
-                <form onSubmit={handleContactSubmit} className="space-y-4">
+              )}
+
+              <form onSubmit={handleContactSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-text-primary dark:text-[#E2E8F0]" htmlFor="contact-name">Name</label>
@@ -329,13 +367,13 @@ export const Home: React.FC = () => {
                   </div>
                   <button
                     type="submit"
-                    className="w-full bg-primary dark:bg-[#4F46E5] text-white font-semibold py-2.5 rounded-lg flex items-center justify-center space-x-2 hover:bg-primary/95 dark:hover:bg-[#4338CA] transition-all"
+                    disabled={contactSending}
+                    className="w-full bg-primary dark:bg-[#4F46E5] text-white font-semibold py-2.5 rounded-lg flex items-center justify-center space-x-2 hover:bg-primary/95 dark:hover:bg-[#4338CA] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    <span>Send Message</span>
-                    <Send className="h-4 w-4" />
+                    <span>{contactSending ? 'Sending Message...' : 'Send Message'}</span>
+                    {!contactSending && <Send className="h-4 w-4" />}
                   </button>
                 </form>
-              )}
             </div>
           </div>
         </div>

@@ -4,6 +4,17 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, AreaChart, Area, Legend } from 'recharts';
 import { Calendar, Filter, Sparkles, TrendingUp, Loader2 } from 'lucide-react';
 
+const formatDDMM = (timestamp: number) => {
+  const dt = new Date(timestamp);
+  return `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}`;
+};
+
+const formatAssessmentTime = (timestamp: number) =>
+  new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+const tooltipTimeLabel = (_: unknown, payload: readonly { payload?: { hoverTimeLabel?: string } }[]) =>
+  payload?.[0]?.payload?.hoverTimeLabel ?? '';
+
 export const HistoryTrends: React.FC = () => {
   const { trackerHistory, fetchTrackerHistory, analyticsSummary, fetchAnalytics, trackerHistoryLoading, analyticsLoading } = useStore();
 
@@ -21,17 +32,13 @@ export const HistoryTrends: React.FC = () => {
   // Filter tracker data based on selection
   const getFilteredData = () => {
     let data = [...trackerHistory];
-    
-    // Sort chronologically just in case
-    data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    data.sort((a, b) => a.timestamp - b.timestamp);
 
     if (startDate && endDate) {
       const start = new Date(startDate).getTime();
       const end = new Date(endDate).getTime();
-      return data.filter(item => {
-        const itemTime = new Date(item.date).getTime();
-        return itemTime >= start && itemTime <= end;
-      });
+      return data.filter(item => item.timestamp >= start && item.timestamp <= end);
     }
 
     return data.slice(-filterDays);
@@ -39,29 +46,13 @@ export const HistoryTrends: React.FC = () => {
 
   const filteredData = getFilteredData();
 
-  // Build unique labels per data point — if multiple entries share the same date,
-  // include the time so Recharts doesn't collapse them to a single tooltip value.
-  const dateGroups: Record<string, number> = {};
-  filteredData.forEach(item => {
-    const d = item.date;
-    dateGroups[d] = (dateGroups[d] ?? 0) + 1;
-  });
-
-  const formattedChartData = filteredData.map((item, idx) => {
-    const sameDay = dateGroups[item.date] > 1;
-    const dt = new Date(item.timestamp);
-    const dateLabel = sameDay
-      ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) +
-        ' ' +
-        dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : dt.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    return {
-      ...item,
-      idx,
-      dateLabel,
-      satisfaction: 10 - item.procrastination,
-    };
-  });
+  const formattedChartData = filteredData.map((item, index) => ({
+    ...item,
+    index,
+    dateLabel: formatDDMM(item.timestamp),
+    hoverTimeLabel: formatAssessmentTime(item.timestamp),
+    satisfaction: 10 - item.procrastination,
+  }));
 
   const EmptyState = ({ title }: { title: string }) => (
     <div className="flex items-center justify-center h-56 bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-[#334155]">
@@ -83,102 +74,106 @@ export const HistoryTrends: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 animate-in fade-in duration-300">
+      <div className="space-y-8">
         
         {/* Header Block */}
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 pb-4 border-b border-slate-100 dark:border-[#334155]">
-          <div>
-            <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">History & Wellness Trends</h2>
-            <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">Monitor progress trends and behavior correlations</p>
-          </div>
+        <div className="space-y-4 pb-4 border-b border-slate-100 dark:border-[#334155]">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+            <div className="lg:flex-1">
+              <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">History & Wellness Trends</h2>
+              <p className="text-xs text-neutral-outline dark:text-[#CBD5E1]">Monitor progress trends and behavior correlations</p>
+            </div>
 
-          {/* Backend Analytics Cards */}
-          <div className="flex gap-4">
-            {analyticsSummary?.currentTrend && (
-              <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
-                <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Overall Trend</span>
-                <span className={`font-semibold text-sm ${
-                  analyticsSummary.currentTrend === 'IMPROVING' ? 'text-success' : 
-                  analyticsSummary.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
-                }`}>
-                  {analyticsSummary.currentTrend}
-                </span>
-              </div>
-            )}
-            
-            {analyticsSummary?.baselineComparison && (
-              <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
-                <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Baseline Shift</span>
-                <div className="flex items-center gap-2">
+            {/* Backend Analytics Cards */}
+            <div className="flex flex-wrap gap-4 lg:ml-auto lg:mr-6 xl:mr-10">
+              {analyticsSummary?.currentTrend && (
+                <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
+                  <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Overall Trend</span>
                   <span className={`font-semibold text-sm ${
-                    analyticsSummary.baselineComparison.status === 'IMPROVED' ? 'text-success' : 
-                    analyticsSummary.baselineComparison.status === 'WORSENED' ? 'text-error' : 'text-primary'
+                    analyticsSummary.currentTrend === 'IMPROVING' ? 'text-success' : 
+                    analyticsSummary.currentTrend === 'WORSENING' ? 'text-error' : 'text-primary'
                   }`}>
-                    {analyticsSummary.baselineComparison.status}
-                  </span>
-                  <span className="text-xs text-text-secondary">
-                    ({analyticsSummary.baselineComparison.difference > 0 ? '+' : ''}{analyticsSummary.baselineComparison.difference} pts)
+                    {analyticsSummary.currentTrend}
                   </span>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Filters */}
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-neutral-outline dark:text-[#CBD5E1] shrink-0" />
-            <div className="inline-flex rounded-lg border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#1E293B] p-0.5 shadow-sm text-xs font-semibold">
-              <button
-                onClick={() => { setFilterDays(7); setStartDate(''); setEndDate(''); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 7 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
-              >
-                7 Days
-              </button>
-              <button
-                onClick={() => { setFilterDays(30); setStartDate(''); setEndDate(''); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 30 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
-              >
-                30 Days
-              </button>
-              <button
-                onClick={() => { setFilterDays(90); setStartDate(''); setEndDate(''); }}
-                className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 90 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
-              >
-                90 Days
-              </button>
+              )}
+              
+              {analyticsSummary?.baselineComparison && (
+                <div className="bg-white/80 dark:bg-[#1E293B]/80 px-4 py-2 rounded-xl border border-slate-200 dark:border-[#334155] shadow-sm">
+                  <span className="text-[10px] text-text-secondary uppercase tracking-wider block">Baseline Shift</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`font-semibold text-sm ${
+                      analyticsSummary.baselineComparison.status === 'IMPROVED' ? 'text-success' : 
+                      analyticsSummary.baselineComparison.status === 'WORSENED' ? 'text-error' : 'text-primary'
+                    }`}>
+                      {analyticsSummary.baselineComparison.status}
+                    </span>
+                    <span className="text-xs text-text-secondary">
+                      ({analyticsSummary.baselineComparison.difference > 0 ? '+' : ''}{analyticsSummary.baselineComparison.difference} pts)
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* Custom Date Range Picker */}
-        <div className="bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm border border-slate-100 dark:border-[#334155] rounded-xl p-4 flex flex-wrap gap-4 items-center shadow-sm">
-          <span className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC] flex items-center">
-            <Calendar className="h-4 w-4 mr-1 text-primary dark:text-[#4F46E5]" />
-            Custom Range:
-          </span>
-          <div className="flex items-center space-x-2 text-xs">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="border border-slate-200 dark:border-[#334155] rounded-lg px-2 py-1.5 bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary dark:focus:border-[#4F46E5]"
-            />
-            <span className="text-neutral-outline dark:text-[#CBD5E1]">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="border border-slate-200 dark:border-[#334155] rounded-lg px-2 py-1.5 bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary dark:focus:border-[#4F46E5]"
-            />
+          {/* Custom Date Range Picker */}
+          <div className="bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm border border-slate-100 dark:border-[#334155] rounded-xl p-4 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-4 min-w-0">
+              <span className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC] flex items-center">
+                <Calendar className="h-4 w-4 mr-1 text-primary dark:text-[#4F46E5]" />
+                Custom Range:
+              </span>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="border border-slate-200 dark:border-[#334155] rounded-lg px-2 py-1.5 bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary dark:focus:border-[#4F46E5]"
+                />
+                <span className="text-neutral-outline dark:text-[#CBD5E1]">to</span>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="border border-slate-200 dark:border-[#334155] rounded-lg px-2 py-1.5 bg-white dark:bg-[#111827] text-neutral-slate dark:text-[#F8FAFC] focus:outline-none focus:border-primary dark:focus:border-[#4F46E5]"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button
+                  onClick={() => { setStartDate(''); setEndDate(''); setFilterDays(30); }}
+                  className="text-xs text-error font-semibold hover:underline"
+                >
+                  Clear Custom Range
+                </button>
+              )}
+            </div>
+
+            {/* Quick Filters */}
+            <div className="flex items-center space-x-2 sm:ml-auto shrink-0">
+              <Filter className="h-4 w-4 text-neutral-outline dark:text-[#CBD5E1] shrink-0" />
+              <div className="inline-flex rounded-lg border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#1E293B] p-0.5 shadow-sm text-xs font-semibold">
+                <button
+                  onClick={() => { setFilterDays(7); setStartDate(''); setEndDate(''); }}
+                  className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 7 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
+                >
+                  7 Days
+                </button>
+                <button
+                  onClick={() => { setFilterDays(30); setStartDate(''); setEndDate(''); }}
+                  className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 30 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
+                >
+                  30 Days
+                </button>
+                <button
+                  onClick={() => { setFilterDays(90); setStartDate(''); setEndDate(''); }}
+                  className={`px-3 py-1.5 rounded-md transition-all ${filterDays === 90 && !startDate ? 'bg-primary dark:bg-[#4F46E5] text-white shadow-sm' : 'text-neutral-slate/75 dark:text-[#CBD5E1] hover:bg-slate-50 dark:hover:bg-[#273449] dark:hover:text-[#F8FAFC]'}`}
+                >
+                  90 Days
+                </button>
+              </div>
+            </div>
           </div>
-          {(startDate || endDate) && (
-            <button
-              onClick={() => { setStartDate(''); setEndDate(''); setFilterDays(30); }}
-              className="text-xs text-error font-semibold hover:underline"
-            >
-              Clear Custom Range
-            </button>
-          )}
         </div>
 
         {/* Graphs Grid */}
@@ -198,7 +193,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <defs>
                       <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#433FE5" stopOpacity={0.2}/>
@@ -206,9 +201,19 @@ export const HistoryTrends: React.FC = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#433FE5', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#433FE5', strokeWidth: 1, strokeDasharray: '4 4' }} />
                     <Area type="monotone" dataKey="burnoutScore" stroke="#433FE5" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" activeDot={false} name="Burnout" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -232,11 +237,21 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
-                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
+                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
                     <Line type="monotone" dataKey="sleepHours" stroke="#5D5CFF" strokeWidth={2} name="Sleep Hours" dot={{ r: 2 }} activeDot={false} />
                     <Line type="monotone" dataKey="stressLevel" stroke="#EF4444" strokeWidth={2} name="Stress Level" dot={{ r: 2 }} activeDot={false} />
@@ -259,11 +274,21 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
-                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
+                    <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
                     <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} activeDot={false} />
                     <Line type="monotone" dataKey="screenTime" stroke="#F59E0B" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} activeDot={false} />
@@ -286,7 +311,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <defs>
                       <linearGradient id="colorProcr" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#EF4444" stopOpacity={0.15}/>
@@ -294,9 +319,19 @@ export const HistoryTrends: React.FC = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={5} />
-                    <YAxis domain={[0, 10]} tick={{ fontSize: 10, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#EF4444', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => formattedChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={5}
+                    />
+                    <YAxis domain={[0, 10]} tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#EF4444', strokeWidth: 1, strokeDasharray: '4 4' }} />
                     <Area type="monotone" dataKey="procrastination" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorProcr)" activeDot={false} name="Procrastination" />
                   </AreaChart>
                 </ResponsiveContainer>

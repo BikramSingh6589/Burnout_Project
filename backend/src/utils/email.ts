@@ -74,3 +74,268 @@ export const sendWeeklyReminderEmail = async (to: string, name: string): Promise
     `,
   });
 };
+
+export const sendSupportEmail = async (to: string, name: string, subject: string, message: string): Promise<void> => {
+  await getTransporter().sendMail({
+    from: fromAddress(),
+    to,
+    subject,
+    text: `Dear ${name},\n\n${message}\n\nBest regards,\nBurnout Wellness Team`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:28px;">
+          <h2 style="margin:0 0 18px;font-size:24px;color:#1f2937;font-weight:700;">${subject}</h2>
+          <p style="margin:0 0 18px;color:#374151;font-size:16px;">Dear ${name},</p>
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;white-space:pre-wrap;color:#334155;font-size:15px;">
+            ${message}
+          </div>
+          <p style="margin:0 0 4px;color:#475569;font-size:14px;">Remember, your wellbeing is important. If you need additional support, please reach out to your counselor or support services.</p>
+          <p style="margin:0;color:#475569;font-size:14px;">Best regards,<br/>Burnout Wellness Team</p>
+        </div>
+      </div>
+    `,
+  });
+};
+
+export type WellnessRiskTier = "high" | "moderate" | "low";
+
+export interface WellnessEmailTemplate {
+  subject: string;
+  text: string;
+  html: string;
+}
+
+interface WellnessEmailTheme {
+  outerBg: string;
+  borderColor: string;
+  headerGradient: string;
+  headerSubtitleColor: string;
+  guidanceBg: string;
+  guidanceBorder: string;
+  buttonBg: string;
+  boxShadow: string;
+}
+
+const wellnessEmailThemes: Record<WellnessRiskTier, WellnessEmailTheme> = {
+  high: {
+    outerBg: "#FEE2E2",
+    borderColor: "#FECACA",
+    headerGradient: "linear-gradient(135deg,#EF4444 0%,#DC2626 100%)",
+    headerSubtitleColor: "#FEE2E2",
+    guidanceBg: "#FEE2E2",
+    guidanceBorder: "#FECACA",
+    buttonBg: "#DC2626",
+    boxShadow: "0 8px 24px rgba(220,38,38,0.14)",
+  },
+  moderate: {
+    outerBg: "#FEF3C7",
+    borderColor: "#FDE68A",
+    headerGradient: "linear-gradient(135deg,#FBBF24 0%,#F59E0B 100%)",
+    headerSubtitleColor: "#FEF3C7",
+    guidanceBg: "#FEF3C7",
+    guidanceBorder: "#FDE68A",
+    buttonBg: "#F59E0B",
+    boxShadow: "0 8px 24px rgba(245,158,11,0.14)",
+  },
+  low: {
+    outerBg: "#D1FAE5",
+    borderColor: "#A7F3D0",
+    headerGradient: "linear-gradient(135deg,#34D399 0%,#10B981 100%)",
+    headerSubtitleColor: "#D1FAE5",
+    guidanceBg: "#D1FAE5",
+    guidanceBorder: "#A7F3D0",
+    buttonBg: "#10B981",
+    boxShadow: "0 8px 24px rgba(16,185,129,0.14)",
+  },
+};
+
+const getDashboardUrl = (): string => {
+  const base = (process.env.FRONTEND_URL || process.env.APP_URL || "").replace(/\/$/, "");
+  return base ? `${base}/dashboard` : "";
+};
+
+const wellnessEmailShell = (
+  tier: WellnessRiskTier,
+  subject: string,
+  studentName: string,
+  messageHtml: string,
+  guidanceHtml: string
+): string => {
+  const theme = wellnessEmailThemes[tier];
+  const dashboardUrl = getDashboardUrl();
+  const dashboardButtonHtml = dashboardUrl
+    ? `
+                  <table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px auto 0;">
+                    <tr>
+                      <td align="center" style="border-radius:10px;background:${theme.buttonBg};">
+                        <a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;background:${theme.buttonBg};">
+                          View My Dashboard
+                        </a>
+                      </td>
+                    </tr>
+                  </table>`
+    : "";
+
+  return `
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>${subject}</title>
+    </head>
+    <body style="margin:0;padding:0;background:${theme.outerBg};font-family:Arial,Helvetica,sans-serif;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${theme.outerBg};padding:32px 16px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid ${theme.borderColor};border-radius:16px;overflow:hidden;box-shadow:${theme.boxShadow};">
+              <tr>
+                <td style="background:${theme.headerGradient};padding:24px 28px;">
+                  <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:${theme.headerSubtitleColor};">Student Wellness Platform</p>
+                  <h1 style="margin:8px 0 0;font-size:24px;line-height:1.3;color:#ffffff;font-weight:700;">${subject}</h1>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:28px;color:#0f172a;font-size:16px;line-height:1.7;">
+                  <p style="margin:0 0 16px;color:#334155;">Hello ${studentName},</p>
+                  ${messageHtml}
+                  <div style="margin:20px 0 0;padding:18px 20px;background:${theme.guidanceBg};border:1px solid ${theme.guidanceBorder};border-radius:12px;">
+                    ${guidanceHtml}
+                  </div>
+                  ${dashboardButtonHtml}
+                  <p style="margin:28px 0 0;padding-top:20px;border-top:1px solid #e2e8f0;color:#64748b;font-size:13px;text-align:center;">
+                    Student Wellness Platform
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+  </html>
+`;
+};
+
+const paragraphHtml = (text: string): string =>
+  `<p style="margin:0 0 12px;color:#334155;">${text}</p>`;
+
+const guidanceParagraphHtml = (text: string, isLast = false): string =>
+  `<p style="margin:0${isLast ? "" : " 0 10px"};color:#334155;font-size:15px;line-height:1.6;">${text}</p>`;
+
+export const getWellnessEmailTemplate = (
+  tier: WellnessRiskTier,
+  studentName: string
+): WellnessEmailTemplate => {
+  const dashboardUrl = getDashboardUrl();
+  const dashboardText = dashboardUrl ? `\n\nView your dashboard: ${dashboardUrl}` : "";
+
+  if (tier === "high") {
+    const subject = "Wellness Support Reminder";
+    const messageParagraphs = [
+      "Your recent wellness assessments indicate a high burnout risk level.",
+      "We encourage you to review your recommendations, improve sleep quality, reduce academic stress where possible, and regularly use the Wellness Assistant for guidance.",
+    ];
+    const guidanceParagraphs = [
+      "Small consistent improvements can significantly improve your wellbeing.",
+      "Please take care of yourself and reach out when needed.",
+    ];
+    const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+    const guidanceHtml = guidanceParagraphs
+      .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
+      .join("");
+    const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+    return {
+      subject,
+      text,
+      html: wellnessEmailShell(tier, subject, studentName, messageHtml, guidanceHtml),
+    };
+  }
+
+  if (tier === "moderate") {
+    const subject = "Wellness Progress Reminder";
+    const messageParagraphs = [
+      "Your current burnout indicators fall within the moderate range.",
+      "You are making progress, but there is still room for improvement.",
+    ];
+    const guidanceParagraphs = [
+      "Maintaining healthy study habits, managing stress, and following platform recommendations can help improve your wellbeing further.",
+      "Keep moving forward consistently.",
+    ];
+    const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+    const guidanceHtml = guidanceParagraphs
+      .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
+      .join("");
+    const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+    return {
+      subject,
+      text,
+      html: wellnessEmailShell(tier, subject, studentName, messageHtml, guidanceHtml),
+    };
+  }
+
+  const subject = "Congratulations on Your Progress";
+  const messageParagraphs = [
+    "Your recent assessments indicate a healthy wellness status.",
+    "You are maintaining positive habits and managing your academic wellbeing effectively.",
+  ];
+  const guidanceParagraphs = [
+    "Continue following your current routine and regularly monitor your wellness progress.",
+    "Keep up the excellent work.",
+  ];
+  const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+  const guidanceHtml = guidanceParagraphs
+    .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
+    .join("");
+  const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+  return {
+    subject,
+    text,
+    html: wellnessEmailShell(tier, subject, studentName, messageHtml, guidanceHtml),
+  };
+};
+
+export const sendWellnessTemplateEmail = async (
+  to: string,
+  template: WellnessEmailTemplate
+): Promise<void> => {
+  await getTransporter().sendMail({
+    from: fromAddress(),
+    to,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  });
+};
+
+export interface ContactFormPayload {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}
+
+export const sendContactFormEmail = async (payload: ContactFormPayload): Promise<void> => {
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+  
+  await getTransporter().sendMail({
+    from: fromAddress(),
+    to: adminEmail,
+    replyTo: payload.email,
+    subject: `Contact Form: ${payload.subject}`,
+    text: `From: ${payload.name} (${payload.email})\n\n${payload.message}`,
+    html: `
+      <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:28px;">
+          <h2 style="margin:0 0 18px;font-size:24px;color:#1f2937;font-weight:700;">New Contact Form Submission</h2>
+          <p style="margin:0 0 12px;color:#475569;font-size:14px;"><strong>From:</strong> ${payload.name}</p>
+          <p style="margin:0 0 12px;color:#475569;font-size:14px;"><strong>Email:</strong> <a href="mailto:${payload.email}">${payload.email}</a></p>
+          <p style="margin:0 0 12px;color:#475569;font-size:14px;"><strong>Subject:</strong> ${payload.subject}</p>
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-top:22px;white-space:pre-wrap;color:#334155;font-size:15px;">
+            ${payload.message}
+          </div>
+        </div>
+      </div>
+    `,
+  });
+};

@@ -13,7 +13,7 @@ export const Register: React.FC = () => {
     name: '',
     phone: '',
     email: '',
-    gender: 'Male',
+    gender: '',
     age: '',
     password: '',
     confirmPassword: '',
@@ -29,7 +29,7 @@ export const Register: React.FC = () => {
     setError(null);
 
     // Validation
-    if (!formData.name || !formData.phone || !formData.email || !formData.age || !formData.password || !formData.confirmPassword) {
+    if (!formData.name || !formData.phone || !formData.email || !formData.gender || !formData.age || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all fields.');
       return;
     }

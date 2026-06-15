@@ -15,6 +15,8 @@ import recommendationRoutes from "./routes/recommendation.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import aiRoutes from "./routes/ai.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
+import adminRoutes from "./routes/admin.routes.js";
+import contactRoutes from "./routes/contact.routes.js";
 import { healthRouter } from "./routes/health.routes.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 
@@ -58,6 +60,8 @@ app.use("/api/recommendations", recommendationRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/contact", contactRoutes);
 
 app.use((_req, res) => {
   res.status(404).json({

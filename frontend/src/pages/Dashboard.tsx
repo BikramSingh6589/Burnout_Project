@@ -1,13 +1,86 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { apiRequest } from '../lib/api';
+import { hasReachedWeeklyAssessmentLimit, type WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
 import { DashboardLayout } from '../components/DashboardLayout';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
-import { Sparkles, Calendar, Moon, Compass, ArrowRight, Loader2 } from 'lucide-react';
+import { ChartTimeframeSelect } from '../components/ChartTimeframeSelect';
+import { buildChartData, type ChartDataPoint, type ChartTimeframe } from '../lib/chartTimeframe';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Customized } from 'recharts';
+import { Sparkles, Calendar, Moon, Compass, ArrowRight, Loader2, Info } from 'lucide-react';
+
+const tooltipTimeLabel = (_: unknown, payload: readonly { payload?: { hoverTimeLabel?: string } }[]) =>
+  payload?.[0]?.payload?.hoverTimeLabel ?? '';
+
+type BarHoverTimeLabelProps = {
+  hoveredIndex: number | null;
+  data: ChartDataPoint[];
+  valueKey: 'sleepHours' | 'screenTime';
+  xAxisMap?: Record<string, { scale: (v: string) => number; bandSize?: number }>;
+  yAxisMap?: Record<string, { scale: (v: number) => number }>;
+  offset?: { left: number; top: number };
+};
+
+const BarHoverTimeLabel: React.FC<BarHoverTimeLabelProps> = ({
+  hoveredIndex,
+  data,
+  valueKey,
+  xAxisMap,
+  yAxisMap,
+  offset,
+}) => {
+  if (hoveredIndex === null || !xAxisMap || !yAxisMap || !offset) return null;
+
+  const entry = data[hoveredIndex];
+  if (!entry) return null;
+
+  const xAxis = xAxisMap[Object.keys(xAxisMap)[0]];
+  const yAxis = yAxisMap[Object.keys(yAxisMap)[0]];
+  if (!xAxis?.scale || !yAxis?.scale) return null;
+
+  const bandWidth = xAxis.bandSize ?? 0;
+  const x = xAxis.scale(String(hoveredIndex)) + bandWidth / 2;
+  const y = yAxis.scale(entry[valueKey]) - 6;
+
+  return (
+    <g pointerEvents="none">
+      <text
+        x={x + offset.left}
+        y={y + offset.top}
+        textAnchor="middle"
+        fill="#CBD5E1"
+        fontSize={11}
+        fontWeight={500}
+      >
+        {entry.hoverTimeLabel}
+      </text>
+    </g>
+  );
+};
 
 export const Dashboard: React.FC = () => {
-  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk, analyticsLoading, trackerHistoryLoading, burnoutRiskLoading, recommendationsLoading } = useStore();
+  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk, analyticsLoading, trackerHistoryLoading, burnoutRiskLoading, recommendationsLoading, adminSettings, fetchAdminSettings, authToken } = useStore();
   const navigate = useNavigate();
+  const [sleepHoveredIndex, setSleepHoveredIndex] = useState<number | null>(null);
+  const [screenHoveredIndex, setScreenHoveredIndex] = useState<number | null>(null);
+  const [burnoutTimeframe, setBurnoutTimeframe] = useState<ChartTimeframe>('daily');
+  const [sleepTimeframe, setSleepTimeframe] = useState<ChartTimeframe>('daily');
+  const [screenTimeframe, setScreenTimeframe] = useState<ChartTimeframe>('daily');
+  const [weeklyAssessmentHistory, setWeeklyAssessmentHistory] = useState<WeeklyAssessmentRecord[]>([]);
+
+  const fetchWeeklyAssessmentHistory = useCallback(async () => {
+    if (!authToken) return;
+
+    try {
+      const response = await apiRequest<{
+        success: boolean;
+        data: { history: WeeklyAssessmentRecord[] };
+      }>('/weekly-assessment/history', { token: authToken });
+      setWeeklyAssessmentHistory(response.data.history);
+    } catch {
+      setWeeklyAssessmentHistory([]);
+    }
+  }, [authToken]);
 
   useEffect(() => {
     fetchTrackerHistory();
@@ -15,7 +88,17 @@ export const Dashboard: React.FC = () => {
     fetchNotifications();
     fetchAnalytics();
     fetchBurnoutRisk();
-  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics, fetchBurnoutRisk]);
+    fetchAdminSettings();
+  }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics, fetchBurnoutRisk, fetchAdminSettings]);
+
+  useEffect(() => {
+    void fetchWeeklyAssessmentHistory();
+  }, [fetchWeeklyAssessmentHistory, trackerHistory]);
+
+  const isWeeklyLimitReached = useMemo(
+    () => hasReachedWeeklyAssessmentLimit(weeklyAssessmentHistory, adminSettings.maxWeeklyAssessmentsPerStudent),
+    [weeklyAssessmentHistory, adminSettings.maxWeeklyAssessmentsPerStudent],
+  );
 
   // Guard checks handled in DashboardLayout, but let's read the latest values
   const latestTracker = trackerHistory.length > 0 ? trackerHistory[trackerHistory.length - 1] : null;
@@ -86,20 +169,20 @@ export const Dashboard: React.FC = () => {
     { name: 'Pending Feedback', value: dashboardRecommendations.length, color: '#C7C4D8' }
   ];
 
-  // Format history for line chart (showing up to last 7 entries)
-  const last7 = trackerHistory.slice(-7);
-  const dashDateGroups: Record<string, number> = {};
-  last7.forEach(h => { dashDateGroups[h.date] = (dashDateGroups[h.date] ?? 0) + 1; });
-  const chartData = last7.map(h => {
-    const sameDay = dashDateGroups[h.date] > 1;
-    const dt = new Date(h.timestamp);
-    return {
-      ...h,
-      dateLabel: sameDay
-        ? dt.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : dt.toLocaleDateString([], { month: 'short', day: 'numeric' }),
-    };
-  });
+  const burnoutChartData = useMemo(
+    () => buildChartData(trackerHistory, burnoutTimeframe, 'last7'),
+    [trackerHistory, burnoutTimeframe],
+  );
+
+  const sleepChartData = useMemo(
+    () => buildChartData(trackerHistory, sleepTimeframe, 'all'),
+    [trackerHistory, sleepTimeframe],
+  );
+
+  const screenChartData = useMemo(
+    () => buildChartData(trackerHistory, screenTimeframe, 'all'),
+    [trackerHistory, screenTimeframe],
+  );
 
   return (
     <DashboardLayout>
@@ -124,12 +207,29 @@ export const Dashboard: React.FC = () => {
             >
               History & Trends
             </button>
-            <button
-              onClick={() => navigate('/assessment/weekly')}
-              className="bg-primary text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm hover:bg-[#4338CA] hover:shadow-md "
-            >
-              Take Assessment
-            </button>
+            <div className="relative group">
+              <button
+                type="button"
+                disabled={isWeeklyLimitReached}
+                onClick={() => {
+                  if (!isWeeklyLimitReached) {
+                    navigate('/assessment/weekly');
+                  }
+                }}
+                className={`bg-primary text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm ${
+                  isWeeklyLimitReached
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-[#4338CA] hover:shadow-md'
+                }`}
+              >
+                Take Assessment
+              </button>
+              {isWeeklyLimitReached && (
+                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-xs -translate-x-1/2 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs font-medium text-[#CBD5E1] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  Weekly assessment limit reached. Try again when the new week begins.
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -241,16 +341,16 @@ export const Dashboard: React.FC = () => {
           
           {/* Left: Burnout Score Trend Area Chart (col-span-2) */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 lg:col-span-2 space-y-6">
-            <div className="flex justify-between items-end pb-4 border-b border-border">
+            <div className="flex justify-between items-center gap-3 pb-4 border-b border-border">
               <h3 className="text-base font-semibold tracking-tight text-text-primary">Burnout score tracker</h3>
-              <span className="text-xs text-text-secondary font-medium">Last 7 Sessions</span>
+              <ChartTimeframeSelect value={burnoutTimeframe} onChange={setBurnoutTimeframe} />
             </div>
             {isLoading ? (
               <GraphLoading />
             ) : (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <AreaChart data={burnoutChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25}/>
@@ -258,11 +358,22 @@ export const Dashboard: React.FC = () => {
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', padding: '12px' }} 
-                      cursor={{ stroke: '#4F46E5', strokeWidth: 1, strokeDasharray: '4 4' }} 
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => burnoutChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
+                    />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <Tooltip
+                      labelFormatter={tooltipTimeLabel}
+                      contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)', padding: '12px' }}
+                      cursor={{ stroke: '#4F46E5', strokeWidth: 1, strokeDasharray: '4 4' }}
                     />
                     <Area 
                       type="monotone"
@@ -283,7 +394,18 @@ export const Dashboard: React.FC = () => {
           {/* Right: Recommendation Analytics Pie Chart */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 flex flex-col justify-between space-y-6">
             <div className="flex justify-between items-end pb-4 border-b border-border">
-              <h3 className="text-base font-semibold tracking-tight text-text-primary">Interventions</h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-base font-semibold tracking-tight text-text-primary">Interventions</h3>
+                <div className="relative group">
+                  <Info
+                    className="h-4 w-4 text-text-secondary cursor-help"
+                    aria-label="Interventions information"
+                  />
+                  <div className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-64 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs font-medium leading-relaxed text-[#CBD5E1] opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                    Interventions are your personalized wellness recommendations.
+                  </div>
+                </div>
+              </div>
               <span className="text-xs text-text-secondary font-medium">Status</span>
             </div>
             
@@ -330,24 +452,52 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
           {/* Sleep Hours Trend */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 space-y-6">
-            <div className="flex justify-between items-end pb-4 border-b border-border">
+            <div className="flex justify-between items-center gap-3 pb-4 border-b border-border">
               <h3 className="text-base font-semibold tracking-tight flex items-center ">
                 <Moon className="h-4 w-4 mr-2 text-indigo-500" />
                 <span>Sleep Tracker</span>
               </h3>
-              <span className="text-xs text-text-secondary font-medium">Hours slept</span>
+              <ChartTimeframeSelect value={sleepTimeframe} onChange={setSleepTimeframe} />
             </div>
             {isLoading ? (
               <GraphLoading />
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                  <BarChart data={sleepChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
-                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
-                    <Bar dataKey="sleepHours" fill="#5D5CFF" radius={[4, 4, 0, 0]} name="Sleep Hours" activeBar={false} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => sleepChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
+                    />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
+                    <Customized
+                      component={(props: BarHoverTimeLabelProps) => (
+                        <BarHoverTimeLabel
+                          {...props}
+                          hoveredIndex={sleepHoveredIndex}
+                          data={sleepChartData}
+                          valueKey="sleepHours"
+                        />
+                      )}
+                    />
+                    <Bar
+                      dataKey="sleepHours"
+                      fill="#5D5CFF"
+                      radius={[4, 4, 0, 0]}
+                      name="Sleep Hours"
+                      activeBar={false}
+                      onMouseEnter={(_, index) => setSleepHoveredIndex(index)}
+                      onMouseLeave={() => setSleepHoveredIndex(null)}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -356,24 +506,52 @@ export const Dashboard: React.FC = () => {
 
           {/* Screen Time Trend */}
           <div className="bg-surface p-6 rounded-2xl border border-border shadow-sm hover:shadow-md  transition-all duration-300 space-y-6">
-            <div className="flex justify-between items-end pb-4 border-b border-border">
+            <div className="flex justify-between items-center gap-3 pb-4 border-b border-border">
               <h3 className="text-base font-semibold tracking-tight flex items-center ">
                 <Compass className="h-4 w-4 mr-2 text-purple-500" />
                 <span>Screen Time Exposure</span>
               </h3>
-              <span className="text-xs text-text-secondary font-medium">Daily exposure</span>
+              <ChartTimeframeSelect value={screenTimeframe} onChange={setScreenTimeframe} />
             </div>
             {isLoading ? (
               <GraphLoading />
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                  <BarChart data={screenChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={true} animationDuration={800} animationEasing="ease-out">
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
-                    <XAxis dataKey="dateLabel" tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dy={10} />
-                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: '#CBD5E1' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
-                    <Tooltip contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
-                    <Bar dataKey="screenTime" fill="#8127CF" radius={[4, 4, 0, 0]} name="Screen Hours" activeBar={false} />
+                    <XAxis
+                      dataKey="index"
+                      type="category"
+                      interval={0}
+                      tickFormatter={(value) => screenChartData[Number(value)]?.dateLabel ?? ''}
+                      tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }}
+                      stroke="#334155"
+                      tickLine={false}
+                      axisLine={false}
+                      dy={10}
+                    />
+                    <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
+                    <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
+                    <Customized
+                      component={(props: BarHoverTimeLabelProps) => (
+                        <BarHoverTimeLabel
+                          {...props}
+                          hoveredIndex={screenHoveredIndex}
+                          data={screenChartData}
+                          valueKey="screenTime"
+                        />
+                      )}
+                    />
+                    <Bar
+                      dataKey="screenTime"
+                      fill="#8127CF"
+                      radius={[4, 4, 0, 0]}
+                      name="Screen Hours"
+                      activeBar={false}
+                      onMouseEnter={(_, index) => setScreenHoveredIndex(index)}
+                      onMouseLeave={() => setScreenHoveredIndex(null)}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
