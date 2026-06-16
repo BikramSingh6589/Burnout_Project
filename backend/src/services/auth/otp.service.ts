@@ -78,43 +78,29 @@ export const verifyOTP = async (
 };
 
 export const sendOTPEmail = async (email: string, otp: string, purpose: OtpPurpose): Promise<void> => {
-  logger.info("=== Starting sendOTPEmail ===");
-  logger.info("config.emailUser exists:", !!config.emailUser);
-  logger.info("config.emailPassword exists:", !!config.emailPassword);
-  logger.info("process.env.EMAIL_USER:", process.env.EMAIL_USER);
-  logger.info("process.env.user_email:", process.env.user_email);
-
   if (!config.emailUser || !config.emailPassword) {
-    const errMsg = "Email service is not configured - missing EMAIL_USER/EMAIL_PASSWORD or user_email/user_password";
-    logger.error(errMsg);
-    throw new OtpError(errMsg, 500);
+    throw new OtpError("Email service is not configured", 500);
   }
 
-  try {
-    logger.info("Creating nodemailer transporter...");
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: config.emailUser,
-        pass: config.emailPassword,
-      },
-    });
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: config.emailUser,
+      pass: config.emailPassword,
+    },
+  });
 
-    logger.info("Verifying transporter...");
-    await transporter.verify();
-    logger.info("Transporter verified successfully!");
-
-    const isPasswordReset = purpose === "password_reset";
-    const subject = isPasswordReset ? "Reset your Burnout Wellness password" : "Verify your Burnout Wellness account";
-    const headline = isPasswordReset ? "Reset your password" : "Verify your email";
-    const lead = isPasswordReset
-      ? "Use this one-time code to reset your password securely."
-      : "Use this one-time code to finish creating your student wellness account.";
-    const note = isPasswordReset
-      ? "If you did not request a password reset, you can safely ignore this email."
-      : "If you did not create an account, you can safely ignore this email.";
-    const text = `${headline}: ${otp}. This code expires in ${OTP_EXPIRY_MINUTES} minutes. ${note}`;
-    const html = `
+  const isPasswordReset = purpose === "password_reset";
+  const subject = isPasswordReset ? "Reset your Burnout Wellness password" : "Verify your Burnout Wellness account";
+  const headline = isPasswordReset ? "Reset your password" : "Verify your email";
+  const lead = isPasswordReset
+    ? "Use this one-time code to reset your password securely."
+    : "Use this one-time code to finish creating your student wellness account.";
+  const note = isPasswordReset
+    ? "If you did not request a password reset, you can safely ignore this email."
+    : "If you did not create an account, you can safely ignore this email.";
+  const text = `${headline}: ${otp}. This code expires in ${OTP_EXPIRY_MINUTES} minutes. ${note}`;
+  const html = `
     <div style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#152033">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:28px 12px">
         <tr>
@@ -149,20 +135,11 @@ export const sendOTPEmail = async (email: string, otp: string, purpose: OtpPurpo
     </div>
   `;
 
-    logger.info("Sending email to:", email);
-    const info = await transporter.sendMail({
-      from: `Burnout Wellness <${config.emailUser}>`,
-      to: email,
-      subject,
-      text,
-      html,
-    });
-    logger.info("Email sent successfully! Message ID:", info.messageId);
-  } catch (error) {
-    logger.error("Error sending email:", error);
-    if (error instanceof Error) {
-      throw new OtpError(`Email failed: ${error.message}`, 500);
-    }
-    throw new OtpError("Email failed to send", 500);
-  }
+  await transporter.sendMail({
+    from: `Burnout Wellness <${config.emailUser}>`,
+    to: email,
+    subject,
+    text,
+    html,
+  });
 };
