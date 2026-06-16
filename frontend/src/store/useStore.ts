@@ -306,12 +306,7 @@ interface AppState {
   rejectAiRecommendation: (id: string) => Promise<void>;
 }
 
-// Initial Mock Data Helpers
-const getPastDateString = (daysAgo: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() - daysAgo);
-  return date.toISOString().split('T')[0];
-};
+
 
 interface BackendStudent {
   id?: string;
@@ -401,78 +396,7 @@ const getStoredAuthToken = () => {
 };
 const getStoredPendingEmail = () => localStorage.getItem(PENDING_EMAIL_KEY);
 
-const mockAdminStudents: AdminStudent[] = [
-  {
-    id: 's-1',
-    name: 'Jane Doe',
-    email: 'jane.doe@university.edu',
-    phone: '+1 555-0199',
-    age: 21,
-    gender: 'Female',
-    burnoutScore: 78,
-    riskLevel: 'High',
-    lastAssessmentDate: getPastDateString(2),
-    sleepHoursAvg: 4.8,
-    stressLevelAvg: 8.5,
-    journalSentimentSummary: 'Mostly Negative'
-  },
-  {
-    id: 's-2',
-    name: 'John Smith',
-    email: 'john.smith@university.edu',
-    phone: '+1 555-0124',
-    age: 22,
-    gender: 'Male',
-    burnoutScore: 55,
-    riskLevel: 'Moderate',
-    lastAssessmentDate: getPastDateString(3),
-    sleepHoursAvg: 6.2,
-    stressLevelAvg: 5.8,
-    journalSentimentSummary: 'Neutral'
-  },
-  {
-    id: 's-3',
-    name: 'Alex Rivera',
-    email: 'alex.rivera@university.edu',
-    phone: '+1 555-0177',
-    age: 20,
-    gender: 'Non-binary',
-    burnoutScore: 24,
-    riskLevel: 'Low',
-    lastAssessmentDate: getPastDateString(1),
-    sleepHoursAvg: 7.8,
-    stressLevelAvg: 2.1,
-    journalSentimentSummary: 'Mostly Positive'
-  },
-  {
-    id: 's-4',
-    name: 'Emily Watson',
-    email: 'emily.w@university.edu',
-    phone: '+1 555-0143',
-    age: 23,
-    gender: 'Female',
-    burnoutScore: 82,
-    riskLevel: 'High',
-    lastAssessmentDate: getPastDateString(1),
-    sleepHoursAvg: 4.2,
-    stressLevelAvg: 9.0,
-    journalSentimentSummary: 'Negative'
-  },
-  {
-    id: 's-5',
-    name: 'Marcus Brody',
-    email: 'marcus.b@university.edu',
-    phone: '+1 555-0158',
-    age: 21,
-    gender: 'Male',
-    burnoutScore: 48,
-    riskLevel: 'Moderate',
-    lastAssessmentDate: getPastDateString(4),
-    sleepHoursAvg: 6.0,
-    stressLevelAvg: 6.2,
-    journalSentimentSummary: 'Neutral'
-  }
-];
+
 
 const initialAuthToken = getStoredAuthToken();
 
@@ -1431,7 +1355,7 @@ export const useStore = create<AppState>((set, get) => ({
     } catch (err) {
       console.error('[Store] Failed to delete recommendation:', err);
       // Revert on error
-      set((state) => ({
+      set((_) => ({
         recommendations: originalRecommendations,
         recommendationHistory: originalRecommendationHistory,
       }));
@@ -1563,7 +1487,7 @@ export const useStore = create<AppState>((set, get) => ({
       const flushEvent = () => {
         if (!currentData) return;
         if (currentEvent === 'message') {
-          let parsed = currentData;
+          let parsed: any = currentData;
           try {
             parsed = JSON.parse(currentData);
           } catch {

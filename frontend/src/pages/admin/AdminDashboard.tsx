@@ -10,7 +10,6 @@ export const AdminDashboard: React.FC = () => {
     logout,
     adminStudents,
     adminDashboardMetrics,
-    adminHighRiskStudents,
     adminSettings,
     fetchAdminStudents,
     fetchAdminHighRisk,
@@ -76,9 +75,7 @@ export const AdminDashboard: React.FC = () => {
   const highRiskCount = adminDashboardMetrics?.highRiskStudents ?? adminStudents.filter(s => s.burnoutScore >= adminSettings.highRiskThreshold).length;
   const lowRiskCount = adminDashboardMetrics?.lowRiskStudents ?? adminStudents.filter(s => s.burnoutScore < adminSettings.moderateRiskThreshold).length;
   const moderateRiskCount = adminDashboardMetrics?.mediumRiskStudents ?? adminStudents.filter(s => s.burnoutScore >= adminSettings.moderateRiskThreshold && s.burnoutScore < adminSettings.highRiskThreshold).length;
-  const activeStudentsCount = adminDashboardMetrics?.weeklyActiveStudents ?? Math.round(totalStudentsCount * 0.85);
   const riskBase = totalStudentsCount || 1;
-  const highRiskStudents = adminHighRiskStudents.length > 0 ? adminHighRiskStudents : adminStudents.filter(s => s.burnoutScore >= adminSettings.highRiskThreshold);
 
   // Filter students based on search
   const filteredStudents = adminStudents.filter(s =>
