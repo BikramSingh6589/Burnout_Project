@@ -27,10 +27,16 @@ export const apiRequest = async <T>(path: string, options: ApiOptions = {}): Pro
       },
     });
 
-    const data = await response.json().catch(() => ({}));
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = {};
+    }
 
     if (!response.ok) {
-      throw new ApiError(response.status, data?.message ?? 'Request failed');
+      const errorMessage = data?.message || data?.error || `Request failed with status ${response.status}`;
+      throw new ApiError(response.status, errorMessage);
     }
 
     return data as T;
