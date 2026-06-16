@@ -31,7 +31,10 @@ const authLimiter = rateLimit({
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(",").map((origin) => origin.trim()) ?? ["http://localhost:5173"],
+    origin: (origin, callback) => {
+      // Allow all origins for now to fix the problem
+      return callback(null, true);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
   }),
