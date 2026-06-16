@@ -62,7 +62,7 @@ export const errorMiddleware = (
 
   const responseBody: Record<string, unknown> = {
     success: false,
-    message: config.env === "production" && statusCode === 500 ? "Internal server error" : message,
+    message: message, // Temporarily show real error in production to debug
   };
 
   if (config.env === "development" && error.stack) {
