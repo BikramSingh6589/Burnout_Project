@@ -1,11 +1,11 @@
 import nodemailer from "nodemailer";
 
 const getTransporter = () => {
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASSWORD;
+  const user = process.env.EMAIL_USER || process.env.user_email;
+  const pass = process.env.EMAIL_PASSWORD || process.env.user_password;
 
   if (!user || !pass) {
-    throw new Error("EMAIL_USER and EMAIL_PASSWORD must be configured to send emails");
+    throw new Error("EMAIL_USER/EMAIL_PASSWORD or user_email/user_password must be configured to send emails");
   }
 
   return nodemailer.createTransport({
@@ -17,7 +17,10 @@ const getTransporter = () => {
   });
 };
 
-const fromAddress = (): string => process.env.EMAIL_FROM || `Burnout Wellness <${process.env.EMAIL_USER}>`;
+const fromAddress = (): string => {
+  const user = process.env.EMAIL_USER || process.env.user_email;
+  return process.env.EMAIL_FROM || `Burnout Wellness <${user}>`;
+};
 
 export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
   await getTransporter().sendMail({
@@ -316,7 +319,7 @@ export interface ContactFormPayload {
 }
 
 export const sendContactFormEmail = async (payload: ContactFormPayload): Promise<void> => {
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || process.env.user_email;
   const subject = payload.subject || "New Contact Form Submission";
   
   await getTransporter().sendMail({

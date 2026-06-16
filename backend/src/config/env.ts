@@ -38,8 +38,8 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error("Invalid PORT value. PORT must be a positive integer.");
 }
 
-const emailUser = process.env.EMAIL_USER?.trim();
-const emailPassword = process.env.EMAIL_PASSWORD?.trim();
+const emailUser = (process.env.EMAIL_USER || process.env.user_email)?.trim();
+const emailPassword = (process.env.EMAIL_PASSWORD || process.env.user_password)?.trim();
 
 if ((emailUser && !emailPassword) || (!emailUser && emailPassword)) {
   throw new Error("EMAIL_USER and EMAIL_PASSWORD must both be set if either one is provided.");
