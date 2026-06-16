@@ -170,17 +170,17 @@ export const Dashboard: React.FC = () => {
   ];
 
   const burnoutChartData = useMemo(
-    () => buildChartData(trackerHistory, burnoutTimeframe, 'last7'),
+    () => buildChartData(trackerHistory, burnoutTimeframe),
     [trackerHistory, burnoutTimeframe],
   );
 
   const sleepChartData = useMemo(
-    () => buildChartData(trackerHistory, sleepTimeframe, 'last7'),
+    () => buildChartData(trackerHistory, sleepTimeframe),
     [trackerHistory, sleepTimeframe],
   );
 
   const screenChartData = useMemo(
-    () => buildChartData(trackerHistory, screenTimeframe, 'last7'),
+    () => buildChartData(trackerHistory, screenTimeframe),
     [trackerHistory, screenTimeframe],
   );
 
@@ -368,7 +368,7 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={burnoutChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }} isAnimationActive={false}>
+                  <AreaChart data={burnoutChartData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25}/>
@@ -402,6 +402,7 @@ export const Dashboard: React.FC = () => {
                       fill="url(#colorBurnout)"
                       activeDot={false}
                       name="Burnout Score"
+                      isAnimationActive={false}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -439,7 +440,6 @@ export const Dashboard: React.FC = () => {
                     paddingAngle={4}
                     dataKey="value"
                     stroke="none"
-                    activeIndex={undefined}
                   >
                     {displayPieData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -482,7 +482,7 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sleepChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={false}>
+                  <BarChart data={sleepChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis
                       dataKey="index"
@@ -498,7 +498,7 @@ export const Dashboard: React.FC = () => {
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(93, 92, 255, 0.05)' }} />
                     <Customized
-                      component={(props: BarHoverTimeLabelProps) => (
+                      component={(props: any) => (
                         <BarHoverTimeLabel
                           {...props}
                           hoveredIndex={sleepHoveredIndex}
@@ -513,6 +513,7 @@ export const Dashboard: React.FC = () => {
                       radius={[4, 4, 0, 0]}
                       name="Sleep Hours"
                       activeBar={false}
+                      isAnimationActive={false}
                       onMouseEnter={(_, index) => setSleepHoveredIndex(index)}
                       onMouseLeave={() => setSleepHoveredIndex(null)}
                     />
@@ -536,7 +537,7 @@ export const Dashboard: React.FC = () => {
             ) : (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={screenChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }} isAnimationActive={false}>
+                  <BarChart data={screenChartData} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis
                       dataKey="index"
@@ -552,7 +553,7 @@ export const Dashboard: React.FC = () => {
                     <YAxis tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-10} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 12, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ fill: 'rgba(129, 39, 207, 0.05)' }} />
                     <Customized
-                      component={(props: BarHoverTimeLabelProps) => (
+                      component={(props: any) => (
                         <BarHoverTimeLabel
                           {...props}
                           hoveredIndex={screenHoveredIndex}
@@ -567,6 +568,7 @@ export const Dashboard: React.FC = () => {
                       radius={[4, 4, 0, 0]}
                       name="Screen Hours"
                       activeBar={false}
+                      isAnimationActive={false}
                       onMouseEnter={(_, index) => setScreenHoveredIndex(index)}
                       onMouseLeave={() => setScreenHoveredIndex(null)}
                     />

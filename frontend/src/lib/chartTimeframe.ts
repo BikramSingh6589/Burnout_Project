@@ -23,8 +23,6 @@ export type ChartDataPoint = {
 
 type TrackerEntry = TrackerHistory & { id?: string };
 
-type DailyMode = 'last7' | 'all';
-
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const formatDDMM = (timestamp: number) => {
@@ -63,7 +61,7 @@ const toChartPoint = (
   stressLevel: aggregates?.stressLevel ?? entry.stressLevel,
 });
 
-const buildDailyData = (history: TrackerEntry[], dailyMode: DailyMode): ChartDataPoint[] => {
+const buildDailyData = (history: TrackerEntry[]): ChartDataPoint[] => {
   // Sort by timestamp descending to inspect the latest entries first
   const sortedDesc = [...history].sort((a, b) => b.timestamp - a.timestamp);
 
@@ -194,11 +192,10 @@ const buildYearlyData = (history: TrackerEntry[]): ChartDataPoint[] => {
 export const buildChartData = (
   history: TrackerEntry[],
   timeframe: ChartTimeframe,
-  dailyMode: DailyMode = 'last7',
 ): ChartDataPoint[] => {
   switch (timeframe) {
     case 'daily':
-      return buildDailyData(history, dailyMode);
+      return buildDailyData(history);
     case 'weekly':
       return buildWeeklyData(history);
     case 'monthly':

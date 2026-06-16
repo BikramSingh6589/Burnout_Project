@@ -54,7 +54,7 @@ export const HistoryTrends: React.FC = () => {
     satisfaction: 10 - item.procrastination,
   })), [filteredData]);
 
-  const EmptyState = ({ title }: { title: string }) => (
+  const EmptyState = () => (
     <div className="flex items-center justify-center h-56 bg-white/50 dark:bg-[#1E293B]/50 backdrop-blur-sm rounded-xl border border-slate-100 dark:border-[#334155]">
       <div className="text-center">
         <p className="text-sm text-neutral-outline dark:text-[#CBD5E1] font-medium mb-1">No assessment is taken</p>
@@ -193,7 +193,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={false}>
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} >
                     <defs>
                       <linearGradient id="colorBurnout" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#433FE5" stopOpacity={0.2}/>
@@ -214,12 +214,12 @@ export const HistoryTrends: React.FC = () => {
                     />
                     <YAxis domain={[0, 100]} tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#433FE5', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                    <Area type="monotone" dataKey="burnoutScore" stroke="#433FE5" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" activeDot={false} name="Burnout" />
+                    <Area type="monotone" dataKey="burnoutScore" stroke="#433FE5" strokeWidth={2} fillOpacity={1} fill="url(#colorBurnout)" activeDot={false} name="Burnout" isAnimationActive={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <EmptyState title="Burnout Index Trend" />
+              <EmptyState />
             )}
           </div>
 
@@ -237,7 +237,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={false}>
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis
                       dataKey="index"
@@ -253,13 +253,13 @@ export const HistoryTrends: React.FC = () => {
                     <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
-                    <Line type="monotone" dataKey="sleepHours" stroke="#5D5CFF" strokeWidth={2} name="Sleep Hours" dot={{ r: 2 }} activeDot={false} />
-                    <Line type="monotone" dataKey="stressLevel" stroke="#EF4444" strokeWidth={2} name="Stress Level" dot={{ r: 2 }} activeDot={false} />
+                    <Line type="monotone" dataKey="sleepHours" stroke="#5D5CFF" strokeWidth={2} name="Sleep Hours" dot={{ r: 2 }} activeDot={false} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="stressLevel" stroke="#EF4444" strokeWidth={2} name="Stress Level" dot={{ r: 2 }} activeDot={false} isAnimationActive={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <EmptyState title="Sleep & Stress Correlation" />
+              <EmptyState />
             )}
           </div>
 
@@ -274,7 +274,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={false}>
+                  <LineChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-slate-200 dark:text-white/10" opacity={0.5} />
                     <XAxis
                       dataKey="index"
@@ -290,13 +290,13 @@ export const HistoryTrends: React.FC = () => {
                     <YAxis tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#CBD5E1' }} />
-                    <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} activeDot={false} />
-                    <Line type="monotone" dataKey="screenTime" stroke="#F59E0B" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} activeDot={false} />
+                    <Line type="monotone" dataKey="studyHours" stroke="#10B981" strokeWidth={2} name="Study Hours" dot={{ r: 2 }} activeDot={false} isAnimationActive={false} />
+                    <Line type="monotone" dataKey="screenTime" stroke="#F59E0B" strokeWidth={2} name="Screen Time" dot={{ r: 2 }} activeDot={false} isAnimationActive={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <EmptyState title="Study Focus vs Digital Exposure" />
+              <EmptyState />
             )}
           </div>
 
@@ -311,7 +311,7 @@ export const HistoryTrends: React.FC = () => {
             ) : formattedChartData.length > 0 ? (
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} isAnimationActive={false}>
+                  <AreaChart data={formattedChartData} margin={{ top: 10, right: 5, left: -25, bottom: 0 }} >
                     <defs>
                       <linearGradient id="colorProcr" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#EF4444" stopOpacity={0.15}/>
@@ -332,12 +332,12 @@ export const HistoryTrends: React.FC = () => {
                     />
                     <YAxis domain={[0, 10]} tick={{ fontSize: 10, fontWeight: 500, fill: 'var(--axis-text-color)' }} stroke="#334155" tickLine={false} axisLine={false} dx={-5} />
                     <Tooltip labelFormatter={tooltipTimeLabel} contentStyle={{ backgroundColor: '#1E293B', color: '#F8FAFC', fontSize: 12, borderRadius: 8, border: '1px solid #334155', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }} cursor={{ stroke: '#EF4444', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                    <Area type="monotone" dataKey="procrastination" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorProcr)" activeDot={false} name="Procrastination" />
+                    <Area type="monotone" dataKey="procrastination" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorProcr)" activeDot={false} name="Procrastination" isAnimationActive={false} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <EmptyState title="Procrastination Factor" />
+              <EmptyState />
             )}
           </div>
 
