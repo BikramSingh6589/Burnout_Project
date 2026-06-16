@@ -311,18 +311,19 @@ export const sendWellnessTemplateEmail = async (
 export interface ContactFormPayload {
   name: string;
   email: string;
-  subject: string;
+  subject?: string;
   message: string;
 }
 
 export const sendContactFormEmail = async (payload: ContactFormPayload): Promise<void> => {
   const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER;
+  const subject = payload.subject || "New Contact Form Submission";
   
   await getTransporter().sendMail({
     from: fromAddress(),
     to: adminEmail,
     replyTo: payload.email,
-    subject: `Contact Form: ${payload.subject}`,
+    subject: `Contact Form: ${subject}`,
     text: `From: ${payload.name} (${payload.email})\n\n${payload.message}`,
     html: `
       <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
@@ -330,7 +331,7 @@ export const sendContactFormEmail = async (payload: ContactFormPayload): Promise
           <h2 style="margin:0 0 18px;font-size:24px;color:#1f2937;font-weight:700;">New Contact Form Submission</h2>
           <p style="margin:0 0 12px;color:#475569;font-size:14px;"><strong>From:</strong> ${payload.name}</p>
           <p style="margin:0 0 12px;color:#475569;font-size:14px;"><strong>Email:</strong> <a href="mailto:${payload.email}">${payload.email}</a></p>
-          <p style="margin:0 0 12px;color:#475569;font-size:14px;"><strong>Subject:</strong> ${payload.subject}</p>
+          <p style="margin:0 0 12px;color:#475569;font-size:14px;"><strong>Subject:</strong> ${subject}</p>
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-top:22px;white-space:pre-wrap;color:#334155;font-size:15px;">
             ${payload.message}
           </div>
