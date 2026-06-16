@@ -10,7 +10,6 @@ export const AdminDashboard: React.FC = () => {
     logout,
     adminStudents,
     adminDashboardMetrics,
-    adminHighRiskStudents,
     adminSettings,
     fetchAdminStudents,
     fetchAdminHighRisk,
