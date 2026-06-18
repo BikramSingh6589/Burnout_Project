@@ -502,7 +502,6 @@ export const useStore = create<AppState>((set, get) => ({
       
       set({ trackerHistory: mapped, trackerHistoryLoading: false });
     } catch (err) {
-      console.error('[Store] Failed to fetch tracker history:', err);
       set({ trackerHistoryLoading: false });
     }
   },
@@ -533,7 +532,6 @@ export const useStore = create<AppState>((set, get) => ({
         });
       }
     } catch (err) {
-      console.error('[Store] Failed to fetch analytics:', err);
     } finally {
       set({ analyticsLoading: false });
     }
@@ -562,7 +560,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       set({ journalEntries: mapped });
     } catch (err) {
-      console.error('[Store] Failed to fetch journal entries:', err);
     }
   },
 
@@ -577,7 +574,6 @@ export const useStore = create<AppState>((set, get) => ({
       }>('/recommendations', { token });
       set({ recommendations: response.data, recommendationsLoading: false });
     } catch (err) {
-      console.error('[Store] Failed to fetch recommendations:', err);
       set({ recommendationsLoading: false });
     }
   },
@@ -593,7 +589,6 @@ export const useStore = create<AppState>((set, get) => ({
       }>('/recommendations/history', { token });
       set({ recommendationHistory: response.data, recommendationHistoryLoading: false });
     } catch (err) {
-      console.error('[Store] Failed to fetch recommendation history:', err);
       set({ recommendationHistoryLoading: false });
     }
   },
@@ -613,7 +608,6 @@ export const useStore = create<AppState>((set, get) => ({
         unreadNotificationCount: response.unreadCount 
       });
     } catch (err) {
-      console.error('[Store] Failed to fetch notifications:', err);
     }
   },
 
@@ -627,7 +621,6 @@ export const useStore = create<AppState>((set, get) => ({
       }>('/ai/history', { token });
       set({ chatMessages: response.data });
     } catch (err) {
-      console.error('[Store] Failed to fetch AI history:', err);
     }
   },
 
@@ -652,7 +645,6 @@ export const useStore = create<AppState>((set, get) => ({
       // Re-sync with server state (will return default greeting if cleared)
       await get().fetchAIHistory();
     } catch (err) {
-      console.error('[Store] Failed to clear AI history:', err);
     }
   },
 
@@ -661,7 +653,6 @@ export const useStore = create<AppState>((set, get) => ({
       const response = await apiRequest<SettingsResponse>('/settings');
       set({ adminSettings: response.data });
     } catch (err) {
-      console.error('[Store] Failed to fetch admin settings:', err);
     }
   },
 
@@ -672,7 +663,6 @@ export const useStore = create<AppState>((set, get) => ({
       const response = await apiRequest<{ success: boolean; data: AdminDashboardMetrics }>('/admin/dashboard', { token });
       set({ adminDashboardMetrics: response.data });
     } catch (err) {
-      console.error('[Store] Failed to fetch admin dashboard metrics:', err);
     }
   },
 
@@ -712,7 +702,6 @@ export const useStore = create<AppState>((set, get) => ({
       
       set({ adminStudents: mapped });
     } catch (err) {
-      console.error('[Store] Failed to fetch admin students:', err);
     }
   },
 
@@ -749,7 +738,6 @@ export const useStore = create<AppState>((set, get) => ({
       
       set({ adminHighRiskStudents: mapped });
     } catch (err) {
-      console.error('[Store] Failed to fetch high-risk students:', err);
     }
   },
 
@@ -761,7 +749,6 @@ export const useStore = create<AppState>((set, get) => ({
       const response = await apiRequest<{ success: boolean; data: any }>(`/admin/student/${studentId}`, { token });
       set({ adminStudentDetail: response.data, adminStudentLoading: false });
     } catch (err) {
-      console.error('[Store] Failed to fetch student detail:', err);
       set({ adminStudentLoading: false });
     }
   },
@@ -776,7 +763,6 @@ export const useStore = create<AppState>((set, get) => ({
         body: JSON.stringify({ studentId }),
       });
     } catch (err) {
-      console.error('[Store] Failed to send wellness email:', err);
       throw err;
     }
   },
@@ -795,7 +781,6 @@ export const useStore = create<AppState>((set, get) => ({
       );
       return { sent: response.data?.sent ?? 0 };
     } catch (err) {
-      console.error('[Store] Failed to send bulk wellness email:', err);
       throw err;
     }
   },
@@ -1211,7 +1196,6 @@ export const useStore = create<AppState>((set, get) => ({
 
       return null; // null = success
     } catch (error) {
-      console.error('[Assessment] Submit failed:', error);
       // Return the real backend message so the UI can show it
       if (error instanceof Error) return error.message;
       return 'Failed to save assessment. Please check your connection and try again.';
@@ -1231,7 +1215,6 @@ export const useStore = create<AppState>((set, get) => ({
       await get().fetchNotifications();
       await get().fetchTrackerHistory();
     } catch (err) {
-      console.error('[Store] Failed to add journal entry:', err);
     }
   },
 
@@ -1253,7 +1236,6 @@ export const useStore = create<AppState>((set, get) => ({
       }));
       set({ journalAiEntries: mapped });
     } catch (err) {
-      console.error('[Store] Failed to fetch AI journal entries:', err);
     }
   },
 
@@ -1268,7 +1250,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       await get().fetchJournalAiEntries();
     } catch (err) {
-      console.error('[Store] Failed to add AI journal entry:', err);
     }
   },
 
@@ -1283,7 +1264,6 @@ export const useStore = create<AppState>((set, get) => ({
       }>('/journal-ai/burnout-risk', { token });
       set({ burnoutRisk: response.data, burnoutRiskLoading: false });
     } catch (err) {
-      console.error('[Store] Failed to fetch burnout risk:', err);
       set({ burnoutRiskLoading: false });
     }
   },
@@ -1298,7 +1278,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       await get().fetchJournalAiEntries();
     } catch (err) {
-      console.error('[Store] Failed to delete AI journal entry:', err);
     }
   },
 
@@ -1312,7 +1291,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       await get().fetchJournalEntries();
     } catch (err) {
-      console.error('[Store] Failed to delete journal entry:', err);
     }
   },
 
@@ -1329,7 +1307,6 @@ export const useStore = create<AppState>((set, get) => ({
       await get().fetchRecommendationHistory();
       await get().fetchNotifications();
     } catch (err) {
-      console.error('[Store] Failed to submit recommendation feedback:', err);
     }
   },
 
@@ -1353,7 +1330,6 @@ export const useStore = create<AppState>((set, get) => ({
         token,
       });
     } catch (err) {
-      console.error('[Store] Failed to delete recommendation:', err);
       // Revert on error
       set((_) => ({
         recommendations: originalRecommendations,
@@ -1378,7 +1354,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       await get().fetchNotifications();
     } catch (err) {
-      console.error('[Store] Failed to mark notification read:', err);
     }
   },
 
@@ -1392,7 +1367,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       await get().fetchNotifications();
     } catch (err) {
-      console.error('[Store] Failed to mark all notifications read:', err);
     }
   },
 
@@ -1406,7 +1380,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       await get().fetchNotifications();
     } catch (err) {
-      console.error('[Store] Failed to delete notification:', err);
     }
   },
 
@@ -1420,7 +1393,6 @@ export const useStore = create<AppState>((set, get) => ({
       });
       await get().fetchNotifications();
     } catch (err) {
-      console.error('[Store] Failed to delete all notifications:', err);
     }
   },
 
@@ -1550,7 +1522,6 @@ export const useStore = create<AppState>((set, get) => ({
           msg.id === aiMsgId ? { ...msg, text: `⚠️ ${errorMessage}` } : msg,
         ),
       }));
-      console.error('[Store] Failed to send chat message:', err);
     }
   },
 
@@ -1587,7 +1558,7 @@ export const useStore = create<AppState>((set, get) => ({
       body: JSON.stringify(settings),
     })
       .then((response) => set({ adminSettings: response.data }))
-      .catch((err) => console.error('[Store] Failed to update admin settings:', err));
+      .catch((err) =>);
   },
 
   // Admin Approval Queue
@@ -1602,7 +1573,6 @@ export const useStore = create<AppState>((set, get) => ({
       );
       set({ pendingAiRecommendations: response.data, pendingAiLoading: false });
     } catch (err) {
-      console.error('[Store] Failed to fetch pending AI recommendations:', err);
       set({ pendingAiLoading: false });
     }
   },
@@ -1616,7 +1586,6 @@ export const useStore = create<AppState>((set, get) => ({
         pendingAiRecommendations: state.pendingAiRecommendations.filter((r) => r.id !== id),
       }));
     } catch (err) {
-      console.error('[Store] Failed to approve recommendation:', err);
       throw err;
     }
   },
@@ -1634,7 +1603,6 @@ export const useStore = create<AppState>((set, get) => ({
         pendingAiRecommendations: state.pendingAiRecommendations.filter((r) => r.id !== id),
       }));
     } catch (err) {
-      console.error('[Store] Failed to edit-approve recommendation:', err);
       throw err;
     }
   },
@@ -1648,7 +1616,6 @@ export const useStore = create<AppState>((set, get) => ({
         pendingAiRecommendations: state.pendingAiRecommendations.filter((r) => r.id !== id),
       }));
     } catch (err) {
-      console.error('[Store] Failed to reject recommendation:', err);
       throw err;
     }
   },

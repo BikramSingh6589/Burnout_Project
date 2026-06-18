@@ -103,11 +103,14 @@ export const Register: React.FC = () => {
           <p className="text-sm text-neutral-outline dark:text-[#CBD5E1]">Start monitoring your academic wellness</p>
         </div>
 
-        {error && (
-          <div className="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-xs font-semibold text-center animate-shake">
-            {error}
-          </div>
-        )}
+        {/* Reserve space for error to prevent CLS */}
+        <div className="min-h-[44px]">
+          {error && (
+            <div className="bg-error/10 border border-error/20 text-error p-3 rounded-lg text-xs font-semibold text-center animate-shake">
+              {error}
+            </div>
+          )}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
