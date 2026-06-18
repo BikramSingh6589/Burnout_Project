@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, Navigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { LayoutDashboard, BarChart2, Heart, User, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, BarChart2, Heart, User, AlertTriangle, Menu, X } from 'lucide-react';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -10,6 +10,7 @@ interface DashboardLayoutProps {
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const { isAuthenticated, otpVerified, user } = useStore();
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Authentication Guards
   if (!isAuthenticated) {
@@ -58,10 +59,65 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         <HighRiskBanner />
       )}
 
+      {/* Mobile Hamburger Button */}
+      <div className="md:hidden mb-4">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="flex items-center space-x-2 px-4 py-2 bg-surface border border-border rounded-xl text-text-primary"
+        >
+          <Menu className="h-5 w-5" />
+          <span className="text-sm font-medium">Menu</span>
+        </button>
+      </div>
+
+      {/* Mobile Sidebar Drawer Overlay */}
+      {sidebarOpen && (
+        <>
+          {/* Overlay to close when clicking outside */}
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+          {/* Sidebar Drawer */}
+          <aside className="fixed top-0 left-0 h-full w-64 bg-surface border-r border-border z-50 md:hidden animate-in slide-in-from-left duration-300">
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <h3 className="font-bold text-text-primary">Menu</h3>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="p-2 rounded-lg hover:bg-surface-elevated"
+              >
+                <X className="h-5 w-5 text-text-secondary" />
+              </button>
+            </div>
+            <div className="p-3 flex flex-col gap-1.5">
+              {sidebarItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`group flex items-center space-x-3 px-4 py-3 rounded-xl text-[13px] tracking-tight font-medium transition-all duration-200 ${
+                      isActive
+                        ? 'bg-primary text-white shadow-md'
+                        : 'text-text-secondary hover:bg-surface-elevated hover:text-primary dark:hover:bg-[rgba(124,92,252,0.18)] dark:hover:text-[#9B84FF]'
+                    }`}
+                  >
+                    <Icon className={`h-[18px] w-[18px] shrink-0 ${isActive ? 'text-white' : 'text-text-muted dark:group-hover:text-[#9B84FF]'}`} />
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </aside>
+        </>
+      )}
+
       <div className="flex flex-col md:flex-row gap-8 items-start">
-        {/* Sidebar */}
-        <aside className="w-full md:w-64 shrink-0 md:sticky md:top-20 z-10">
-          <div className="bg-surface backdrop-blur-md rounded-2xl border border-border p-3 flex flex-row md:flex-col gap-1.5 overflow-x-auto md:overflow-x-visible shadow-sm transition-colors duration-300">
+        {/* Desktop Sidebar */}
+        <aside className="hidden md:block md:w-64 shrink-0 md:sticky md:top-20 z-10">
+          <div className="bg-surface backdrop-blur-md rounded-2xl border border-border p-3 flex flex-col gap-1.5 shadow-sm transition-colors duration-300">
             {sidebarItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
@@ -69,7 +125,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`group flex items-center space-x-3 px-4 py-3 rounded-xl text-[13px] tracking-tight font-medium whitespace-nowrap transition-all duration-200 ${
+                  className={`group flex items-center space-x-3 px-4 py-3 rounded-xl text-[13px] tracking-tight font-medium transition-all duration-200 ${
                     isActive
                       ? 'bg-primary text-white shadow-md'
                       : 'text-text-secondary hover:bg-surface-elevated hover:text-primary dark:hover:bg-[rgba(124,92,252,0.18)] dark:hover:text-[#9B84FF]'

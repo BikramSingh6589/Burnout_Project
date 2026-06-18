@@ -70,10 +70,10 @@ export const AIWidget: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
       {/* Expanded Chat Window */}
       {isOpen && (
-        <div className="relative w-[440px] h-[550px] bg-surface backdrop-blur-xl rounded-2xl border border-border/60 shadow-2xl flex flex-col overflow-hidden mb-5 animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed inset-0 sm:relative sm:w-[440px] sm:h-[550px] w-full h-full sm:mb-5 bg-surface backdrop-blur-xl sm:rounded-2xl border border-border/60 shadow-2xl flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Toast Notification */}
           {toast && (
             <div className={`absolute top-16 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-xl text-xs font-semibold shadow-md z-20 transition-all duration-300 animate-in fade-in slide-in-from-top-2 ${

@@ -1558,7 +1558,7 @@ export const useStore = create<AppState>((set, get) => ({
       body: JSON.stringify(settings),
     })
       .then((response) => set({ adminSettings: response.data }))
-      .catch((err) =>);
+      .catch((err) => console.error(err));
   },
 
   // Admin Approval Queue
