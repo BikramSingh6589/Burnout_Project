@@ -3,6 +3,7 @@ import { logger } from './logger.js';
 
 // Resend API Configuration
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+logger.info('[Resend] Initializing Resend with API Key length:', RESEND_API_KEY ? RESEND_API_KEY.substring(0, 8) + '...' : 'NOT SET');
 const resend = new Resend(RESEND_API_KEY);
 
 // Helper to send emails via Resend API
@@ -13,13 +14,20 @@ const sendEmailViaResend = async (
   html: string,
   fromName: string = 'Burnout Wellness'
 ): Promise<void> => {
+  logger.info('[Resend] Starting sendEmailViaResend');
+  
   try {
     // Determine from address (use EMAIL_USER/user_email or a verified Resend domain)
     // IMPORTANT: For Resend, you need a verified domain (or use onboarding@resend.dev for testing)
     const fromEmail = process.env.EMAIL_USER || process.env.user_email || 'onboarding@resend.dev';
-    const fromAddress = `${fromName} <${fromEmail}>`;
+    logger.info('[Resend] From email:', fromEmail);
+    logger.info('[Resend] To email(s):', to);
+    logger.info('[Resend] Subject:', subject);
     
-    logger.info(`[Resend] Sending email to: ${to}`);
+    const fromAddress = `${fromName} <${fromEmail}>`;
+    logger.info('[Resend] From address:', fromAddress);
+    
+    logger.info('[Resend] Calling resend.emails.send()...');
     
     const { data, error } = await resend.emails.send({
       from: fromAddress,
@@ -30,21 +38,25 @@ const sendEmailViaResend = async (
     });
     
     if (error) {
-      logger.error(`[Resend] Failed to send email:`, error);
+      logger.error('[Resend] ERROR from Resend API:', JSON.stringify(error, null, 2));
       throw new Error(`Resend error: ${error.message}`);
     }
     
-    logger.info(`[Resend] Email sent successfully to ${to}:`, data);
+    logger.info('[Resend] SUCCESS! Email sent:', JSON.stringify(data, null, 2));
   } catch (error: any) {
-    logger.error(`[Resend] Failed to send email to ${to}:`, error.message || error);
+    logger.error('[Resend] ERROR in sendEmailViaResend:', error);
+    logger.error('[Resend] Error stack:', error.stack);
     throw new Error(`Email sending failed: ${error.message}`);
   }
 };
 
 export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
-  const subject = 'Verify your Burnout Wellness account';
-  const text = `Your verification code is ${otp}. It expires in 10 minutes. If you did not create an account, ignore this email.`;
-  const html = `
+  logger.info('[Email] sendOtpEmail called for:', to);
+  
+  try {
+    const subject = 'Verify your Burnout Wellness account';
+    const text = `Your verification code is ${otp}. It expires in 10 minutes. If you did not create an account, ignore this email.`;
+    const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">  
         <h2>Verify your account</h2>
         <p>Your verification code is:</p>
@@ -53,13 +65,21 @@ export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
       </div>
     `;
   
-  await sendEmailViaResend(to, subject, text, html);
+    await sendEmailViaResend(to, subject, text, html);
+    logger.info('[Email] sendOtpEmail completed successfully!');
+  } catch (error) {
+    logger.error('[Email] sendOtpEmail FAILED:', error);
+    throw error;
+  }
 };
 
 export const sendPasswordResetEmail = async (to: string, token: string): Promise<void> => {
-  const subject = 'Reset your Burnout Wellness password';
-  const text = `Your password reset code is ${token}. It expires in 15 minutes. If you did not request this, ignore this email.`;
-  const html = `
+  logger.info('[Email] sendPasswordResetEmail called for:', to);
+  
+  try {
+    const subject = 'Reset your Burnout Wellness password';
+    const text = `Your password reset code is ${token}. It expires in 15 minutes. If you did not request this, ignore this email.`;
+    const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">  
         <h2>Reset your password</h2>
         <p>Your password reset code is:</p>
@@ -68,14 +88,22 @@ export const sendPasswordResetEmail = async (to: string, token: string): Promise
       </div>
     `;
   
-  await sendEmailViaResend(to, subject, text, html);
+    await sendEmailViaResend(to, subject, text, html);
+    logger.info('[Email] sendPasswordResetEmail completed successfully!');
+  } catch (error) {
+    logger.error('[Email] sendPasswordResetEmail FAILED:', error);
+    throw error;
+  }
 };
 
 export const sendWeeklyReminderEmail = async (to: string, name: string): Promise<void> => {
-  const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
-  const subject = 'Weekly Assessment Reminder - Burnout Wellness';
-  const text = `Hi ${name},\n\nIt's time for your weekly burnout assessment! Click the button below to take it now:\n\n${appUrl}\n\nBest regards,\nBurnout Wellness Team`;
-  const html = `
+  logger.info('[Email] sendWeeklyReminderEmail called for:', to);
+  
+  try {
+    const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+    const subject = 'Weekly Assessment Reminder - Burnout Wellness';
+    const text = `Hi ${name},\n\nIt's time for your weekly burnout assessment! Click the button below to take it now:\n\n${appUrl}\n\nBest regards,\nBurnout Wellness Team`;
+    const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827;max-width:600px;margin:0 auto">
         <h2 style="color:#4F46E5">Hi ${name},</h2>
         <p>It's time for your weekly burnout assessment! Taking it regularly helps you track your well-being.</p>
@@ -88,13 +116,21 @@ export const sendWeeklyReminderEmail = async (to: string, name: string): Promise
       </div>
     `;
   
-  await sendEmailViaResend(to, subject, text, html);
+    await sendEmailViaResend(to, subject, text, html);
+    logger.info('[Email] sendWeeklyReminderEmail completed successfully!');
+  } catch (error) {
+    logger.error('[Email] sendWeeklyReminderEmail FAILED:', error);
+    throw error;
+  }
 };
 
 export const sendSupportEmail = async (to: string, name: string, subject: string, message: string): Promise<void> => {
-  const emailSubject = subject || 'New Contact Form Submission';
-  const text = `Dear ${name},\n\n${message}\n\nBest regards,\nBurnout Wellness Team`;
-  const html = `
+  logger.info('[Email] sendSupportEmail called for:', to);
+  
+  try {
+    const emailSubject = subject || 'New Contact Form Submission';
+    const text = `Dear ${name},\n\n${message}\n\nBest regards,\nBurnout Wellness Team`;
+    const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:28px;">
           <h2 style="margin:0 0 18px;font-size:24px;color:#1f2937;font-weight:700;">${emailSubject}</h2>
@@ -108,7 +144,12 @@ export const sendSupportEmail = async (to: string, name: string, subject: string
       </div>
     `;
   
-  await sendEmailViaResend(to, emailSubject, text, html);
+    await sendEmailViaResend(to, emailSubject, text, html);
+    logger.info('[Email] sendSupportEmail completed successfully!');
+  } catch (error) {
+    logger.error('[Email] sendSupportEmail FAILED:', error);
+    throw error;
+  }
 };
 
 export type WellnessRiskTier = 'high' | 'moderate' | 'low';
@@ -313,7 +354,14 @@ export const sendWellnessTemplateEmail = async (
   to: string,
   template: WellnessEmailTemplate
 ): Promise<void> => {
-  await sendEmailViaResend(to, template.subject, template.text, template.html);
+  logger.info('[Email] sendWellnessTemplateEmail called for:', to);
+  try {
+    await sendEmailViaResend(to, template.subject, template.text, template.html);
+    logger.info('[Email] sendWellnessTemplateEmail completed successfully!');
+  } catch (error) {
+    logger.error('[Email] sendWellnessTemplateEmail FAILED:', error);
+    throw error;
+  }
 };
 
 export interface ContactFormPayload {
@@ -324,11 +372,21 @@ export interface ContactFormPayload {
 }
 
 export const sendContactFormEmail = async (payload: ContactFormPayload): Promise<void> => {
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || process.env.user_email;
-  const subject = payload.subject || 'New Contact Form Submission';
+  logger.info('[Email] sendContactFormEmail called with payload:', JSON.stringify(payload));
   
-  const text = `From: ${payload.name} (${payload.email})\n\n${payload.message}`;
-  const html = `
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || process.env.user_email;
+    logger.info('[Email] Admin email:', adminEmail);
+    
+    if (!adminEmail) {
+      logger.warn('[Email] No admin email found, skipping contact form email not sent!');
+      return;
+    }
+    
+    const subject = payload.subject || 'New Contact Form Submission';
+    
+    const text = `From: ${payload.name} (${payload.email})\n\n${payload.message}`;
+    const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:28px;">
           <h2 style="margin:0 0 18px;font-size:24px;color:#1f2937;font-weight:700;">New Contact Form Submission</h2>
@@ -342,7 +400,10 @@ export const sendContactFormEmail = async (payload: ContactFormPayload): Promise
       </div>
     `;
   
-  if (adminEmail) {
     await sendEmailViaResend(adminEmail, `Contact Form: ${subject}`, text, html);
+    logger.info('[Email] sendContactFormEmail completed successfully!');
+  } catch (error) {
+    logger.error('[Email] sendContactFormEmail FAILED:', error);
+    throw error;
   }
 };
