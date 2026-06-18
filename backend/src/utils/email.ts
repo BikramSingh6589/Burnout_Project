@@ -1,54 +1,48 @@
-import axios from "axios";
-import { logger } from "./logger.js";
+import { Resend } from 'resend';
+import { logger } from './logger.js';
 
-// Promailer API Configuration
-const PROMAILER_API_URL = "https://mailserver.automationlounge.com/api/v1/messages/send";
-const API_KEY = process.env.PROMAILER_API_KEY || process.env.PROMailer_API_KEY || "";
+// Resend API Configuration
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const resend = new Resend(RESEND_API_KEY);
 
-// Helper to send emails via Promailer API
-const sendEmailViaPromailer = async (
-  to: string,
+// Helper to send emails via Resend API
+const sendEmailViaResend = async (
+  to: string | string[],
   subject: string,
   text: string,
   html: string,
-  fromName: string = "Burnout Wellness"
+  fromName: string = 'Burnout Wellness'
 ): Promise<void> => {
   try {
-    // Determine from address (use EMAIL_USER/user_email or default)
-    const fromEmail = process.env.EMAIL_USER || process.env.user_email || "noreply@burnoutwellness.com";
+    // Determine from address (use EMAIL_USER/user_email or a verified Resend domain)
+    // IMPORTANT: For Resend, you need a verified domain (or use onboarding@resend.dev for testing)
+    const fromEmail = process.env.EMAIL_USER || process.env.user_email || 'onboarding@resend.dev';
+    const fromAddress = `${fromName} <${fromEmail}>`;
     
-    logger.info(`[Promailer] Sending email to: ${to}`);
+    logger.info(`[Resend] Sending email to: ${to}`);
     
-    const response = await axios.post(
-      PROMAILER_API_URL,
-      {
-        to,
-        subject,
-        html,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const { data, error } = await resend.emails.send({
+      from: fromAddress,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      text,
+      html,
+    });
     
-    logger.info(`[Promailer] Email sent successfully to ${to}:`, response.data);
+    if (error) {
+      logger.error(`[Resend] Failed to send email:`, error);
+      throw new Error(`Resend error: ${error.message}`);
+    }
+    
+    logger.info(`[Resend] Email sent successfully to ${to}:`, data);
   } catch (error: any) {
-    logger.error(`[Promailer] Failed to send email to ${to}:`, error.response?.data || error.message);
+    logger.error(`[Resend] Failed to send email to ${to}:`, error.message || error);
     throw new Error(`Email sending failed: ${error.message}`);
   }
 };
 
-// Helper to get from address
-const getFromAddress = (): string => {
-  const user = process.env.EMAIL_USER || process.env.user_email;
-  return process.env.EMAIL_FROM || process.env.SMTP_FROM || user || "noreply@burnoutwellness.com";
-};
-
 export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
-  const subject = "Verify your Burnout Wellness account";
+  const subject = 'Verify your Burnout Wellness account';
   const text = `Your verification code is ${otp}. It expires in 10 minutes. If you did not create an account, ignore this email.`;
   const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">  
@@ -59,11 +53,11 @@ export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
       </div>
     `;
   
-  await sendEmailViaPromailer(to, subject, text, html);
+  await sendEmailViaResend(to, subject, text, html);
 };
 
 export const sendPasswordResetEmail = async (to: string, token: string): Promise<void> => {
-  const subject = "Reset your Burnout Wellness password";
+  const subject = 'Reset your Burnout Wellness password';
   const text = `Your password reset code is ${token}. It expires in 15 minutes. If you did not request this, ignore this email.`;
   const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">  
@@ -74,12 +68,12 @@ export const sendPasswordResetEmail = async (to: string, token: string): Promise
       </div>
     `;
   
-  await sendEmailViaPromailer(to, subject, text, html);
+  await sendEmailViaResend(to, subject, text, html);
 };
 
 export const sendWeeklyReminderEmail = async (to: string, name: string): Promise<void> => {
-  const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || "http://localhost:5173";
-  const subject = "Weekly Assessment Reminder - Burnout Wellness";
+  const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+  const subject = 'Weekly Assessment Reminder - Burnout Wellness';
   const text = `Hi ${name},\n\nIt's time for your weekly burnout assessment! Click the button below to take it now:\n\n${appUrl}\n\nBest regards,\nBurnout Wellness Team`;
   const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827;max-width:600px;margin:0 auto">
@@ -94,11 +88,11 @@ export const sendWeeklyReminderEmail = async (to: string, name: string): Promise
       </div>
     `;
   
-  await sendEmailViaPromailer(to, subject, text, html);
+  await sendEmailViaResend(to, subject, text, html);
 };
 
 export const sendSupportEmail = async (to: string, name: string, subject: string, message: string): Promise<void> => {
-  const emailSubject = subject || "New Contact Form Submission";
+  const emailSubject = subject || 'New Contact Form Submission';
   const text = `Dear ${name},\n\n${message}\n\nBest regards,\nBurnout Wellness Team`;
   const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
@@ -114,10 +108,10 @@ export const sendSupportEmail = async (to: string, name: string, subject: string
       </div>
     `;
   
-  await sendEmailViaPromailer(to, emailSubject, text, html);
+  await sendEmailViaResend(to, emailSubject, text, html);
 };
 
-export type WellnessRiskTier = "high" | "moderate" | "low";
+export type WellnessRiskTier = 'high' | 'moderate' | 'low';
 
 export interface WellnessEmailTemplate {
   subject: string;
@@ -138,40 +132,40 @@ interface WellnessEmailTheme {
 
 const wellnessEmailThemes: Record<WellnessRiskTier, WellnessEmailTheme> = {
   high: {
-    outerBg: "#FEE2E2",
-    borderColor: "#FECACA",
-    headerGradient: "linear-gradient(135deg,#EF4444 0%,#DC2626 100%)",
-    headerSubtitleColor: "#FEE2E2",
-    guidanceBg: "#FEE2E2",
-    guidanceBorder: "#FECACA",
-    buttonBg: "#DC2626",
-    boxShadow: "0 8px 24px rgba(220,38,38,0.14)",
+    outerBg: '#FEE2E2',
+    borderColor: '#FECACA',
+    headerGradient: 'linear-gradient(135deg,#EF4444 0%,#DC2626 100%)',
+    headerSubtitleColor: '#FEE2E2',
+    guidanceBg: '#FEE2E2',
+    guidanceBorder: '#FECACA',
+    buttonBg: '#DC2626',
+    boxShadow: '0 8px 24px rgba(220,38,38,0.14)',
   },
   moderate: {
-    outerBg: "#FEF3C7",
-    borderColor: "#FDE68A",
-    headerGradient: "linear-gradient(135deg,#FBBF24 0%,#F59E0B 100%)",
-    headerSubtitleColor: "#FEF3C7",
-    guidanceBg: "#FEF3C7",
-    guidanceBorder: "#FDE68A",
-    buttonBg: "#F59E0B",
-    boxShadow: "0 8px 24px rgba(245,158,11,0.14)",
+    outerBg: '#FEF3C7',
+    borderColor: '#FDE68A',
+    headerGradient: 'linear-gradient(135deg,#FBBF24 0%,#F59E0B 100%)',
+    headerSubtitleColor: '#FEF3C7',
+    guidanceBg: '#FEF3C7',
+    guidanceBorder: '#FDE68A',
+    buttonBg: '#F59E0B',
+    boxShadow: '0 8px 24px rgba(245,158,11,0.14)',
   },
   low: {
-    outerBg: "#D1FAE5",
-    borderColor: "#A7F3D0",
-    headerGradient: "linear-gradient(135deg,#34D399 0%,#10B981 100%)",
-    headerSubtitleColor: "#D1FAE5",
-    guidanceBg: "#D1FAE5",
-    guidanceBorder: "#A7F3D0",
-    buttonBg: "#10B981",
-    boxShadow: "0 8px 24px rgba(16,185,129,0.14)",
+    outerBg: '#D1FAE5',
+    borderColor: '#A7F3D0',
+    headerGradient: 'linear-gradient(135deg,#34D399 0%,#10B981 100%)',
+    headerSubtitleColor: '#D1FAE5',
+    guidanceBg: '#D1FAE5',
+    guidanceBorder: '#A7F3D0',
+    buttonBg: '#10B981',
+    boxShadow: '0 8px 24px rgba(16,185,129,0.14)',
   },
 };
 
 const getDashboardUrl = (): string => {
-  const base = (process.env.FRONTEND_URL || process.env.APP_URL || "").replace(/\/$/, "");
-  return base ? `${base}/dashboard` : "";
+  const base = (process.env.FRONTEND_URL || process.env.APP_URL || '').replace(/\/$/, '');
+  return base ? `${base}/dashboard` : '';
 };
 
 const wellnessEmailShell = (
@@ -194,7 +188,7 @@ const wellnessEmailShell = (
                       </td>
                     </tr>
                   </table>`
-    : "";
+    : '';
 
   return `
   <!DOCTYPE html>
@@ -241,30 +235,30 @@ const paragraphHtml = (text: string): string =>
   `<p style="margin:0 0 12px;color:#334155;">${text}</p>`;
 
 const guidanceParagraphHtml = (text: string, isLast: boolean = false): string =>
-  `<p style="margin:0${isLast ? "" : " 0 10px"};color:#334155;font-size:15px;line-height:1.6;">${text}</p>`;
+  `<p style="margin:0${isLast ? '' : ' 0 10px'};color:#334155;font-size:15px;line-height:1.6;">${text}</p>`;
 
 export const getWellnessEmailTemplate = (
   tier: WellnessRiskTier,
   studentName: string
 ): WellnessEmailTemplate => {
   const dashboardUrl = getDashboardUrl();
-  const dashboardText = dashboardUrl ? `\n\nView your dashboard: ${dashboardUrl}` : "";
+  const dashboardText = dashboardUrl ? `\n\nView your dashboard: ${dashboardUrl}` : '';
 
-  if (tier === "high") {
-    const subject = "Wellness Support Reminder";
+  if (tier === 'high') {
+    const subject = 'Wellness Support Reminder';
     const messageParagraphs = [
-      "Your recent wellness assessments indicate a high burnout risk level.",
-      "We encourage you to review your recommendations, improve sleep quality, reduce academic stress where possible, and regularly use the Wellness Assistant for guidance.",
+      'Your recent wellness assessments indicate a high burnout risk level.',
+      'We encourage you to review your recommendations, improve sleep quality, reduce academic stress where possible, and regularly use the Wellness Assistant for guidance.',
     ];
     const guidanceParagraphs = [
-      "Small consistent improvements can significantly improve your wellbeing.",
-      "Please take care of yourself and reach out when needed.",
+      'Small consistent improvements can significantly improve your wellbeing.',
+      'Please take care of yourself and reach out when needed.',
     ];
-    const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+    const messageHtml = messageParagraphs.map(paragraphHtml).join('');
     const guidanceHtml = guidanceParagraphs
       .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
-      .join("");
-    const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+      .join('');
+    const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join('\n\n')}${dashboardText}\n\nStudent Wellness Platform`;
     return {
       subject,
       text,
@@ -272,21 +266,21 @@ export const getWellnessEmailTemplate = (
     };
   }
 
-  if (tier === "moderate") {
-    const subject = "Wellness Progress Reminder";
+  if (tier === 'moderate') {
+    const subject = 'Wellness Progress Reminder';
     const messageParagraphs = [
-      "Your current burnout indicators fall within the moderate range.",
-      "You are making progress, but there is still room for improvement.",
+      'Your current burnout indicators fall within the moderate range.',
+      'You are making progress, but there is still room for improvement.',
     ];
     const guidanceParagraphs = [
-      "Maintaining healthy study habits, managing stress, and following platform recommendations can help improve your wellbeing further.",
-      "Keep moving forward consistently.",
+      'Maintaining healthy study habits, managing stress, and following platform recommendations can help improve your wellbeing further.',
+      'Keep moving forward consistently.',
     ];
-    const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+    const messageHtml = messageParagraphs.map(paragraphHtml).join('');
     const guidanceHtml = guidanceParagraphs
       .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
-      .join("");
-    const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+      .join('');
+    const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join('\n\n')}${dashboardText}\n\nStudent Wellness Platform`;
     return {
       subject,
       text,
@@ -294,20 +288,20 @@ export const getWellnessEmailTemplate = (
     };
   }
 
-  const subject = "Congratulations on Your Progress";
+  const subject = 'Congratulations on Your Progress';
   const messageParagraphs = [
-    "Your recent assessments indicate a healthy wellness status.",
-    "You are maintaining positive habits and managing your academic wellbeing effectively.",
+    'Your recent assessments indicate a healthy wellness status.',
+    'You are maintaining positive habits and managing your academic wellbeing effectively.',
   ];
   const guidanceParagraphs = [
-    "Continue following your current routine and regularly monitor your wellness progress.",
-    "Keep up the excellent work.",
+    'Continue following your current routine and regularly monitor your wellness progress.',
+    'Keep up the excellent work.',
   ];
-  const messageHtml = messageParagraphs.map(paragraphHtml).join("");
+  const messageHtml = messageParagraphs.map(paragraphHtml).join('');
   const guidanceHtml = guidanceParagraphs
     .map((p, i) => guidanceParagraphHtml(p, i === guidanceParagraphs.length - 1))
-    .join("");
-  const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join("\n\n")}${dashboardText}\n\nStudent Wellness Platform`;
+    .join('');
+  const text = `Hello ${studentName},\n\n${[...messageParagraphs, ...guidanceParagraphs].join('\n\n')}${dashboardText}\n\nStudent Wellness Platform`;
   return {
     subject,
     text,
@@ -319,7 +313,7 @@ export const sendWellnessTemplateEmail = async (
   to: string,
   template: WellnessEmailTemplate
 ): Promise<void> => {
-  await sendEmailViaPromailer(to, template.subject, template.text, template.html);
+  await sendEmailViaResend(to, template.subject, template.text, template.html);
 };
 
 export interface ContactFormPayload {
@@ -331,7 +325,7 @@ export interface ContactFormPayload {
 
 export const sendContactFormEmail = async (payload: ContactFormPayload): Promise<void> => {
   const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || process.env.user_email;
-  const subject = payload.subject || "New Contact Form Submission";
+  const subject = payload.subject || 'New Contact Form Submission';
   
   const text = `From: ${payload.name} (${payload.email})\n\n${payload.message}`;
   const html = `
@@ -348,5 +342,7 @@ export const sendContactFormEmail = async (payload: ContactFormPayload): Promise
       </div>
     `;
   
-  await sendEmailViaPromailer(adminEmail as string, `Contact Form: ${subject}`, text, html);
+  if (adminEmail) {
+    await sendEmailViaResend(adminEmail, `Contact Form: ${subject}`, text, html);
+  }
 };

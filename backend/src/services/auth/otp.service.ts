@@ -80,8 +80,8 @@ export const verifyOTP = async (
 export const sendOTPEmail = async (email: string, otp: string, purpose: OtpPurpose): Promise<void> => {
   logger.info(`[OTP Email] Starting send for ${email}, purpose: ${purpose}`);
   
-  if (!process.env.PROMAILER_API_KEY && !process.env.PROMailer_API_KEY) {
-    const errMsg = "Promailer API key not configured";
+  if (!process.env.RESEND_API_KEY) {
+    const errMsg = "Resend API key not configured";
     logger.error(errMsg);
     throw new OtpError(errMsg, 500);
   }
