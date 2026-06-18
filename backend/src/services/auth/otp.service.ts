@@ -1,10 +1,10 @@
 import bcrypt from "bcrypt";
-import nodemailer from "nodemailer";
 import type { HydratedDocument } from "mongoose";
 import { config } from "../../config/env.js";
 import type { IStudent } from "../../models/Student.js";
 import type { OtpPurpose } from "../../types/auth.types.js";
 import { logger } from "../../utils/logger.js";
+import { sendOtpEmail, sendPasswordResetEmail } from "../../utils/email.js";
 
 const OTP_EXPIRY_MINUTES = 10;
 const MAX_OTP_ATTEMPTS = 5;
@@ -26,7 +26,7 @@ export const generateOTP = (): string => {
 export const saveOTP = async (
   student: HydratedDocument<IStudent>,
   otp: string,
-  purpose: OtpPurpose,
+  purpose: OtpPurpose
 ): Promise<void> => {
   student.otpHash = await bcrypt.hash(otp, OTP_SALT_ROUNDS);
   student.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
@@ -46,7 +46,7 @@ export const clearOTP = async (student: HydratedDocument<IStudent>): Promise<voi
 export const verifyOTP = async (
   student: HydratedDocument<IStudent>,
   otp: string,
-  purpose: OtpPurpose,
+  purpose: OtpPurpose
 ): Promise<void> => {
   if (!student.otpHash || !student.otpExpiresAt || student.otpPurpose !== purpose) {
     throw new OtpError("Invalid OTP");
@@ -78,68 +78,26 @@ export const verifyOTP = async (
 };
 
 export const sendOTPEmail = async (email: string, otp: string, purpose: OtpPurpose): Promise<void> => {
-  if (!config.emailUser || !config.emailPassword) {
-    throw new OtpError("Email service is not configured", 500);
+  logger.info(`[OTP Email] Starting send for ${email}, purpose: ${purpose}`);
+  
+  if (!process.env.PROMAILER_API_KEY && !process.env.PROMailer_API_KEY) {
+    const errMsg = "Promailer API key not configured";
+    logger.error(errMsg);
+    throw new OtpError(errMsg, 500);
   }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: config.emailUser,
-      pass: config.emailPassword,
-    },
-  });
-
-  const isPasswordReset = purpose === "password_reset";
-  const subject = isPasswordReset ? "Reset your Burnout Wellness password" : "Verify your Burnout Wellness account";
-  const headline = isPasswordReset ? "Reset your password" : "Verify your email";
-  const lead = isPasswordReset
-    ? "Use this one-time code to reset your password securely."
-    : "Use this one-time code to finish creating your student wellness account.";
-  const note = isPasswordReset
-    ? "If you did not request a password reset, you can safely ignore this email."
-    : "If you did not create an account, you can safely ignore this email.";
-  const text = `${headline}: ${otp}. This code expires in ${OTP_EXPIRY_MINUTES} minutes. ${note}`;
-  const html = `
-    <div style="margin:0;padding:0;background:#f4f7fb;font-family:Arial,Helvetica,sans-serif;color:#152033">
-      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f4f7fb;padding:28px 12px">
-        <tr>
-          <td align="center">
-            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;background:#ffffff;border:1px solid #e5ebf3;border-radius:18px;overflow:hidden;box-shadow:0 18px 45px rgba(21,32,51,0.10)">
-              <tr>
-                <td style="background:#0f766e;padding:26px 30px;color:#ffffff">
-                  <div style="font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.9">Burnout Wellness</div>
-                  <h1 style="margin:10px 0 0;font-size:26px;line-height:1.2;font-weight:800">${headline}</h1>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:30px">
-                  <p style="margin:0 0 18px;font-size:15px;line-height:1.65;color:#475569">${lead}</p>
-                  <div style="background:#eefcf8;border:1px solid #b7eee2;border-radius:14px;text-align:center;padding:22px 14px;margin:20px 0">
-                    <div style="font-size:12px;font-weight:700;color:#0f766e;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Your OTP Code</div>
-                    <div style="font-size:38px;line-height:1;font-weight:800;letter-spacing:10px;color:#102a43">${otp}</div>
-                  </div>
-                  <p style="margin:0 0 14px;font-size:14px;line-height:1.6;color:#475569">This code expires in <strong>${OTP_EXPIRY_MINUTES} minutes</strong>. Please do not share it with anyone.</p>
-                  <p style="margin:0;font-size:12px;line-height:1.6;color:#64748b">${note}</p>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:18px 30px;background:#f8fafc;border-top:1px solid #e5ebf3;font-size:12px;color:#64748b;text-align:center">
-                  Academic Burnout Detection and Wellness Monitoring
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
-    </div>
-  `;
-
-  await transporter.sendMail({
-    from: `Burnout Wellness <${config.emailUser}>`,
-    to: email,
-    subject,
-    text,
-    html,
-  });
+  try {
+    if (purpose === "password_reset") {
+      await sendPasswordResetEmail(email, otp);
+    } else {
+      await sendOtpEmail(email, otp);
+    }
+    logger.info(`[OTP Email] Successfully sent to ${email}`);
+  } catch (error) {
+    logger.error(`[OTP Email] Failed to send to ${email}:`, error);
+    if (error instanceof Error) {
+      throw new OtpError(`Failed to send OTP email: ${error.message}`, 500);
+    }
+    throw new OtpError("Failed to send OTP email", 500);
+  }
 };

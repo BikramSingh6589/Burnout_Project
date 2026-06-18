@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/axios": "^0.9.36",
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -20,6 +21,7 @@
     "@types/node": "^22.10.7",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^8.0.0",
+    "axios": "^1.18.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",

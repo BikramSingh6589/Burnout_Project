@@ -1,69 +1,87 @@
-import nodemailer from "nodemailer";
+import axios from "axios";
+import { logger } from "./logger.js";
 
-const getTransporter = () => {
-  const user = process.env.EMAIL_USER || process.env.user_email;
-  const pass = process.env.EMAIL_PASSWORD || process.env.user_password;
+// Promailer API Configuration
+const PROMAILER_API_URL = "https://mailserver.automationlounge.com/api/v1/messages/send";
+const API_KEY = process.env.PROMAILER_API_KEY || process.env.PROMailer_API_KEY || "";
 
-  if (!user || !pass) {
-    throw new Error("EMAIL_USER/EMAIL_PASSWORD or user_email/user_password must be configured to send emails");
+// Helper to send emails via Promailer API
+const sendEmailViaPromailer = async (
+  to: string,
+  subject: string,
+  text: string,
+  html: string,
+  fromName: string = "Burnout Wellness"
+): Promise<void> => {
+  try {
+    // Determine from address (use EMAIL_USER/user_email or default)
+    const fromEmail = process.env.EMAIL_USER || process.env.user_email || "noreply@burnoutwellness.com";
+    
+    logger.info(`[Promailer] Sending email to: ${to}`);
+    
+    const response = await axios.post(
+      PROMAILER_API_URL,
+      {
+        to,
+        subject,
+        html,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    
+    logger.info(`[Promailer] Email sent successfully to ${to}:`, response.data);
+  } catch (error: any) {
+    logger.error(`[Promailer] Failed to send email to ${to}:`, error.response?.data || error.message);
+    throw new Error(`Email sending failed: ${error.message}`);
   }
-
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user,
-      pass,
-    },
-  });
 };
 
-const fromAddress = (): string => {
+// Helper to get from address
+const getFromAddress = (): string => {
   const user = process.env.EMAIL_USER || process.env.user_email;
-  return process.env.EMAIL_FROM || `Burnout Wellness <${user}>`;
+  return process.env.EMAIL_FROM || process.env.SMTP_FROM || user || "noreply@burnoutwellness.com";
 };
 
 export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
-  await getTransporter().sendMail({
-    from: fromAddress(),
-    to,
-    subject: "Verify your Burnout Wellness account",
-    text: `Your verification code is ${otp}. It expires in 10 minutes. If you did not create an account, ignore this email.`,
-    html: `
+  const subject = "Verify your Burnout Wellness account";
+  const text = `Your verification code is ${otp}. It expires in 10 minutes. If you did not create an account, ignore this email.`;
+  const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">  
         <h2>Verify your account</h2>
         <p>Your verification code is:</p>
         <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0">${otp}</p>
         <p>This code expires in 10 minutes.</p>
       </div>
-    `,
-  });
+    `;
+  
+  await sendEmailViaPromailer(to, subject, text, html);
 };
 
 export const sendPasswordResetEmail = async (to: string, token: string): Promise<void> => {
-  await getTransporter().sendMail({
-    from: fromAddress(),
-    to,
-    subject: "Reset your Burnout Wellness password",
-    text: `Your password reset code is ${token}. It expires in 15 minutes. If you did not request this, ignore this email.`,
-    html: `
+  const subject = "Reset your Burnout Wellness password";
+  const text = `Your password reset code is ${token}. It expires in 15 minutes. If you did not request this, ignore this email.`;
+  const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">  
         <h2>Reset your password</h2>
         <p>Your password reset code is:</p>
         <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0">${token}</p>
         <p>This code expires in 15 minutes.</p>
       </div>
-    `,
-  });
+    `;
+  
+  await sendEmailViaPromailer(to, subject, text, html);
 };
 
 export const sendWeeklyReminderEmail = async (to: string, name: string): Promise<void> => {
-  const appUrl = process.env.APP_URL || "http://localhost:5173";
-  await getTransporter().sendMail({
-    from: fromAddress(),
-    to,
-    subject: "Weekly Assessment Reminder - Burnout Wellness",
-    text: `Hi ${name},\n\nIt's time for your weekly burnout assessment! Click the button below to take it now:\n\n${appUrl}\n\nBest regards,\nBurnout Wellness Team`,
-    html: `
+  const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || "http://localhost:5173";
+  const subject = "Weekly Assessment Reminder - Burnout Wellness";
+  const text = `Hi ${name},\n\nIt's time for your weekly burnout assessment! Click the button below to take it now:\n\n${appUrl}\n\nBest regards,\nBurnout Wellness Team`;
+  const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827;max-width:600px;margin:0 auto">
         <h2 style="color:#4F46E5">Hi ${name},</h2>
         <p>It's time for your weekly burnout assessment! Taking it regularly helps you track your well-being.</p>
@@ -74,20 +92,18 @@ export const sendWeeklyReminderEmail = async (to: string, name: string): Promise
         </div>
         <p style="color:#6B7280;font-size:14px">Best regards,<br>Burnout Wellness Team</p>
       </div>
-    `,
-  });
+    `;
+  
+  await sendEmailViaPromailer(to, subject, text, html);
 };
 
 export const sendSupportEmail = async (to: string, name: string, subject: string, message: string): Promise<void> => {
-  await getTransporter().sendMail({
-    from: fromAddress(),
-    to,
-    subject,
-    text: `Dear ${name},\n\n${message}\n\nBest regards,\nBurnout Wellness Team`,
-    html: `
+  const emailSubject = subject || "New Contact Form Submission";
+  const text = `Dear ${name},\n\n${message}\n\nBest regards,\nBurnout Wellness Team`;
+  const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:28px;">
-          <h2 style="margin:0 0 18px;font-size:24px;color:#1f2937;font-weight:700;">${subject}</h2>
+          <h2 style="margin:0 0 18px;font-size:24px;color:#1f2937;font-weight:700;">${emailSubject}</h2>
           <p style="margin:0 0 18px;color:#374151;font-size:16px;">Dear ${name},</p>
           <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;padding:18px;margin-bottom:22px;white-space:pre-wrap;color:#334155;font-size:15px;">
             ${message}
@@ -96,8 +112,9 @@ export const sendSupportEmail = async (to: string, name: string, subject: string
           <p style="margin:0;color:#475569;font-size:14px;">Best regards,<br/>Burnout Wellness Team</p>
         </div>
       </div>
-    `,
-  });
+    `;
+  
+  await sendEmailViaPromailer(to, emailSubject, text, html);
 };
 
 export type WellnessRiskTier = "high" | "moderate" | "low";
@@ -223,7 +240,7 @@ const wellnessEmailShell = (
 const paragraphHtml = (text: string): string =>
   `<p style="margin:0 0 12px;color:#334155;">${text}</p>`;
 
-const guidanceParagraphHtml = (text: string, isLast = false): string =>
+const guidanceParagraphHtml = (text: string, isLast: boolean = false): string =>
   `<p style="margin:0${isLast ? "" : " 0 10px"};color:#334155;font-size:15px;line-height:1.6;">${text}</p>`;
 
 export const getWellnessEmailTemplate = (
@@ -302,13 +319,7 @@ export const sendWellnessTemplateEmail = async (
   to: string,
   template: WellnessEmailTemplate
 ): Promise<void> => {
-  await getTransporter().sendMail({
-    from: fromAddress(),
-    to,
-    subject: template.subject,
-    text: template.text,
-    html: template.html,
-  });
+  await sendEmailViaPromailer(to, template.subject, template.text, template.html);
 };
 
 export interface ContactFormPayload {
@@ -322,13 +333,8 @@ export const sendContactFormEmail = async (payload: ContactFormPayload): Promise
   const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || process.env.user_email;
   const subject = payload.subject || "New Contact Form Submission";
   
-  await getTransporter().sendMail({
-    from: fromAddress(),
-    to: adminEmail,
-    replyTo: payload.email,
-    subject: `Contact Form: ${subject}`,
-    text: `From: ${payload.name} (${payload.email})\n\n${payload.message}`,
-    html: `
+  const text = `From: ${payload.name} (${payload.email})\n\n${payload.message}`;
+  const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
         <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:28px;">
           <h2 style="margin:0 0 18px;font-size:24px;color:#1f2937;font-weight:700;">New Contact Form Submission</h2>
@@ -340,6 +346,7 @@ export const sendContactFormEmail = async (payload: ContactFormPayload): Promise
           </div>
         </div>
       </div>
-    `,
-  });
+    `;
+  
+  await sendEmailViaPromailer(adminEmail as string, `Contact Form: ${subject}`, text, html);
 };
