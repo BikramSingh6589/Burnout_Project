@@ -1,25 +1,11 @@
-import nodemailer from 'nodemailer';
+import axios from 'axios';
 import { logger } from './logger.js';
 
-// Brevo SMTP Configuration (https://www.brevo.com/)
-const createTransporter = () => {
-  const user = process.env.BREVO_SMTP_USER || process.env.EMAIL_USER || process.env.user_email;
-  const pass = process.env.BREVO_SMTP_PASS || process.env.BREVO_API_KEY;
+// Brevo API Configuration
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-  logger.info('[Brevo] Initializing SMTP transporter with user:', user ? user : 'NOT SET');
-
-  return nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false, // true for 465, false for 587
-    auth: {
-      user: user,
-      pass: pass,
-    },
-  });
-};
-
-// Helper to send emails via Brevo SMTP
+// Helper to send emails via Brevo API
 const sendEmailViaBrevo = async (
   to: string | string[],
   subject: string,
@@ -27,28 +13,34 @@ const sendEmailViaBrevo = async (
   html: string,
   fromName: string = 'Burnout Wellness'
 ): Promise<void> => {
-  logger.info('[Brevo] Starting email send');
+  logger.info('[Brevo] Starting email send via API');
 
   try {
-    const transporter = createTransporter();
-    const fromEmail = process.env.BREVO_SMTP_USER || process.env.EMAIL_USER || process.env.user_email || 'no-reply@burnoutwellness.app';
-    const fromAddress = `${fromName} <${fromEmail}>`;
+    const fromEmail = process.env.BREVO_SMTP_USER || process.env.EMAIL_USER || 'no-reply@burnoutwellness.app';
+    const fromAddress = { email: fromEmail, name: fromName };
+    const toAddresses = Array.isArray(to) ? to.map(email => ({ email })) : [{ email: to }];
 
     logger.info('[Brevo] From email:', fromEmail);
     logger.info('[Brevo] To email(s):', to);
     logger.info('[Brevo] Subject:', subject);
 
-    const info = await transporter.sendMail({
-      from: fromAddress,
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      text,
-      html,
+    const response = await axios.post(BREVO_API_URL, {
+      sender: fromAddress,
+      to: toAddresses,
+      subject: subject,
+      htmlContent: html,
+      textContent: text,
+    }, {
+      headers: {
+        'api-key': BREVO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000, // 10 seconds
     });
 
-    logger.info('[Brevo] Email sent successfully! Message ID:', info.messageId);
+    logger.info('[Brevo] Email sent successfully! Response:', response.data);
   } catch (error: any) {
-    logger.error('[Brevo] Error sending email:', error.message);
+    logger.error('[Brevo] Error sending email via API:', error.response?.data || error.message);
     logger.error('[Brevo] Full error:', error);
     throw new Error(`Email sending failed: ${error.message}`);
   }
