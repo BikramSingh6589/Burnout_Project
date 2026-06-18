@@ -1,71 +1,75 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { logger } from './logger.js';
 
-// Resend API Configuration
-const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
-logger.info('[Resend] Initializing Resend with API Key length:', RESEND_API_KEY ? RESEND_API_KEY.substring(0, 8) + '...' : 'NOT SET');
-const resend = new Resend(RESEND_API_KEY);
+// Brevo SMTP Configuration (https://www.brevo.com/)
+const createTransporter = () => {
+  const user = process.env.BREVO_SMTP_USER || process.env.EMAIL_USER || process.env.user_email;
+  const pass = process.env.BREVO_SMTP_PASS || process.env.BREVO_API_KEY;
 
-// Helper to send emails via Resend API
-const sendEmailViaResend = async (
+  logger.info('[Brevo] Initializing SMTP transporter with user:', user ? user : 'NOT SET');
+
+  return nodemailer.createTransport({
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false, // true for 465, false for 587
+    auth: {
+      user: user,
+      pass: pass,
+    },
+  });
+};
+
+// Helper to send emails via Brevo SMTP
+const sendEmailViaBrevo = async (
   to: string | string[],
   subject: string,
   text: string,
   html: string,
   fromName: string = 'Burnout Wellness'
 ): Promise<void> => {
-  logger.info('[Resend] Starting sendEmailViaResend');
-  
+  logger.info('[Brevo] Starting email send');
+
   try {
-    // IMPORTANT: Resend won't let you send from gmail.com in production (anti-spam)
-    // Use Resend's free onboarding@resend.dev for testing, or verify a custom domain!
-    const fromEmail = 'onboarding@resend.dev'; // FORCE to Resend's approved testing address
-    logger.info('[Resend] From email:', fromEmail);
-    logger.info('[Resend] To email(s):', to);
-    logger.info('[Resend] Subject:', subject);
-    
+    const transporter = createTransporter();
+    const fromEmail = process.env.BREVO_SMTP_USER || process.env.EMAIL_USER || process.env.user_email || 'no-reply@burnoutwellness.app';
     const fromAddress = `${fromName} <${fromEmail}>`;
-    logger.info('[Resend] From address:', fromAddress);
-    
-    logger.info('[Resend] Calling resend.emails.send()...');
-    
-    const { data, error } = await resend.emails.send({
+
+    logger.info('[Brevo] From email:', fromEmail);
+    logger.info('[Brevo] To email(s):', to);
+    logger.info('[Brevo] Subject:', subject);
+
+    const info = await transporter.sendMail({
       from: fromAddress,
       to: Array.isArray(to) ? to : [to],
       subject,
       text,
       html,
     });
-    
-    if (error) {
-      logger.error('[Resend] ERROR from Resend API:', JSON.stringify(error, null, 2));
-      throw new Error(`Resend error: ${error.message}`);
-    }
-    
-    logger.info('[Resend] SUCCESS! Email sent:', JSON.stringify(data, null, 2));
+
+    logger.info('[Brevo] Email sent successfully! Message ID:', info.messageId);
   } catch (error: any) {
-    logger.error('[Resend] ERROR in sendEmailViaResend:', error);
-    logger.error('[Resend] Error stack:', error.stack);
+    logger.error('[Brevo] Error sending email:', error.message);
+    logger.error('[Brevo] Full error:', error);
     throw new Error(`Email sending failed: ${error.message}`);
   }
 };
 
 export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
   logger.info('[Email] sendOtpEmail called for:', to);
-  
+
   try {
     const subject = 'Verify your Burnout Wellness account';
     const text = `Your verification code is ${otp}. It expires in 10 minutes. If you did not create an account, ignore this email.`;
     const html = `
-      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">  
+      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">
         <h2>Verify your account</h2>
         <p>Your verification code is:</p>
         <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0">${otp}</p>
         <p>This code expires in 10 minutes.</p>
       </div>
     `;
-  
-    await sendEmailViaResend(to, subject, text, html);
+
+    await sendEmailViaBrevo(to, subject, text, html);
     logger.info('[Email] sendOtpEmail completed successfully!');
   } catch (error) {
     logger.error('[Email] sendOtpEmail FAILED:', error);
@@ -75,20 +79,20 @@ export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
 
 export const sendPasswordResetEmail = async (to: string, token: string): Promise<void> => {
   logger.info('[Email] sendPasswordResetEmail called for:', to);
-  
+
   try {
     const subject = 'Reset your Burnout Wellness password';
     const text = `Your password reset code is ${token}. It expires in 15 minutes. If you did not request this, ignore this email.`;
     const html = `
-      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">  
+      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">
         <h2>Reset your password</h2>
         <p>Your password reset code is:</p>
         <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0">${token}</p>
         <p>This code expires in 15 minutes.</p>
       </div>
     `;
-  
-    await sendEmailViaResend(to, subject, text, html);
+
+    await sendEmailViaBrevo(to, subject, text, html);
     logger.info('[Email] sendPasswordResetEmail completed successfully!');
   } catch (error) {
     logger.error('[Email] sendPasswordResetEmail FAILED:', error);
@@ -98,7 +102,7 @@ export const sendPasswordResetEmail = async (to: string, token: string): Promise
 
 export const sendWeeklyReminderEmail = async (to: string, name: string): Promise<void> => {
   logger.info('[Email] sendWeeklyReminderEmail called for:', to);
-  
+
   try {
     const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
     const subject = 'Weekly Assessment Reminder - Burnout Wellness';
@@ -115,8 +119,8 @@ export const sendWeeklyReminderEmail = async (to: string, name: string): Promise
         <p style="color:#6B7280;font-size:14px">Best regards,<br>Burnout Wellness Team</p>
       </div>
     `;
-  
-    await sendEmailViaResend(to, subject, text, html);
+
+    await sendEmailViaBrevo(to, subject, text, html);
     logger.info('[Email] sendWeeklyReminderEmail completed successfully!');
   } catch (error) {
     logger.error('[Email] sendWeeklyReminderEmail FAILED:', error);
@@ -126,7 +130,7 @@ export const sendWeeklyReminderEmail = async (to: string, name: string): Promise
 
 export const sendSupportEmail = async (to: string, name: string, subject: string, message: string): Promise<void> => {
   logger.info('[Email] sendSupportEmail called for:', to);
-  
+
   try {
     const emailSubject = subject || 'New Contact Form Submission';
     const text = `Dear ${name},\n\n${message}\n\nBest regards,\nBurnout Wellness Team`;
@@ -143,8 +147,8 @@ export const sendSupportEmail = async (to: string, name: string, subject: string
         </div>
       </div>
     `;
-  
-    await sendEmailViaResend(to, emailSubject, text, html);
+
+    await sendEmailViaBrevo(to, emailSubject, text, html);
     logger.info('[Email] sendSupportEmail completed successfully!');
   } catch (error) {
     logger.error('[Email] sendSupportEmail FAILED:', error);
@@ -220,15 +224,15 @@ const wellnessEmailShell = (
   const dashboardUrl = getDashboardUrl();
   const dashboardButtonHtml = dashboardUrl
     ? `
-                  <table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px auto 0;">
-                    <tr>
-                      <td align="center" style="border-radius:10px;background:${theme.buttonBg};">
-                        <a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;background:${theme.buttonBg};">
-                          View My Dashboard
-                        </a>
-                      </td>
-                    </tr>
-                  </table>`
+      <table role="presentation" cellspacing="0" cellpadding="0" style="margin:28px auto 0;">
+        <tr>
+          <td align="center" style="border-radius:10px;background:${theme.buttonBg};">
+            <a href="${dashboardUrl}" style="display:inline-block;padding:14px 32px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:10px;background:${theme.buttonBg};">
+              View My Dashboard
+            </a>
+          </td>
+        </tr>
+      </table>`
     : '';
 
   return `
@@ -356,7 +360,7 @@ export const sendWellnessTemplateEmail = async (
 ): Promise<void> => {
   logger.info('[Email] sendWellnessTemplateEmail called for:', to);
   try {
-    await sendEmailViaResend(to, template.subject, template.text, template.html);
+    await sendEmailViaBrevo(to, template.subject, template.text, template.html);
     logger.info('[Email] sendWellnessTemplateEmail completed successfully!');
   } catch (error) {
     logger.error('[Email] sendWellnessTemplateEmail FAILED:', error);
@@ -373,18 +377,18 @@ export interface ContactFormPayload {
 
 export const sendContactFormEmail = async (payload: ContactFormPayload): Promise<void> => {
   logger.info('[Email] sendContactFormEmail called with payload:', JSON.stringify(payload));
-  
+
   try {
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_USER || process.env.user_email;
     logger.info('[Email] Admin email:', adminEmail);
-    
+
     if (!adminEmail) {
       logger.warn('[Email] No admin email found, skipping contact form email not sent!');
       return;
     }
-    
+
     const subject = payload.subject || 'New Contact Form Submission';
-    
+
     const text = `From: ${payload.name} (${payload.email})\n\n${payload.message}`;
     const html = `
       <div style="font-family:Arial,Helvetica,sans-serif;margin:0 auto;max-width:680px;color:#111827;line-height:1.6;padding:20px;">
@@ -399,8 +403,8 @@ export const sendContactFormEmail = async (payload: ContactFormPayload): Promise
         </div>
       </div>
     `;
-  
-    await sendEmailViaResend(adminEmail, `Contact Form: ${subject}`, text, html);
+
+    await sendEmailViaBrevo(adminEmail, `Contact Form: ${subject}`, text, html);
     logger.info('[Email] sendContactFormEmail completed successfully!');
   } catch (error) {
     logger.error('[Email] sendContactFormEmail FAILED:', error);
