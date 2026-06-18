@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { apiRequest } from '../lib/api';
+import type { WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5001/api';
 
@@ -209,6 +210,7 @@ interface AppState {
   journalAiEntries: JournalAiEntry[];
   burnoutRisk: BurnoutRisk | null;
   trackerHistory: TrackerHistory[];
+  weeklyAssessmentHistory: WeeklyAssessmentRecord[];
   analyticsSummary: AnalyticsSummary | null;
   latestAssessment: LatestAssessment | null;
   recommendations: Recommendation[];
@@ -220,7 +222,9 @@ interface AppState {
   recommendationHistoryLoading: boolean;
   analyticsLoading: boolean;
   trackerHistoryLoading: boolean;
+  weeklyAssessmentHistoryLoading: boolean;
   burnoutRiskLoading: boolean;
+  adminSettingsLoading: boolean;
 
   // Chat Widget State
   chatMessages: { id: string; sender: 'user' | 'ai'; text: string; timestamp: number }[];
@@ -414,6 +418,7 @@ export const useStore = create<AppState>((set, get) => ({
   journalAiEntries: [],
   burnoutRisk: null,
   trackerHistory: [],
+  weeklyAssessmentHistory: [],
   analyticsSummary: null,
   latestAssessment: null,
   recommendations: [],
@@ -425,7 +430,9 @@ export const useStore = create<AppState>((set, get) => ({
   recommendationHistoryLoading: false,
   analyticsLoading: false,
   trackerHistoryLoading: false,
+  weeklyAssessmentHistoryLoading: false,
   burnoutRiskLoading: false,
+  adminSettingsLoading: false,
 
   // Chat Widget State
   chatMessages: [
@@ -458,7 +465,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchTrackerHistory: async () => {
     const token = get().authToken ?? getStoredAuthToken();
     if (!token) return;
-    set({ trackerHistoryLoading: true });
+    set({ trackerHistoryLoading: true, weeklyAssessmentHistoryLoading: true });
     try {
       const [initialResponse, weeklyResponse] = await Promise.all([
         apiRequest<{
@@ -500,9 +507,14 @@ export const useStore = create<AppState>((set, get) => ({
         .sort((a, b) => a.timestamp - b.timestamp)
         .slice(-10); // Take last 10 entries max
       
-      set({ trackerHistory: mapped, trackerHistoryLoading: false });
+      set({ 
+        trackerHistory: mapped, 
+        trackerHistoryLoading: false, 
+        weeklyAssessmentHistory: weeklyResponse.data.history,
+        weeklyAssessmentHistoryLoading: false 
+      });
     } catch (err) {
-      set({ trackerHistoryLoading: false });
+      set({ trackerHistoryLoading: false, weeklyAssessmentHistoryLoading: false });
     }
   },
 
@@ -649,10 +661,12 @@ export const useStore = create<AppState>((set, get) => ({
   },
 
   fetchAdminSettings: async () => {
+    set({ adminSettingsLoading: true });
     try {
       const response = await apiRequest<SettingsResponse>('/settings');
-      set({ adminSettings: response.data });
+      set({ adminSettings: response.data, adminSettingsLoading: false });
     } catch (err) {
+      set({ adminSettingsLoading: false });
     }
   },
 

@@ -1,0 +1,12 @@
+# BurnoutGuard
+Academic Burnout Prediction & Monitoring Platform
+
+## Description
+An AI-powered platform to help students monitor and prevent academic burnout.
+
+## Important Pages
+- Home: https://burnoutguard.com/home
+- Login: https://burnoutguard.com/auth/login
+- Register: https://burnoutguard.com/auth/register
+- About: https://burnoutguard.com/home#about
+- Contact: https://burnoutguard.com/home#contact

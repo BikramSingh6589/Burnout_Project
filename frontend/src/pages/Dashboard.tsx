@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { apiRequest } from '../lib/api';
-import { hasReachedWeeklyAssessmentLimit, type WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
+import { hasReachedWeeklyAssessmentLimit } from '../lib/weeklyAssessment';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ChartTimeframeSelect } from '../components/ChartTimeframeSelect';
 import { buildChartData, type ChartDataPoint, type ChartTimeframe } from '../lib/chartTimeframe';
@@ -59,28 +58,34 @@ const BarHoverTimeLabel: React.FC<BarHoverTimeLabelProps> = ({
 };
 
 export const Dashboard: React.FC = () => {
-  const { user, trackerHistory, recommendations, fetchTrackerHistory, fetchRecommendations, fetchNotifications, latestAssessment, analyticsSummary, fetchAnalytics, burnoutRisk, fetchBurnoutRisk, analyticsLoading, trackerHistoryLoading, burnoutRiskLoading, recommendationsLoading, adminSettings, fetchAdminSettings, authToken } = useStore();
+  const { 
+    user, 
+    trackerHistory, 
+    recommendations, 
+    fetchTrackerHistory, 
+    fetchRecommendations, 
+    fetchNotifications, 
+    latestAssessment, 
+    analyticsSummary, 
+    fetchAnalytics, 
+    burnoutRisk, 
+    fetchBurnoutRisk, 
+    analyticsLoading, 
+    trackerHistoryLoading, 
+    burnoutRiskLoading, 
+    recommendationsLoading, 
+    adminSettings, 
+    fetchAdminSettings, 
+    weeklyAssessmentHistory,
+    weeklyAssessmentHistoryLoading,
+    adminSettingsLoading,
+  } = useStore();
   const navigate = useNavigate();
   const [sleepHoveredIndex, setSleepHoveredIndex] = useState<number | null>(null);
   const [screenHoveredIndex, setScreenHoveredIndex] = useState<number | null>(null);
   const [burnoutTimeframe, setBurnoutTimeframe] = useState<ChartTimeframe>('daily');
   const [sleepTimeframe, setSleepTimeframe] = useState<ChartTimeframe>('daily');
   const [screenTimeframe, setScreenTimeframe] = useState<ChartTimeframe>('daily');
-  const [weeklyAssessmentHistory, setWeeklyAssessmentHistory] = useState<WeeklyAssessmentRecord[]>([]);
-
-  const fetchWeeklyAssessmentHistory = useCallback(async () => {
-    if (!authToken) return;
-
-    try {
-      const response = await apiRequest<{
-        success: boolean;
-        data: { history: WeeklyAssessmentRecord[] };
-      }>('/weekly-assessment/history', { token: authToken });
-      setWeeklyAssessmentHistory(response.data.history);
-    } catch {
-      setWeeklyAssessmentHistory([]);
-    }
-  }, [authToken]);
 
   useEffect(() => {
     fetchTrackerHistory();
@@ -91,14 +96,12 @@ export const Dashboard: React.FC = () => {
     fetchAdminSettings();
   }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics, fetchBurnoutRisk, fetchAdminSettings]);
 
-  useEffect(() => {
-    void fetchWeeklyAssessmentHistory();
-  }, [fetchWeeklyAssessmentHistory, trackerHistory]);
-
   const isWeeklyLimitReached = useMemo(
     () => hasReachedWeeklyAssessmentLimit(weeklyAssessmentHistory, adminSettings.maxWeeklyAssessmentsPerStudent),
     [weeklyAssessmentHistory, adminSettings.maxWeeklyAssessmentsPerStudent],
   );
+
+  const isDataLoading = weeklyAssessmentHistoryLoading || adminSettingsLoading;
 
   // Guard checks handled in DashboardLayout, but let's read the latest values
   const latestTracker = trackerHistory.length > 0 ? trackerHistory[trackerHistory.length - 1] : null;
@@ -200,7 +203,7 @@ export const Dashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate('/dashboard/history')}
               className="bg-transparent hover:bg-surface-elevated text-text-primary dark:text-[#E2E8F0] border border-slate-200/60 border-primary/40 font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm hover:shadow"
@@ -210,18 +213,19 @@ export const Dashboard: React.FC = () => {
             <div className="relative group">
               <button
                 type="button"
-                disabled={isWeeklyLimitReached}
+                disabled={isDataLoading || isWeeklyLimitReached}
                 onClick={() => {
-                  if (!isWeeklyLimitReached) {
+                  if (!isWeeklyLimitReached && !isDataLoading) {
                     navigate('/assessment/weekly');
                   }
                 }}
-                className={`bg-primary text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm ${
-                  isWeeklyLimitReached
+                className={`flex items-center gap-2 bg-primary text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm ${
+                  isDataLoading || isWeeklyLimitReached
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:bg-[#4338CA] hover:shadow-md'
                 }`}
               >
+                {isDataLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Take Assessment
               </button>
               {isWeeklyLimitReached && (

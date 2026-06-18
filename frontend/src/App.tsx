@@ -114,8 +114,8 @@ const LayoutWrapper: React.FC = () => {
   }, [fetchMe]);
   return (
     <div className="min-h-screen flex flex-col">
-      {!hideNavbar && <Navbar />}
-      <div className="flex-1">
+      {!hideNavbar && <header><Navbar /></header>}
+      <main className="flex-1">
         <PageTransition>
           <Routes>
             {/* Root: smart redirect based on auth state */}
@@ -253,7 +253,7 @@ const LayoutWrapper: React.FC = () => {
             <Route path="*" element={<Navigate to="/auth/register" replace />} />
           </Routes>
         </PageTransition>
-      </div>
+      </main>
       {!isAdminRoute && !isAuthRoute && <AIWidget />}
     </div>
   );

@@ -72,7 +72,7 @@ export const GoogleSignInButton = ({
       <button
         type="button"
         disabled
-        className="w-full border border-slate-200 dark:border-[#334155] bg-white dark:bg-[#111827] py-2.5 rounded-lg font-semibold text-neutral-outline dark:text-[#64748B] text-xs cursor-not-allowed opacity-70"
+        className="w-full border border-slate-300 dark:border-[#475569] bg-white dark:bg-[#1e293b] py-2.5 rounded-lg font-semibold text-slate-700 dark:text-[#cbd5e1] text-sm cursor-not-allowed opacity-70"
       >
         Google Sign-In is not configured
       </button>
@@ -83,7 +83,7 @@ export const GoogleSignInButton = ({
     <div className="relative w-full h-[42px]">
       <div
         aria-hidden="true"
-        className="absolute inset-0 z-0 flex items-center justify-center space-x-2 rounded-lg border border-slate-200 bg-white py-2.5 text-xs font-semibold text-neutral-slate dark:border-[#334155] dark:bg-[#111827] dark:text-[#E2E8F0] pointer-events-none"
+        className="absolute inset-0 z-0 flex items-center justify-center space-x-2 rounded-lg border border-slate-300 dark:border-[#475569] bg-white dark:bg-[#1e293b] py-2.5 text-sm font-semibold text-slate-700 dark:text-[#e2e8f0] pointer-events-none"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
