@@ -53,12 +53,47 @@ export const sendOtpEmail = async (to: string, otp: string): Promise<void> => {
     const subject = 'Verify your Burnout Wellness account';
     const text = `Your verification code is ${otp}. It expires in 10 minutes. If you did not create an account, ignore this email.`;
     const html = `
-      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">
-        <h2>Verify your account</h2>
-        <p>Your verification code is:</p>
-        <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0">${otp}</p>
-        <p>This code expires in 10 minutes.</p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Verify Your Account</title>
+        </head>
+        <body style="margin:0;padding:0;background:#F3F4F6;font-family:Arial,Helvetica,sans-serif;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F4F6;padding:32px 16px;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #E5E7EB;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(79,70,229,0.08);">
+                  <tr>
+                    <td style="background:linear-gradient(135deg,#4F46E5 0%,#7C3AED 100%);padding:32px 28px;text-align:center;">
+                      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C7D2FE;">Student Wellness Platform</p>
+                      <h1 style="margin:12px 0 0;font-size:28px;line-height:1.3;color:#ffffff;font-weight:700;">Verify Your Account</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:36px 28px;color:#0f172a;font-size:16px;line-height:1.7;">
+                      <p style="margin:0 0 24px;color:#374151;">Hello,</p>
+                      <p style="margin:0 0 20px;color:#374151;">Your verification code is below. This code expires in 10 minutes.</p>
+                      
+                      <div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin:28px 0;text-align:center;">
+                        <p style="margin:0 0 12px;color:#6B7280;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Your Code</p>
+                        <p style="margin:0;font-size:40px;font-weight:800;letter-spacing:12px;color:#4F46E5;font-family:'Courier New',Courier,monospace;">${otp}</p>
+                      </div>
+
+                      <p style="margin:0 0 20px;color:#374151;">If you didn't create an account, you can safely ignore this email.</p>
+
+                      <div style="margin-top:32px;padding-top:24px;border-top:1px solid #E5E7EB;text-align:center;">
+                        <p style="margin:0;color:#9CA3AF;font-size:13px;">Burnout Wellness Team</p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
     `;
 
     await sendEmailViaBrevo(to, subject, text, html);
@@ -76,12 +111,47 @@ export const sendPasswordResetEmail = async (to: string, token: string): Promise
     const subject = 'Reset your Burnout Wellness password';
     const text = `Your password reset code is ${token}. It expires in 15 minutes. If you did not request this, ignore this email.`;
     const html = `
-      <div style="font-family:Arial,sans-serif;line-height:1.5;color:#111827">
-        <h2>Reset your password</h2>
-        <p>Your password reset code is:</p>
-        <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0">${token}</p>
-        <p>This code expires in 15 minutes.</p>
-      </div>
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Reset Your Password</title>
+        </head>
+        <body style="margin:0;padding:0;background:#F3F4F6;font-family:Arial,Helvetica,sans-serif;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F4F6;padding:32px 16px;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #E5E7EB;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(79,70,229,0.08);">
+                  <tr>
+                    <td style="background:linear-gradient(135deg,#059669 0%,#10B981 100%);padding:32px 28px;text-align:center;">
+                      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#A7F3D0;">Student Wellness Platform</p>
+                      <h1 style="margin:12px 0 0;font-size:28px;line-height:1.3;color:#ffffff;font-weight:700;">Reset Your Password</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:36px 28px;color:#0f172a;font-size:16px;line-height:1.7;">
+                      <p style="margin:0 0 24px;color:#374151;">Hello,</p>
+                      <p style="margin:0 0 20px;color:#374151;">You requested to reset your password. Use the code below to set a new password.</p>
+                      
+                      <div style="background:#F8FAFC;border:1px solid #E5E7EB;border-radius:12px;padding:24px;margin:28px 0;text-align:center;">
+                        <p style="margin:0 0 12px;color:#6B7280;font-size:13px;text-transform:uppercase;letter-spacing:0.05em;font-weight:700;">Reset Code</p>
+                        <p style="margin:0;font-size:40px;font-weight:800;letter-spacing:12px;color:#059669;font-family:'Courier New',Courier,monospace;">${token}</p>
+                      </div>
+
+                      <p style="margin:0 0 20px;color:#374151;">This code expires in 15 minutes. If you didn't request this, ignore this email.</p>
+
+                      <div style="margin-top:32px;padding-top:24px;border-top:1px solid #E5E7EB;text-align:center;">
+                        <p style="margin:0;color:#9CA3AF;font-size:13px;">Burnout Wellness Team</p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
     `;
 
     await sendEmailViaBrevo(to, subject, text, html);
