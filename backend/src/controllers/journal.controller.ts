@@ -16,7 +16,10 @@ export const getJournalEntries = async (
 
     const entries = await MoodJournal.find({
       student: new Types.ObjectId(req.user.userId.toString()),
-    }).sort({ journaledAt: -1 });
+    })
+      .sort({ journaledAt: -1 })
+      .select("mood moodScore energyLevel stressLevel notes sentimentScore tags journaledAt")
+      .lean();
 
     res.status(200).json({
       success: true,

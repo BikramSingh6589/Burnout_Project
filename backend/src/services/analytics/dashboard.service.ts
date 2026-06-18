@@ -71,8 +71,10 @@ const calculateMoodTrend = async (userId: string): Promise<"Positive" | "Neutral
  * Get complete dashboard analytics aggregated from all sources
  */
 export const getDashboardAnalytics = async (userId: string) => {
-  // Fetch student record for current scores and baseline
-  const student = await Student.findById(userId);
+  // Fetch student record for current scores and baseline (only needed fields)
+  const student = await Student.findById(userId)
+    .select("currentBurnoutScore currentRiskLevel baselineBurnoutScore baselineDate baselineRiskLevel")
+    .lean();
   if (!student) {
     throw new Error("Student profile not found");
   }

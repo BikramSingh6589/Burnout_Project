@@ -4,6 +4,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
+import compression from "compression";
 import authRoutes from "./routes/auth.routes.js";
 import assessmentRoutes from "./routes/assessment.routes.js";
 import initialAssessmentRoutes from "./routes/initial-assessment.routes.js";
@@ -29,6 +30,7 @@ const authLimiter = rateLimit({
 });
 
 app.use(helmet());
+app.use(compression());
 app.use(
   cors({
     origin: (origin, callback) => {
