@@ -17,9 +17,9 @@ const sendEmailViaResend = async (
   logger.info('[Resend] Starting sendEmailViaResend');
   
   try {
-    // Determine from address (use EMAIL_USER/user_email or a verified Resend domain)
-    // IMPORTANT: For Resend, you need a verified domain (or use onboarding@resend.dev for testing)
-    const fromEmail = process.env.EMAIL_USER || process.env.user_email || 'onboarding@resend.dev';
+    // IMPORTANT: Resend won't let you send from gmail.com in production (anti-spam)
+    // Use Resend's free onboarding@resend.dev for testing, or verify a custom domain!
+    const fromEmail = 'onboarding@resend.dev'; // FORCE to Resend's approved testing address
     logger.info('[Resend] From email:', fromEmail);
     logger.info('[Resend] To email(s):', to);
     logger.info('[Resend] Subject:', subject);
