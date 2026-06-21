@@ -21,10 +21,10 @@ const getFallbackAssistantResponse = (message: string): string => {
   }
 
   if (userText.includes("hello") || userText.includes("hi")) {
-    return "Hello! I'm here to support your wellness journey. Ask me about stress, sleep, study habits, or general questions anytime.";
+    return "Hello! I'm your Student Wellness and Burnout Assistant. I can help with stress, sleep, study habits, productivity, burnout recovery, and career guidance. How are you feeling today?";
   }
 
-  return "I’m here to help. Tell me more about what you’re feeling or ask any question about your studies, wellness, or productivity.";
+  return "I'm here to support your wellness journey. Ask me about burnout, stress, study habits, productivity, sleep, or student career guidance.";
 };
 
 export const chatWithAI = async (

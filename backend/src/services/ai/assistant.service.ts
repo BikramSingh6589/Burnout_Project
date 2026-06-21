@@ -6,16 +6,40 @@ import type { IStudent } from "../../models/Student.js";
 import type { IAssessment } from "../../models/Assessment.js";
 import { ConversationRole } from "../../types/common.types.js";
 import { NotificationService } from "../notification.service.js";
+import {
+  classifyTopic,
+  RESTRICTED_TOPIC_RESPONSE,
+} from "./topic-classifier.js";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_MODEL = process.env.GROQ_MODEL ?? "llama-3.1-8b-instant";
 const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
-const SYSTEM_PROMPT = `You are an AI assistant integrated into a Student Burnout Detection and Wellness Platform.
-Your primary responsibilities are student wellness, burnout guidance, stress management, study habits, academic productivity, sleep improvement, focus, and time management.
-You may also answer general, academic, coding, technical, and career questions.
-When the user's question is related to stress, burnout, sleep, productivity, focus, motivation, mental wellness, study habits, time management, or exam pressure, personalize your response using available student wellness context.
-Do not force wellness topics into unrelated requests. Answer clearly and helpfully, and keep the response respectful and practical.`;
+const SYSTEM_PROMPT = `You are a Student Wellness and Burnout Assistant integrated into a Student Burnout Detection and Wellness Platform.
+
+You are NOT a general-purpose AI assistant, NOT ChatGPT, NOT a coding assistant, and NOT a search engine.
+
+Your primary purpose is to help students with:
+- Burnout prevention, recovery, symptoms, causes, and warning signs
+- Academic wellbeing, stress, exam pressure, anxiety, and mental wellness
+- Productivity, focus, concentration, time management, and procrastination
+- Study habits, planning, revision, routines, and consistency
+- Sleep quality, healthy routines, screen time, and daily schedules
+- High-level student career guidance (career path, placement anxiety, goals, skill planning)
+
+You must REFUSE and redirect questions about:
+- Programming, coding, debugging, algorithms, DSA, system design, SQL, or technical tutorials
+- General knowledge (weather, politics, history, geography, trivia, current affairs, prices)
+- Entertainment (movies, celebrities, sports, music, TV shows)
+- Lifestyle topics unrelated to student wellness (cooking, recipes, fashion, shopping, travel, cars, crypto, stocks)
+
+If a user asks about a restricted topic, respond with the standard refusal message and list what you can help with.
+
+For allowed topics:
+- Be friendly, supportive, practical, and student-focused
+- Keep responses concise (about 80-200 words) unless the user asks for more detail
+- When the question relates to stress, burnout, sleep, productivity, or wellness, personalize using available student context naturally
+- Do not mention burnout score or wellness metrics in every answer; use context only when relevant`;
 
 const normalizeRole = (role: ConversationRole) => {
   if (role === ConversationRole.Assistant) return "assistant";
@@ -147,6 +171,11 @@ export const streamAIResponse = async (
   userMessage: string,
   onDelta: (chunk: string) => Promise<void> | void,
 ): Promise<string> => {
+  if (classifyTopic(userMessage) === "RESTRICTED") {
+    await onDelta(RESTRICTED_TOPIC_RESPONSE);
+    return RESTRICTED_TOPIC_RESPONSE;
+  }
+
   if (!GROQ_API_KEY) {
     throw new Error("GROQ_API_KEY is not configured.");
   }
@@ -271,6 +300,10 @@ export const generateAIResponse = async (
   conversationMessages: IAIMessage[],
   userMessage: string,
 ) => {
+  if (classifyTopic(userMessage) === "RESTRICTED") {
+    return RESTRICTED_TOPIC_RESPONSE;
+  }
+
   // Trigger AI alert if message contains stress patterns
   try {
     const triggerPatterns = ["stressed", "burnout", "overwhelmed", "hopeless", "exhausted", "can't cope", "giving up"];
