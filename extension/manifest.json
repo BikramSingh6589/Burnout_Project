@@ -3,7 +3,7 @@
   "name": "Burnout Guard",
   "version": "1.0.0",
   "description": "Track your burnout daily with streak and wellness reminders.",
-  "permissions": ["storage"],
+  "permissions": ["storage", "alarms", "notifications"],
   "host_permissions": [
     "http://localhost:5173/*",
     "https://burnout-project-xbf1.vercel.app/*"

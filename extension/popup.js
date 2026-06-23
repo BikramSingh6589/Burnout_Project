@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
   
-  initializeApp();
+  loadUserData();
 });
 
 async function getTokenFromStorage() {
@@ -71,6 +71,10 @@ async function fetchDailyAssessmentHistory(token) {
   const dailyHistory = dailyData.data?.history || [];
   
   return [...initialHistory, ...dailyHistory];
+}
+
+function renderDebug(message) {
+  console.log('DEBUG:', message);
 }
 
 function getRandomQuote() {
@@ -171,6 +175,30 @@ function renderLoginPrompt() {
   });
 }
 
+async function getReminderTime() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'GET_REMINDER' }, (response) => {
+      resolve(response?.reminderTime || null);
+    });
+  });
+}
+
+async function setReminderTime(time) {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'SET_REMINDER', time }, (response) => {
+      resolve(response?.success || false);
+    });
+  });
+}
+
+async function clearReminder() {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage({ type: 'CLEAR_REMINDER' }, (response) => {
+      resolve(response?.success || false);
+    });
+  });
+}
+
 function renderApp(user, burnout, streakData, quote) {
   // Use user.currentStreak instead of array length
   const daysCompleted = user.currentStreak ?? 0;
@@ -233,14 +261,25 @@ function renderApp(user, burnout, streakData, quote) {
       </div>
 
       <div class="stats">
-        <div class="stat-card">
+        <div class="stat-card" style="grid-column: span 2;">
           <div class="stat-label">Current Streak</div>
           <div class="stat-value">${daysCompleted} days</div>
         </div>
-        <div class="stat-card">
-          <div class="stat-label">Mood Score</div>
-          <div class="stat-value">${score > 70 ? '😰' : score > 40 ? '😐' : '😊'}</div>
+      </div>
+
+      <div class="reminder-section">
+        <div class="reminder-header">
+          <div class="reminder-title">Daily Reminder</div>
+          <label class="reminder-toggle">
+            <input type="checkbox" id="reminderToggle">
+            <span class="toggle-slider"></span>
+          </label>
         </div>
+        <div class="reminder-controls" id="reminderControls" style="display: none;">
+          <input type="time" id="reminderTimeInput" class="reminder-time-input">
+          <button class="save-reminder-btn" id="saveReminderBtn">Save</button>
+        </div>
+        <div class="reminder-status" id="reminderStatus"></div>
       </div>
 
       <div class="quote">
@@ -263,5 +302,54 @@ function renderApp(user, burnout, streakData, quote) {
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     await chrome.storage.local.remove('authToken');
     loadUserData();
+  });
+  
+  // Initialize reminder UI
+  initReminderUI();
+}
+
+async function initReminderUI() {
+  const reminderToggle = document.getElementById('reminderToggle');
+  const reminderControls = document.getElementById('reminderControls');
+  const reminderTimeInput = document.getElementById('reminderTimeInput');
+  const saveReminderBtn = document.getElementById('saveReminderBtn');
+  const reminderStatus = document.getElementById('reminderStatus');
+  
+  // Load existing reminder
+  const savedTime = await getReminderTime();
+  if (savedTime) {
+    reminderToggle.checked = true;
+    reminderControls.style.display = 'flex';
+    reminderTimeInput.value = savedTime;
+    reminderStatus.textContent = `Reminder set for ${savedTime}`;
+    reminderStatus.classList.add('active');
+  }
+  
+  // Toggle handler
+  reminderToggle.addEventListener('change', async () => {
+    if (reminderToggle.checked) {
+      reminderControls.style.display = 'flex';
+      // Set default time if none
+      if (!reminderTimeInput.value) {
+        reminderTimeInput.value = '21:00';
+      }
+    } else {
+      reminderControls.style.display = 'none';
+      await clearReminder();
+      reminderStatus.textContent = '';
+      reminderStatus.classList.remove('active');
+    }
+  });
+  
+  // Save handler
+  saveReminderBtn.addEventListener('click', async () => {
+    const time = reminderTimeInput.value;
+    if (time) {
+      const success = await setReminderTime(time);
+      if (success) {
+        reminderStatus.textContent = `Reminder set for ${time}`;
+        reminderStatus.classList.add('active');
+      }
+    }
   });
 }

@@ -346,6 +346,123 @@
       line-height: 1.7;
       font-style: italic;
     }
+    
+    .reminder-section {
+      background: linear-gradient(135deg, rgba(79, 70, 229, 0.15) 0%, rgba(124, 58, 237, 0.1) 100%);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      border: 2px solid rgba(129, 140, 248, 0.3);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+    
+    .reminder-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    
+    .reminder-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #a5b4fc;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    
+    .reminder-toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+    }
+    
+    .reminder-toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #334155;
+      transition: 0.3s;
+      border-radius: 26px;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .toggle-slider {
+      background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+    }
+    
+    input:checked + .toggle-slider:before {
+      transform: translateX(22px);
+    }
+    
+    .reminder-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .reminder-time-input {
+      flex: 1;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid #475569;
+      border-radius: 10px;
+      padding: 12px;
+      color: white;
+      font-size: 15px;
+      text-align: center;
+      font-weight: 600;
+    }
+    
+    .reminder-time-input:focus {
+      outline: none;
+      border-color: #818cf8;
+    }
+    
+    .save-reminder-btn {
+      background: linear-gradient(135deg, #4f46e5 0%, #8b5cf6 100%);
+      border: none;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .save-reminder-btn:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.1);
+    }
+    
+    .reminder-status {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    
+    .reminder-status.active {
+      color: #6ee7b7;
+    }
   </style>
 </head>
 <body>
