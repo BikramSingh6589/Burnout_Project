@@ -28,28 +28,6 @@ const mapToInitialAssessmentPayload = (data: AssessmentFormData) => ({
   screenTime: data.screenTime,
 });
 
-const mapToWeeklyAssessmentPayload = (data: AssessmentFormData) => ({
-  // Original weekly assessment transformed fields
-  academicLoadScore: data.stressLevel * 10,
-  stressScore: data.stressLevel * 10,
-  sleepHoursAverage: data.sleepHours,
-  sleepQualityScore: Math.min(100, Math.round((data.sleepHours / 8) * 100)),
-  moodScore: data.energyLevel * 10,
-  motivationScore: data.motivationLevel * 10,
-  concentrationScore: data.academicSatisfaction * 10,
-  physicalFatigueScore: (10 - data.energyLevel) * 10,
-  // Original form fields (for consistency with Assessment model)
-  stressLevel: data.stressLevel,
-  academicSatisfaction: data.academicSatisfaction,
-  studyHours: typeof data.studyHours === 'number' ? data.studyHours : 0,
-  backlog: typeof data.assignmentBacklog === 'number' ? Math.min(10, data.assignmentBacklog) : 0,
-  procrastination: data.procrastination,
-  motivation: data.motivationLevel,
-  energy: data.energyLevel,
-  sleepHours: typeof data.sleepHours === 'number' ? data.sleepHours : 0,
-  screenTime: typeof data.screenTime === 'number' ? data.screenTime : 0,
-});
-
 // Types
 export interface User {
   id?: string;

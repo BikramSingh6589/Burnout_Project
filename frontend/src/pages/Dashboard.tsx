@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { hasReachedWeeklyAssessmentLimit } from '../lib/weeklyAssessment';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { ChartTimeframeSelect } from '../components/ChartTimeframeSelect';
 import { buildChartData, type ChartDataPoint, type ChartTimeframe } from '../lib/chartTimeframe';
@@ -74,7 +73,6 @@ export const Dashboard: React.FC = () => {
     trackerHistoryLoading, 
     burnoutRiskLoading, 
     recommendationsLoading, 
-    adminSettings, 
     fetchAdminSettings, 
     weeklyAssessmentHistory,
     weeklyAssessmentHistoryLoading,

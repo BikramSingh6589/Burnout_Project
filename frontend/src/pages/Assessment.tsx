@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { apiRequest } from '../lib/api';
 
 import { CheckCircle2, ArrowRight, ArrowLeft, ClipboardList } from 'lucide-react';
 import { InfoPopover } from '../components/ui/InfoPopover';

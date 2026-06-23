@@ -12,9 +12,7 @@ export const Navbar: React.FC = () => {
     logout, 
     markNotificationRead, 
     deleteAllNotifications,
-    weeklyAssessmentHistory,
-    weeklyAssessmentHistoryLoading,
-    fetchTrackerHistory
+    weeklyAssessmentHistory
   } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
