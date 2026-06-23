@@ -184,6 +184,13 @@ interface AppState {
   authError: string | null;
   authToken: string | null;
   pendingVerificationEmail: string | null;
+  
+  // Extension state
+  extensionInstalled: boolean;
+  showExtensionPromo: boolean;
+  checkExtensionInstalled: () => void;
+  sendTokenToExtension: () => void;
+  closeExtensionPromo: () => void;
 
   // Student Dashboard State
   journalEntries: JournalEntry[];
@@ -396,6 +403,65 @@ export const useStore = create<AppState>((set, get) => ({
   authError: null,
   authToken: initialAuthToken,
   pendingVerificationEmail: getStoredPendingEmail(),
+
+  // Extension State
+  extensionInstalled: false,
+  showExtensionPromo: false,
+  
+  checkExtensionInstalled: () => {
+    const handler = (event: MessageEvent) => {
+      if (event.data.type === 'BURN_OUT_GUARD_IS_INSTALLED') {
+        set({ extensionInstalled: true, showExtensionPromo: false });
+        // Send token immediately when we confirm extension is installed
+        get().sendTokenToExtension();
+      }
+      if (event.data.type === 'BURN_OUT_GUARD_REQUEST_TOKEN') {
+        // Extension is requesting token - send it!
+        get().sendTokenToExtension();
+      }
+    };
+    window.addEventListener('message', handler);
+    
+    // Try to send check message
+    window.postMessage({ type: 'BURN_OUT_GUARD_CHECK_INSTALLED' }, '*');
+    
+    // Show promo only if extension not installed
+    if (get().isAuthenticated) {
+      setTimeout(() => {
+        if (!get().extensionInstalled) {
+          set({ showExtensionPromo: true });
+        }
+      }, 2000);
+    }
+    
+    return () => window.removeEventListener('message', handler);
+  },
+  
+  sendTokenToExtension: () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return;
+    
+    // Send token immediately
+    window.postMessage(
+      { type: 'BURN_OUT_GUARD_SAVE_TOKEN', token },
+      '*'
+    );
+    
+    // Send multiple times to make sure extension receives it
+    const sendTimes = [300, 800, 1500, 2500, 4000];
+    sendTimes.forEach(delay => {
+      setTimeout(() => {
+        window.postMessage(
+          { type: 'BURN_OUT_GUARD_SAVE_TOKEN', token },
+          '*'
+        );
+      }, delay);
+    });
+  },
+  
+  closeExtensionPromo: () => {
+    set({ showExtensionPromo: false });
+  },
 
   // Student Dashboard State
   journalEntries: [],
