@@ -1,5 +1,4 @@
 
-
 Your backend structure is actually quite good for a production-level student burnout detection platform. The biggest mistake teams make is creating all files first and then getting confused about implementation order.
 
 Follow this sequence.
@@ -21,7 +20,6 @@ npm install express-rate-limit helmet morgan
 npm install node-cron
 
 npm install
-
 typescript
 ts-node-dev
 @types/node
@@ -74,9 +72,9 @@ Flow:
 
 ```text
 server.ts
-    ↓
+        ↓
 database.ts
-    ↓
+        ↓
 MongoDB Atlas
 ```
 
@@ -86,53 +84,84 @@ MongoDB Atlas
 
 Create in this order:
 
-### User
+### User (Student)
 
 ```text
-models/User.ts
+models/Student.ts
 ```
 
 Stores:
 
 ```text
-name
+fullName
 email
 password
 age
 gender
-role
-
-assessmentCompleted
-burnoutScore
-riskLevel
+phoneNumber
+accountStatus
+assessmentCompleted (initial)
+currentBurnoutScore
+currentRiskLevel
+baselineBurnoutScore
+baselineRiskLevel
+baselineDate
+currentStreak
+longestStreak
+lastAssessmentDate
 ```
 
 ---
 
-### Assessment
+### Initial Assessment
 
 ```text
-models/Assessment.ts
+models/InitialAssessment.ts
 ```
 
 Stores:
 
 ```text
-userId
+student
+academicPressureScore
+sleepQualityScore
+emotionalExhaustionScore
+cynicismScore
+efficacyScore
+socialSupportScore
+financialStressScore
+baselineBurnoutScore
+baselineRiskLevel
+status
+completedAt
+```
 
+---
+
+### Daily Assessment (Replaces Weekly Assessment)
+
+```text
+models/DailyAssessment.ts
+```
+
+Stores:
+
+```text
+student
 stressLevel
 academicSatisfaction
 studyHours
 backlog
 procrastination
-
 motivation
 energy
 sleepHours
 screenTime
-
 burnoutScore
 riskLevel
+status
+completedAt
+date (for uniqueness check)
 ```
 
 ---
@@ -146,11 +175,9 @@ models/Journal.ts
 Stores:
 
 ```text
-userId
-
-entry
+studentId
+content
 sentiment
-
 createdAt
 ```
 
@@ -194,11 +221,11 @@ Example:
 
 ```text
 Register Request
-      ↓
+        ↓
 Controller
-      ↓
+        ↓
 Auth Service
-      ↓
+        ↓
 Response
 ```
 
@@ -254,19 +281,19 @@ Flow:
 
 ```text
 User Login
-     ↓
+        ↓
 JWT Generated
-     ↓
+        ↓
 Header
-     ↓
+        ↓
 Middleware
-     ↓
+        ↓
 Next Route
 ```
 
 ---
 
-# Phase 4: Assessment Module
+# Phase 4: Assessment Module (Daily with Streaks)
 
 This is the core of the project.
 
@@ -274,30 +301,36 @@ This is the core of the project.
 
 ### Step 10: Assessment APIs
 
-```text
-POST /assessment
+```http
+POST /initial-assessment (submit initial)
+GET /initial-assessment (get initial)
 
-GET /assessment/history
-
-GET /assessment/latest
+POST /daily-assessment (submit daily, max 1 per day)
+GET /daily-assessment/history (get daily history)
+GET /daily-assessment/latest (get latest daily)
 ```
 
 ---
 
-### Step 11: Assessment Flow
+### Step 11: Assessment Flow with Streak Logic
 
 ```text
-Student submits assessment
+Student Submits Daily Assessment
         ↓
-assessment.service.ts
+Check if already submitted today
         ↓
-calculateBurnout()
+Calculate Burnout Score
         ↓
-calculateRisk()
+Calculate Risk Level
         ↓
-Save Assessment
+Update Streak:
+  - If yesterday was completed → currentStreak += 1
+  - If yesterday not completed → currentStreak = 1
+  - If currentStreak > longestStreak → longestStreak = currentStreak
         ↓
-Update User
+Save Daily Assessment
+        ↓
+Update User (burnout score, risk, streak info)
 ```
 
 ---
@@ -306,11 +339,8 @@ Example:
 
 ```text
 Stress = 9
-
 Sleep = 3
-
 Motivation = 2
-
 Backlog = 8
 ```
 
@@ -359,11 +389,11 @@ Output:
 ### risk-classifier.service.ts
 
 ```text
-0-30 = Low
+0-39 = Low
 
-31-60 = Medium
+40-69 = Medium
 
-61-100 = High
+70-100 = High
 ```
 
 ---
@@ -376,9 +406,7 @@ Used for:
 
 ```text
 Current Score
-
 vs
-
 Initial Score
 ```
 
@@ -407,9 +435,9 @@ Worsening
 ```
 
 ---
+
 extra add::--One thing I would add beyond your original SRS: ask the LLM to store a burnoutScoreBreakdown (stress contribution, sleep contribution, motivation contribution, etc.). This makes the dashboard and recommendations much easier to build later.
 burnoutScoreBreakdown
-
 Stress Contribution
 Sleep Contribution
 Motivation Contribution
@@ -417,7 +445,7 @@ Energy Contribution
 Backlog Contribution
 ...
 
-
+---
 
 # Phase 6: Journal Module
 
@@ -437,11 +465,11 @@ DELETE /journal/:id
 
 ```text
 Journal Entry
-      ↓
+        ↓
 Journal Service
-      ↓
+        ↓
 Sentiment Service
-      ↓
+        ↓
 Store Sentiment
 ```
 
@@ -467,13 +495,9 @@ No AI required.
 
 ```text
 happy = positive
-
 good = positive
-
 sad = negative
-
 tired = negative
-
 exhausted = negative
 ```
 
@@ -493,22 +517,16 @@ Example:
 
 ```text
 IF sleep < 5
-
 THEN
-
-Recommend:
-"Sleep at least 7 hours"
+Recommend: "Sleep at least 7 hours"
 ```
 
 ---
 
 ```text
 IF stress > 8
-
 THEN
-
-Recommend:
-"Try Pomodoro Technique"
+Recommend: "Try Pomodoro Technique"
 ```
 
 ---
@@ -519,11 +537,11 @@ Flow:
 
 ```text
 Assessment
-      ↓
+        ↓
 Risk Level
-      ↓
+        ↓
 Rules Engine
-      ↓
+        ↓
 Recommendations
 ```
 
@@ -531,7 +549,7 @@ Store recommendations.
 
 ---
 
-# Phase 8: Dashboard Analytics
+# Phase 8: Dashboard Analytics (with Streaks)
 
 ### dashboard.service.ts
 
@@ -539,14 +557,13 @@ Collect:
 
 ```text
 Latest Assessment
-
 Burnout Score
-
 Risk Level
-
 Journal Trend
-
 Recommendations
+Current Streak
+Longest Streak
+Weekly Progress (days completed this week)
 ```
 
 Return one object.
@@ -556,7 +573,13 @@ Return one object.
   "burnoutScore": 78,
   "riskLevel": "High",
   "sleepAverage": 5,
-  "moodTrend": "Negative"
+  "moodTrend": "Negative",
+  "currentStreak": 5,
+  "longestStreak": 12,
+  "weeklyProgress": {
+    "completed": 5,
+    "total": 7
+  }
 }
 ```
 
@@ -583,24 +606,22 @@ I am feeling stressed.
 Response:
 
 ```text
-Your recent burnout score is high.
-Try taking short study breaks.
+Your recent burnout score is high. Try taking short study breaks.
 ```
 
-
-
 You are a student wellness and burnout assistant. Primary responsibilities: - Burnout guidance - Stress management - Study habits - Time management - Sleep improvement - Academic wellness You may answer simple general questions, but always prioritize wellness-related assistance.
+
 ---
 
 Flow:
 
 ```text
 Chat Message
-      ↓
+        ↓
 assistant.service.ts
-      ↓
+        ↓
 User Data
-      ↓
+        ↓
 Generate Response
 ```
 
@@ -612,30 +633,40 @@ Later integrate:
 
 ---
 
-# Phase 10: Notifications
+# Phase 10: Notifications & Cron Jobs
 
 ### notification.service.ts
 
 Triggers:
 
 ```text
-Weekly Assessment
-
+Daily Assessment Reminder (if not completed by evening)
 High Risk Alert
-
 Recommendation Update
+New Week Start (with streak summary)
 ```
 
 ---
 
-### reminder.job.ts
+### reminder.job.ts (Updated for Weekly Streak Summary)
 
 Using cron.
 
-Every Sunday:
+Every Sunday at 9 AM:
 
 ```text
-Take Weekly Assessment
+Send Weekly Streak Summary Email
+Contains:
+  - Current Streak
+  - Longest Streak
+  - This Week: X/Y days completed
+  - Encouragement to keep going
+```
+
+Every evening at 8 PM (optional):
+
+```text
+Daily Assessment Reminder (if not yet completed today)
 ```
 
 ---
@@ -677,7 +708,8 @@ Returns:
   "totalStudents": 500,
   "highRiskStudents": 28,
   "mediumRiskStudents": 97,
-  "lowRiskStudents": 375
+  "lowRiskStudents": 375,
+  "averageStreak": 3.2
 }
 ```
 
@@ -704,7 +736,9 @@ Login
         ↓
 JWT Generated
         ↓
-Assessment Submitted
+Initial Assessment Submitted
+        ↓
+Daily Assessments (1/day, streak tracked)
         ↓
 Burnout Score Calculated
         ↓
@@ -712,7 +746,7 @@ Risk Classified
         ↓
 Recommendations Generated
         ↓
-Dashboard Updated
+Dashboard Updated (with streaks)
         ↓
 Journal Entries Added
         ↓
@@ -724,6 +758,8 @@ Notifications Generated
         ↓
 AI Assistant Uses Data
         ↓
+Weekly Streak Summary Email Sent
+        ↓
 Admin Monitors Students
 ```
 
@@ -731,20 +767,22 @@ Admin Monitors Students
 
 ```text
 1. MongoDB Connection
-2. User Model
+2. Student Model (with streak fields)
 3. Authentication
 4. JWT Middleware
-5. Assessment Module
-6. Burnout Engine
-7. Dashboard APIs
-8. Journal Module
-9. Recommendation Engine
-10. Notifications
-11. AI Assistant
-12. Admin Panel
-13. Cron Jobs
-14. Testing
-15. Deployment
+5. Initial Assessment Module
+6. Daily Assessment Module (with streak logic)
+7. Burnout Engine
+8. Dashboard APIs (with streak data)
+9. Journal Module
+10. Recommendation Engine
+11. Notifications
+12. AI Assistant
+13. Admin Panel
+14. Cron Jobs (weekly streak summary)
+15. Testing
+16. Deployment
 ```
 
 If you're building this as a final-year/project-showcase product, I would also add **exact MongoDB schemas, API endpoints, request/response formats, and collection design** before you start coding. That will save a lot of refactoring later.
+

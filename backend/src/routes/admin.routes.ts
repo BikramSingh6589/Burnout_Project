@@ -7,12 +7,14 @@ import {
   getStudentDetail,
   sendWellnessEmail,
   sendBulkWellnessEmail,
+  triggerWeeklyReminderJob,
 } from "../controllers/admin.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
+import { validateAdminLogin } from "../validators/admin.validation.js";
 
 const router = Router();
 
-router.post("/login", loginAdmin);
+router.post("/login", validateAdminLogin, loginAdmin);
 
 // Protected routes - require admin authentication
 router.get("/dashboard", authenticateAdmin, getDashboard);
@@ -21,5 +23,6 @@ router.get("/high-risk", authenticateAdmin, getHighRiskStudents);
 router.get("/student/:studentId", authenticateAdmin, getStudentDetail);
 router.post("/send-email", authenticateAdmin, sendWellnessEmail);
 router.post("/send-bulk-email", authenticateAdmin, sendBulkWellnessEmail);
+router.post("/trigger-reminder-job", authenticateAdmin, triggerWeeklyReminderJob);
 
 export default router;

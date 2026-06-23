@@ -1,18 +1,31 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { Bell, LogOut, Activity, ChevronDown, Menu, X, Settings, Moon, Sun } from 'lucide-react';
+import { Bell, LogOut, Activity, ChevronDown, Menu, X, Settings, Moon, Sun, Flame, Trophy } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
-  const { user, isAuthenticated, notifications, unreadNotificationCount, logout, markNotificationRead, deleteAllNotifications } = useStore();
+  const { 
+    user, 
+    isAuthenticated, 
+    notifications, 
+    unreadNotificationCount, 
+    logout, 
+    markNotificationRead, 
+    deleteAllNotifications,
+    weeklyAssessmentHistory,
+    weeklyAssessmentHistoryLoading,
+    fetchTrackerHistory
+  } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [streakPopupOpen, setStreakPopupOpen] = useState(false);
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') === 'dark');
   const notifRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
+  const streakRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -23,11 +36,14 @@ export const Navbar: React.FC = () => {
       if (profileDropdownOpen && profileRef.current && !profileRef.current.contains(target)) {
         setProfileDropdownOpen(false);
       }
+      if (streakPopupOpen && streakRef.current && !streakRef.current.contains(target)) {
+        setStreakPopupOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [notifDropdownOpen, profileDropdownOpen]);
+  }, [notifDropdownOpen, profileDropdownOpen, streakPopupOpen]);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -62,6 +78,33 @@ export const Navbar: React.FC = () => {
     setProfileDropdownOpen(false);
     navigate('/');
   };
+
+  const { daysCompletedThisWeek, isDailyLimitReached } = React.useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const isDoneToday = weeklyAssessmentHistory.some(
+      (assessment) => (assessment as any).date === today || 
+      new Date((assessment as any).completedAt || (assessment as any).createdAt).toISOString().split('T')[0] === today
+    );
+
+    const now = new Date();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const daysDone = weeklyAssessmentHistory.filter(
+      (assessment) => {
+        const assessmentDate = (assessment as any).date 
+          ? new Date((assessment as any).date) 
+          : new Date((assessment as any).completedAt || (assessment as any).createdAt);
+        return assessmentDate >= startOfWeek;
+      }
+    ).length;
+
+    return {
+      isDailyLimitReached: isDoneToday,
+      daysCompletedThisWeek: daysDone
+    };
+  }, [weeklyAssessmentHistory]);
 
   const isLinkActive = (path: string, hash?: string) => {
     if (hash) {
@@ -141,13 +184,153 @@ export const Navbar: React.FC = () => {
             {isAuthenticated ? (
               <>
                 {user?.role === 'student' && (
-                  <button
-                    onClick={handleDashboardClick}
-                    className="bg-transparent hover:bg-primary/5 text-primary border border-primary font-semibold text-sm px-4 py-2 rounded-lg transition-all duration-200 hover:-translate-y-0.5"
-                  >
-                    Dashboard
-                  </button>
+              <div className="relative group hidden md:block" ref={streakRef}>
+                <button
+                  onClick={() => {
+                    setStreakPopupOpen(!streakPopupOpen);
+                    setNotifDropdownOpen(false);
+                    setProfileDropdownOpen(false);
+                  }}
+                  className="relative w-10 h-10 rounded-full transition-all duration-500 flex items-center justify-center hover:scale-105 active:scale-95"
+                  style={{
+                    background: isDailyLimitReached
+                      ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                      : 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: isDailyLimitReached
+                      ? '0 2px 8px rgba(16, 185, 129, 0.3)'
+                      : '0 2px 8px rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  <svg className="absolute w-full h-full" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="32" stroke="rgba(255,255,255,0.2)" strokeWidth="6" fill="none" />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      stroke="white"
+                      strokeWidth="6"
+                      fill="none"
+                      strokeDasharray="201"
+                      strokeDashoffset={isDailyLimitReached ? 0 : 201}
+                      strokeLinecap="round"
+                      className="transition-all duration-700 ease-out"
+                      style={{
+                        transform: 'rotate(-90deg)',
+                        transformOrigin: '50% 50%'
+                      }}
+                    />
+                  </svg>
+                  <div className="relative z-10">
+                    <Flame className={`w-5 h-5 ${isDailyLimitReached ? 'text-green-300' : 'text-red-300'}`} fill="currentColor" />
+                  </div>
+                </button>
+                <div className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max -translate-x-1/2 rounded-lg px-3 py-2 text-xs font-bold shadow-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100 ${
+                    isDailyLimitReached
+                      ? 'border-2 border-green-500 bg-green-50 text-green-800 dark:bg-green-900 dark:text-green-100 dark:border-green-400'
+                      : 'border-2 border-red-500 bg-red-50 text-red-800 dark:bg-red-900 dark:text-red-100 dark:border-red-400'
+                  }`}>
+                  {daysCompletedThisWeek}/7
+                </div>
+
+                {/* Streak Popup */}
+                {streakPopupOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-3 w-80 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-sm rounded-3xl border border-slate-200/60 dark:border-[#334155] shadow-2xl py-4 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                    {/* Header */}
+                    <div className="px-5 pb-4 border-b border-slate-100/50 dark:border-[#334155] bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-xl" style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)' }}>
+                            <Flame className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-lg text-text-primary dark:text-[#F8FAFC]">Your Streak</h3>
+                            <p className="text-xs text-text-muted dark:text-[#CBD5E1]">
+                              {isDailyLimitReached ? "Today's assessment complete!" : "Don't break your streak!"}
+                            </p>
+                          </div>
+                        </div>
+                        <Trophy className="h-6 w-6 text-yellow-500" />
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="p-5">
+                      <div className="grid grid-cols-2 gap-4 mb-5">
+                        <div className="bg-gradient-to-br from-primary/15 to-primary/5 dark:from-primary/25 dark:to-primary/10 rounded-2xl p-4 text-center">
+                          <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">Current Streak</p>
+                          <p className="text-3xl font-extrabold text-primary">{user?.currentStreak || 0}</p>
+                          <p className="text-xs text-text-muted">days</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-secondary/15 to-secondary/5 dark:from-secondary/25 dark:to-secondary/10 rounded-2xl p-4 text-center">
+                          <p className="text-xs font-bold text-secondary uppercase tracking-wide mb-1">Best Streak</p>
+                          <p className="text-3xl font-extrabold text-secondary">{user?.longestStreak || 0}</p>
+                          <p className="text-xs text-text-muted">days</p>
+                        </div>
+                      </div>
+
+                      {/* Weekly Progress */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-semibold text-sm text-text-primary dark:text-[#F8FAFC]">This Week</span>
+                          <span className="font-bold text-primary">{daysCompletedThisWeek}/7 days</span>
+                        </div>
+                        <div className="w-full h-3 bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-500 ease-out"
+                            style={{ 
+                              width: `${(daysCompletedThisWeek / 7) * 100}%`,
+                              background: 'linear-gradient(90deg, #4F46E5 0%, #8B5CF6 100%)'
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Today Status */}
+                      <div className={`flex items-center gap-3 p-3 rounded-xl border ${
+                        isDailyLimitReached 
+                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
+                          : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                      }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isDailyLimitReached ? 'bg-green-500' : 'bg-orange-500'
+                        }`}>
+                          {isDailyLimitReached ? (
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm text-text-primary dark:text-[#F8FAFC]">
+                            {isDailyLimitReached ? "Today's assessment done!" : "Assessment pending"}
+                          </p>
+                          <p className="text-xs text-text-muted dark:text-[#CBD5E1]">
+                            {isDailyLimitReached ? "Keep up the good work!" : "Take your assessment to keep the streak alive"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Quick Action */}
+                      {!isDailyLimitReached && (
+                        <button
+                          onClick={() => {
+                            setStreakPopupOpen(false);
+                            navigate('/assessment/daily');
+                          }}
+                          className="w-full mt-4 bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+                        >
+                          Take Assessment
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 )}
+              </div>
+            )}
 
                 {user?.role === 'admin' && (
                   <Link
@@ -325,8 +508,156 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex items-center md:hidden">
+          {/* Mobile menu button & streak */}
+          <div className="flex items-center md:hidden space-x-2">
+            {isAuthenticated && user?.role === 'student' && (
+              <div className="relative group md:hidden" ref={streakRef}>
+                <button
+                  onClick={() => {
+                    setStreakPopupOpen(!streakPopupOpen);
+                    setNotifDropdownOpen(false);
+                    setProfileDropdownOpen(false);
+                  }}
+                  className="relative w-8 h-8 rounded-full transition-all duration-500 flex items-center justify-center hover:scale-105 active:scale-95"
+                  style={{
+                    background: isDailyLimitReached
+                      ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                      : 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)',
+                    boxShadow: isDailyLimitReached
+                      ? '0 2px 8px rgba(16, 185, 129, 0.3)'
+                      : '0 2px 8px rgba(79, 70, 229, 0.3)'
+                  }}
+                >
+                  <svg className="absolute w-full h-full" viewBox="0 0 80 80">
+                    <circle cx="40" cy="40" r="32" stroke="rgba(255,255,255,0.2)" strokeWidth="6" fill="none" />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="32"
+                      stroke="white"
+                      strokeWidth="6"
+                      fill="none"
+                      strokeDasharray="201"
+                      strokeDashoffset={isDailyLimitReached ? 0 : 201}
+                      strokeLinecap="round"
+                      className="transition-all duration-700 ease-out"
+                      style={{
+                        transform: 'rotate(-90deg)',
+                        transformOrigin: '50% 50%'
+                      }}
+                    />
+                  </svg>
+                  <div className="relative z-10">
+                    <Flame className={`w-5 h-5 ${isDailyLimitReached ? 'text-green-300' : 'text-red-300'}`} fill="currentColor" />
+                  </div>
+                </button>
+                <div className={`pointer-events-none absolute right-0 top-full z-20 mt-2 w-max rounded-lg px-3 py-2 text-xs font-bold shadow-lg transition-opacity duration-200 opacity-0 group-hover:opacity-100 ${
+                    isDailyLimitReached
+                      ? 'border-2 border-green-500 bg-green-50 text-green-800 dark:bg-green-900 dark:text-green-100 dark:border-green-400'
+                      : 'border-2 border-red-500 bg-red-50 text-red-800 dark:bg-red-900 dark:text-red-100 dark:border-red-400'
+                  }`}>
+                  {daysCompletedThisWeek}/7
+                </div>
+
+                {/* Streak Popup for mobile */}
+                {streakPopupOpen && (
+                  <div className="absolute right-0 top-full z-50 mt-3 w-72 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-sm rounded-3xl border border-slate-200/60 dark:border-[#334155] shadow-2xl py-4 animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden">
+                    {/* Header */}
+                    <div className="px-5 pb-4 border-b border-slate-100/50 dark:border-[#334155] bg-gradient-to-r from-primary/10 to-secondary/10 dark:from-primary/20 dark:to-secondary/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 rounded-xl" style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #8B5CF6 100%)' }}>
+                            <Flame className="h-5 w-5 text-white" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-lg text-text-primary dark:text-[#F8FAFC]">Your Streak</h3>
+                            <p className="text-xs text-text-muted dark:text-[#CBD5E1]">
+                              {isDailyLimitReached ? "Today's assessment complete!" : "Don't break your streak!"}
+                            </p>
+                          </div>
+                        </div>
+                        <Trophy className="h-6 w-6 text-yellow-500" />
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="p-5">
+                      <div className="grid grid-cols-2 gap-4 mb-5">
+                        <div className="bg-gradient-to-br from-primary/15 to-primary/5 dark:from-primary/25 dark:to-primary/10 rounded-2xl p-4 text-center">
+                          <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">Current Streak</p>
+                          <p className="text-3xl font-extrabold text-primary">{user?.currentStreak || 0}</p>
+                          <p className="text-xs text-text-muted">days</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-secondary/15 to-secondary/5 dark:from-secondary/25 dark:to-secondary/10 rounded-2xl p-4 text-center">
+                          <p className="text-xs font-bold text-secondary uppercase tracking-wide mb-1">Longest Streak</p>
+                          <p className="text-3xl font-extrabold text-secondary">{user?.longestStreak || 0}</p>
+                          <p className="text-xs text-text-muted">days</p>
+                        </div>
+                      </div>
+
+                      {/* Weekly Progress */}
+                      <div className="mb-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-semibold text-sm text-text-primary dark:text-[#F8FAFC]">This Week</span>
+                          <span className="font-bold text-primary">{daysCompletedThisWeek}/7 days</span>
+                        </div>
+                        <div className="w-full h-3 bg-slate-200 dark:bg-[#334155] rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500 ease-out"
+                            style={{
+                              width: `${(daysCompletedThisWeek / 7) * 100}%`,
+                              background: 'linear-gradient(90deg, #4F46E5 0%, #8B5CF6 100%)'
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Today Status */}
+                      <div className={`flex items-center gap-3 p-3 rounded-xl border ${
+                        isDailyLimitReached
+                          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                          : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                      }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                          isDailyLimitReached ? 'bg-green-500' : 'bg-orange-500'
+                        }`}>
+                          {isDailyLimitReached ? (
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm text-text-primary dark:text-[#F8FAFC]">
+                            {isDailyLimitReached ? "Today's assessment done!" : "Assessment pending"}
+                          </p>
+                          <p className="text-xs text-text-muted dark:text-[#CBD5E1]">
+                            {isDailyLimitReached ? "Keep up the good work!" : "Take your assessment to keep the streak alive"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Quick Action */}
+                      {!isDailyLimitReached && (
+                        <button
+                          onClick={() => {
+                            setStreakPopupOpen(false);
+                            navigate('/assessment/daily');
+                          }}
+                          className="w-full mt-4 bg-gradient-to-r from-primary to-secondary text-white font-bold py-3 px-4 rounded-xl hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5"
+                        >
+                          Take Assessment
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-text-primary hover:bg-surface-low focus:outline-none"

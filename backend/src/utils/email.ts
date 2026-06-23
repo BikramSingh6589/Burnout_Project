@@ -190,6 +190,94 @@ export const sendWeeklyReminderEmail = async (to: string, name: string): Promise
   }
 };
 
+export const sendWeeklyStreakSummaryEmail = async (
+  to: string,
+  name: string,
+  currentStreak: number,
+  longestStreak: number,
+  daysCompletedThisWeek: number
+): Promise<void> => {
+  logger.info('[Email] sendWeeklyStreakSummaryEmail called for:', to);
+
+  try {
+    const appUrl = process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+    const subject = 'Your Weekly Wellness Check-In - Burnout Wellness';
+    const text = `Hi ${name},\n\nGreat job this week! Here's your streak summary:\n\nCurrent Streak: ${currentStreak} days\nLongest Streak: ${longestStreak} days\nDays Completed This Week: ${daysCompletedThisWeek}/7\n\nKeep up the amazing work! Check your dashboard for more insights:\n\n${appUrl}\n\nBest regards,\nBurnout Wellness Team`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Your Weekly Wellness Check-In</title>
+        </head>
+        <body style="margin:0;padding:0;background:#F3F4F6;font-family:'Arial',sans-serif">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F3F4F6;padding:32px 16px">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 10px 40px rgba(79,70,229,0.1)">
+                  <!-- Header -->
+                  <tr>
+                    <td style="background:linear-gradient(135deg,#4F46E5 0%,#8B5CF6 100%);padding:40px 32px;text-align:center">
+                      <h1 style="margin:0;font-size:28px;line-height:1.3;color:#ffffff;font-weight:800">Your Weekly Streak</h1>
+                      <p style="margin:8px 0 0;font-size:14px;line-height:1.4;color:#C7D2FE;font-weight:600">Keep up the amazing work, ${name}!</p>
+                    </td>
+                  </tr>
+                  <!-- Content -->
+                  <tr>
+                    <td style="padding:32px">
+                      <div style="display:flex;flex-direction:column;gap:24px">
+                        <!-- Streak Cards -->
+                        <div style="display:flex;gap:16px;flex-wrap:wrap">
+                          <div style="flex:1;min-width:150px;background:linear-gradient(135deg,#4F46E5 0%,#8B5CF6 100%);border-radius:16px;padding:20px;text-align:center;box-shadow:0 4px 16px rgba(79,70,229,0.2)">
+                            <p style="margin:0;color:#C7D2FE;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">Current</p>
+                            <p style="margin:8px 0 0;color:#ffffff;font-size:40px;font-weight:800;line-height:1">${currentStreak} <span style="font-size:20px;font-weight:600">days</span></p>
+                          </div>
+                          <div style="flex:1;min-width:150px;background:linear-gradient(135deg,#10B981 0%,#059669 100%);border-radius:16px;padding:20px;text-align:center;box-shadow:0 4px 16px rgba(16,185,129,0.2)">
+                            <p style="margin:0;color:#A7F3D0;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:700">Longest</p>
+                            <p style="margin:8px 0 0;color:#ffffff;font-size:40px;font-weight:800;line-height:1">${longestStreak} <span style="font-size:20px;font-weight:600">days</span></p>
+                          </div>
+                        </div>
+                        <!-- This Week's Progress -->
+                        <div style="background:#F3F4F6;border-radius:16px;padding:24px">
+                          <p style="margin:0 0 16px;color:#111827;font-size:16px;font-weight:700">This Week</p>
+                          <!-- Progress Bar -->
+                          <div style="height:16px;background:#D1D5DB;border-radius:999px;overflow:hidden;margin-bottom:16px">
+                            <div style="height:100%;width:${(daysCompletedThisWeek / 7) * 100}%;background:linear-gradient(90deg,#4F46E5 0%,#8B5CF6 100%);border-radius:999px;transition:width 0.5s ease-out"></div>
+                          </div>
+                          <p style="margin:0;color:#4F46E5;font-size:24px;font-weight:800;text-align:right">${daysCompletedThisWeek} <span style="color:#6B7280;font-size:16px;font-weight:600">/ 7 days</span></p>
+                        </div>
+                        <!-- CTA -->
+                        <div style="text-align:center">
+                          <a href="${appUrl}" style="background:linear-gradient(135deg,#4F46E5 0%,#8B5CF6 100%);color:white;padding:16px 40px;text-decoration:none;border-radius:12px;font-size:16px;font-weight:700;display:inline-block;box-shadow:0 4px 12px rgba(79,70,229,0.3)">
+                            Check Your Dashboard
+                          </a>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  <!-- Footer -->
+                  <tr>
+                    <td style="padding:24px 32px;background:#F9FAFB;border-top:1px solid #E5E7EB;text-align:center">
+                      <p style="margin:0;color:#6B7280;font-size:14px">Best regards,<br><span style="color:#4F46E5;font-weight:700">Burnout Wellness Team</span></p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+
+    await sendEmailViaBrevo(to, subject, text, html);
+    logger.info('[Email] sendWeeklyStreakSummaryEmail completed successfully!');
+  } catch (error) {
+    logger.error('[Email] sendWeeklyStreakSummaryEmail FAILED:', error);
+    throw error;
+  }
+};
+
 export const sendSupportEmail = async (to: string, name: string, subject: string, message: string): Promise<void> => {
   logger.info('[Email] sendSupportEmail called for:', to);
 

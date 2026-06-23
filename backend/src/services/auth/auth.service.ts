@@ -40,6 +40,8 @@ const toPublicUserProfile = (student: IStudent): PublicUserProfile => ({
   accountStatus: student.accountStatus,
   profileCompleted: !!student.profileCompleted,
   assessmentCompleted: !!student.assessmentCompleted,
+  currentStreak: student.currentStreak ?? 0,
+  longestStreak: student.longestStreak ?? 0,
 });
 
 export const register = async (payload: RegisterRequestBody): Promise<{ message: string }> => {

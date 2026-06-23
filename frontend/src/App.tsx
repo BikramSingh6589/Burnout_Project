@@ -148,7 +148,7 @@ const LayoutWrapper: React.FC = () => {
               }
             />
             <Route
-              path="/assessment/weekly"
+              path="/assessment/daily"
               element={
                 <StudentRoute>
                   <LazyRoute fallback={<AssessmentSkeleton />}>

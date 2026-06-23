@@ -38,6 +38,11 @@ export const errorMiddleware = (
   let statusCode = error.statusCode || 500;
   let message = error.message || "Internal Server Error";
 
+  // Handle custom validation errors with statusCode property
+  if (error && typeof error === 'object' && 'statusCode' in error && typeof error.statusCode === 'number') {
+    statusCode = error.statusCode;
+  }
+
   if (error.name === "ValidationError") {
     statusCode = 400;
     message = "Validation Error";

@@ -1,8 +1,8 @@
-#System Requirement Specification (SRS)
+# System Requirement Specification (SRS)
 
 # Academic Burnout Prediction and Monitoring Platform
 
-Version: 1.0
+Version: 2.0
 
 Owner: Student Wellness Project Team
 
@@ -16,7 +16,7 @@ Academic Burnout Prediction and Monitoring Platform
 
 ## Product Vision
 
-To help students identify, monitor, and prevent academic burnout through continuous behavioral analysis, emotional monitoring, personalized recommendations, and AI-assisted wellness support before burnout significantly impacts academic performance and well-being.
+To help students identify, monitor, and prevent academic burnout through daily behavioral analysis, emotional monitoring, personalized recommendations, and AI-assisted wellness support before burnout significantly impacts academic performance and well-being, with streak tracking to encourage consistent engagement.
 
 ---
 
@@ -42,9 +42,9 @@ Most students recognize burnout only after:
 * Motivation disappears
 * Stress becomes overwhelming
 
-Current systems provide little to no early-warning support.
+Current systems provide little to no early-warning support and lack mechanisms to encourage consistent daily check-ins.
 
-The platform aims to detect burnout early and recommend effective interventions.
+The platform aims to detect burnout early, recommend effective interventions, and motivate students through streak-based gamification.
 
 ---
 
@@ -56,11 +56,12 @@ The platform aims to detect burnout early and recommend effective interventions.
 
 Needs:
 
-* Burnout monitoring
+* Daily burnout monitoring
 * Emotional awareness
 * Personalized wellness guidance
 * Progress tracking
 * Early risk detection
+* Streak-based motivation
 
 Pain Points:
 
@@ -69,6 +70,7 @@ Pain Points:
 * Academic overload
 * Low motivation
 * Procrastination
+* Inconsistent daily check-ins
 
 ---
 
@@ -94,7 +96,7 @@ Detect burnout before severe academic decline occurs.
 
 ## Goal 2
 
-Monitor behavioral and emotional changes continuously.
+Monitor behavioral and emotional changes daily.
 
 ## Goal 3
 
@@ -108,6 +110,10 @@ Learn which interventions work best for each student.
 
 Improve student awareness of burnout indicators.
 
+## Goal 6
+
+Encourage consistent daily check-ins through streak tracking.
+
 ---
 
 # 5. User Roles
@@ -117,13 +123,14 @@ Improve student awareness of burnout indicators.
 Capabilities:
 
 * Register account
-* Complete assessments
+* Complete daily assessments (1 per day limit)
 * Use Wellness AI Assistant
 * Write mood journals
 * View analytics
 * View recommendations
 * Submit recommendation feedback
 * Receive alerts
+* Track daily assessment streaks
 
 ---
 
@@ -196,6 +203,31 @@ Purpose:
 
 Questions:
 
+* Academic Pressure Score (0–100)
+* Sleep Quality Score (0–100)
+* Emotional Exhaustion Score (0–100)
+* Cynicism Score (0–100)
+* Efficacy Score (0–100)
+* Social Support Score (0–100)
+* Financial Stress Score (0–100)
+
+Priority: Critical
+
+---
+
+## Feature 2: Daily Assessment (1 per Day Limit)
+
+Students complete daily assessments (maximum of 1 per day).
+
+Purpose:
+
+* Track daily behavioral changes
+* Update burnout profile
+* Validate AI-generated insights
+* Build and maintain streaks
+
+Questions:
+
 * Stress Level (1–10)
 * Motivation Level (1–10)
 * Energy Level (1–10)
@@ -203,28 +235,35 @@ Questions:
 * Sleep Hours
 * Study Hours
 * Screen Time
-* Assignment Backlog
+* Assignment Backlog (1–10)
 * Procrastination Level (1–10)
 
 Priority: Critical
 
 ---
 
-## Feature 2: Periodic Reassessment
+## Feature 3: Streak Tracking
 
-Students complete weekly assessments.
+Tracks consecutive days of completed daily assessments.
+
+Features:
+
+* Current streak length
+* Longest streak length
+* Last assessment date
+* Weekly progress summary (days completed / total days in week)
 
 Purpose:
 
-* Track behavioral changes
-* Update burnout profile
-* Validate AI-generated insights
+* Encourage consistent daily engagement
+* Gamify the wellness journey
+* Provide visual feedback on consistency
 
 Priority: High
 
 ---
 
-## Feature 3: Mood Journal
+## Feature 4: Mood Journal
 
 Students can write daily reflections.
 
@@ -238,7 +277,7 @@ Priority: High
 
 ---
 
-## Feature 4: Sentiment Analysis
+## Feature 5: Sentiment Analysis
 
 The system analyzes journal entries.
 
@@ -257,7 +296,7 @@ Priority: High
 
 ---
 
-## Feature 5: Wellness AI Assistant
+## Feature 6: Wellness AI Assistant
 
 Available after the initial assessment is completed.
 
@@ -280,7 +319,7 @@ Priority: High
 
 ---
 
-## Feature 6: Feature Extraction Engine
+## Feature 7: Feature Extraction Engine
 
 Extracts burnout-related indicators from:
 
@@ -313,7 +352,7 @@ Priority: Critical
 
 ---
 
-## Feature 7: Burnout Prediction Engine
+## Feature 8: Burnout Prediction Engine
 
 Calculates burnout risk score.
 
@@ -325,7 +364,7 @@ Priority: Critical
 
 ---
 
-## Feature 8: Risk Classification
+## Feature 9: Risk Classification
 
 Categories:
 
@@ -345,7 +384,7 @@ Priority: Critical
 
 ---
 
-## Feature 9: Recommendation Engine
+## Feature 10: Recommendation Engine
 
 Generates personalized recommendations based on:
 
@@ -366,7 +405,7 @@ Priority: Critical
 
 ---
 
-## Feature 10: Recommendation Feedback System
+## Feature 11: Recommendation Feedback System
 
 Students provide structured feedback.
 
@@ -384,7 +423,7 @@ Priority: High
 
 ---
 
-## Feature 11: Natural Language Feedback
+## Feature 12: Natural Language Feedback
 
 Students can explain their experiences.
 
@@ -405,14 +444,15 @@ Priority: High
 
 ---
 
-## Feature 12: Notification System
+## Feature 13: Notification System
 
 Triggers:
 
 * High Burnout Risk
 * Stress Increase
 * Negative Mood Trend
-* Missed Assessments
+* Missed Daily Assessments
+* New Week Start (with streak summary)
 
 Delivery Channels:
 
@@ -423,7 +463,7 @@ Priority: High
 
 ---
 
-## Feature 13: Analytics Dashboard
+## Feature 14: Analytics Dashboard
 
 Displays:
 
@@ -434,6 +474,9 @@ Displays:
 * Study Trends
 * Screen Time Trends
 * Recommendation Impact
+* Current Streak
+* Longest Streak
+* Weekly Progress (days completed)
 
 Priority: Critical
 
@@ -538,6 +581,7 @@ Tracks:
 * User feedback
 * Burnout score changes
 * Mood improvements
+* Streak maintenance
 
 Purpose:
 
@@ -555,6 +599,7 @@ Administrators can view:
 * Risk level
 * Sentiment summaries
 * Trend analytics
+* Streak information (aggregate)
 
 Administrators cannot view:
 
@@ -579,11 +624,14 @@ Pages:
 
 * Burnout Score
 * Risk Level
-* Weekly Insights
+* Daily/Weekly Insights
+* Current Streak
+* Longest Streak
+* Weekly Progress
 
 ### Initial Assessment
 
-### Weekly Assessment
+### Daily Assessment
 
 ### Mood Journal
 
@@ -612,6 +660,7 @@ Shows:
 * Total Students
 * Active Students
 * High-Risk Students
+* Average Streak Length
 
 ### Student Monitoring
 
@@ -620,6 +669,7 @@ View:
 * Burnout Scores
 * Risk Levels
 * Trend History
+* Streak Information
 
 ### High-Risk Student Center
 
@@ -642,9 +692,9 @@ Manage platform configurations.
 
 ---
 
-# 12. Weekly Wellness Insight Card
+# 12. Weekly Wellness Insight Card & Streak Summary
 
-Generated automatically.
+Generated automatically every week.
 
 Example:
 
@@ -653,6 +703,11 @@ Average Sleep: 6.1 Hours
 Stress Trend: +15%
 
 Burnout Risk: Moderate
+
+Streak Summary:
+* Current Streak: 5 days
+* Longest Streak: 12 days
+* This Week: 5/7 days completed
 
 Most Effective Recommendation:
 
@@ -670,10 +725,12 @@ Student Engagement:
 
 * Daily Active Users
 * Weekly Active Users
+* Average Streak Length
+* 70% daily completion rate
 
 Assessment Completion:
 
-* 80% completion rate
+* 70% daily completion rate
 
 Journal Participation:
 
@@ -701,7 +758,9 @@ Included:
 
 ✓ Initial Assessment
 
-✓ Weekly Assessment
+✓ Daily Assessment (1 per day limit)
+
+✓ Streak Tracking
 
 ✓ Mood Journal
 
@@ -717,7 +776,7 @@ Included:
 
 ✓ Recommendation Feedback
 
-✓ Email Notifications
+✓ Email Notifications (including weekly streak summary)
 
 ✓ In-App Notifications
 
@@ -744,6 +803,7 @@ Not Included:
 * AI Study Planner
 * Smart Timetable Generator
 * Advanced Recommendation Engine
+* Streak Rewards System
 
 ## Phase 3
 
@@ -756,3 +816,4 @@ Not Included:
 * Professional Counselor Integration
 * Mental Health Referral Support
 * Advanced Behavioral Analytics
+

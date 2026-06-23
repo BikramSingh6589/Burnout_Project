@@ -61,6 +61,8 @@ export interface User {
   profileCompleted?: boolean;
   assessmentCompleted: boolean;
   role: 'student' | 'admin' | null;
+  currentStreak?: number;
+  longestStreak?: number;
 }
 
 export interface JournalEntry {
@@ -324,6 +326,8 @@ interface BackendStudent {
   accountStatus?: string;
   profileCompleted?: boolean;
   assessmentCompleted?: boolean;
+  currentStreak?: number;
+  longestStreak?: number;
 }
 
 interface AuthResponse {
@@ -374,6 +378,8 @@ const mapStudentToUser = (student: BackendStudent): User => ({
   profileCompleted: !!student.profileCompleted,
   assessmentCompleted: !!student.assessmentCompleted,
   role: 'student',
+  currentStreak: student.currentStreak ?? 0,
+  longestStreak: student.longestStreak ?? 0,
 });
 
 const storeSession = (token: string) => {
@@ -467,7 +473,7 @@ export const useStore = create<AppState>((set, get) => ({
     if (!token) return;
     set({ trackerHistoryLoading: true, weeklyAssessmentHistoryLoading: true });
     try {
-      const [initialResponse, weeklyResponse] = await Promise.all([
+      const [initialResponse, dailyResponse] = await Promise.all([
         apiRequest<{
           success: boolean;
           data: { history: any[] };
@@ -475,7 +481,7 @@ export const useStore = create<AppState>((set, get) => ({
         apiRequest<{
           success: boolean;
           data: { history: any[] };
-        }>('/weekly-assessment/history', { token }),
+        }>('/daily-assessment/history', { token }),
       ]);
 
       const initialHistory = initialResponse.data.history.map((h) => ({
@@ -490,27 +496,26 @@ export const useStore = create<AppState>((set, get) => ({
         procrastination: h.procrastination ?? 0,
       }));
 
-      const weeklyHistory = weeklyResponse.data.history.map((h) => ({
+      const dailyHistory = dailyResponse.data.history.map((h) => ({
         id: h._id || h.id || crypto.randomUUID(),
-        date: (h.completedAt ?? h.createdAt).split('T')[0],
-        timestamp: new Date(h.completedAt ?? h.createdAt).getTime(),
+        date: (h.date ?? h.completedAt ?? h.createdAt).split('T')[0],
+        timestamp: new Date(h.completedAt ?? h.createdAt ?? h.date).getTime(),
         burnoutScore: h.burnoutScore,
-        // Now using the actual stored fields
-        sleepHours: h.sleepHours ?? h.sleepHoursAverage ?? 0,
-        studyHours: h.studyHours ?? (h.academicLoadScore ? Math.round(h.academicLoadScore / 10) : 0),
+        sleepHours: h.sleepHours ?? 0,
+        studyHours: h.studyHours ?? 0,
         screenTime: h.screenTime ?? 0,
-        stressLevel: h.stressLevel ?? (h.stressScore ? Math.round(h.stressScore / 10) : 0),
+        stressLevel: h.stressLevel ?? 0,
         procrastination: h.procrastination ?? 0,
       }));
 
-      const mapped = [...initialHistory, ...weeklyHistory]
+      const mapped = [...initialHistory, ...dailyHistory]
         .sort((a, b) => a.timestamp - b.timestamp)
         .slice(-10); // Take last 10 entries max
       
       set({ 
         trackerHistory: mapped, 
         trackerHistoryLoading: false, 
-        weeklyAssessmentHistory: weeklyResponse.data.history,
+        weeklyAssessmentHistory: dailyResponse.data.history,
         weeklyAssessmentHistoryLoading: false 
       });
     } catch (err) {
@@ -525,7 +530,7 @@ export const useStore = create<AppState>((set, get) => ({
     try {
       const [analyticsResponse, latestResponse] = await Promise.all([
         apiRequest<{ success: boolean; data: any }>('/analytics/summary', { token }).catch(() => null),
-        apiRequest<{ success: boolean; data: { assessment: any } }>('/assessment/latest', { token }).catch(() => null),
+        apiRequest<{ success: boolean; data: { assessment: any } }>('/daily-assessment/latest', { token }).catch(() => null),
       ]);
 
       if (analyticsResponse?.success) {
@@ -539,7 +544,7 @@ export const useStore = create<AppState>((set, get) => ({
           latestAssessment: {
             burnoutScore: latestResponse.data.assessment.burnoutScore,
             riskLevel: latestResponse.data.assessment.riskLevel,
-            date: latestResponse.data.assessment.completedAt || latestResponse.data.assessment.createdAt,
+            date: latestResponse.data.assessment.completedAt || latestResponse.data.assessment.createdAt || latestResponse.data.assessment.date,
           },
         });
       }
@@ -1176,12 +1181,11 @@ export const useStore = create<AppState>((set, get) => ({
     }
 
     try {
-      const maxWeeklyAssessments = Math.max(1, get().adminSettings.maxWeeklyAssessmentsPerStudent);
       const endpoint = isWeekly
-        ? `/weekly-assessment?maxWeeklyAssessments=${maxWeeklyAssessments}`
+        ? '/daily-assessment'
         : '/assessment';
       const body = isWeekly
-        ? mapToWeeklyAssessmentPayload(data)
+        ? mapToInitialAssessmentPayload(data)
         : mapToInitialAssessmentPayload(data);
 
       await apiRequest<{
@@ -1193,16 +1197,7 @@ export const useStore = create<AppState>((set, get) => ({
         body: JSON.stringify(body),
       });
 
-      const currentUser = get().user;
-      if (currentUser && !isWeekly) {
-        set({
-          user: {
-            ...currentUser,
-            assessmentCompleted: true,
-          },
-        });
-      }
-
+      await get().fetchMe(); // Refresh user data including streak
       await get().fetchTrackerHistory();
       await get().fetchAnalytics();
       await get().fetchRecommendations();

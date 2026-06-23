@@ -37,14 +37,9 @@ export const getInitialAssessment = async (req: Request, res: Response, next: Ne
 
     const assessment = await initialAssessmentService.getInitialAssessment(req.user.userId.toString());
 
-    if (!assessment) {
-      res.status(404).json({ success: false, message: "Initial assessment not found" });
-      return;
-    }
-
     res.status(200).json({
       success: true,
-      data: { assessment },
+      data: { assessment: assessment || null },
     });
   } catch (error) {
     next(error);

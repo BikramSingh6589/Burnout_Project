@@ -27,6 +27,9 @@ export interface IStudent extends Document {
   baselineDate?: Date;
   baselineRiskLevel?: RiskLevel;
   assessmentCompleted: boolean;
+  currentStreak: number;
+  longestStreak: number;
+  lastAssessmentDate?: Date;
   otpHash?: string;
   otpExpiresAt?: Date;
   otpAttempts: number;
@@ -122,6 +125,17 @@ const StudentSchema = new Schema<IStudent>(
       default: false,
       index: true,
     },
+    currentStreak: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    longestStreak: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastAssessmentDate: Date,
     profileCompleted: {
       type: Boolean,
       default: false,

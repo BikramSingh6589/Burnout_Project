@@ -14,6 +14,7 @@ import {
 } from "../../utils/email.js";
 import { Types } from "mongoose";
 import { RiskLevel } from "../../types/common.types.js";
+import { AppError } from "../../middlewares/error.middleware.js";
 
 export interface AdminLoginRequest {
   username: string;
@@ -94,12 +95,12 @@ export const loginAdmin = async (credentials: AdminLoginRequest): Promise<AdminL
   const admin = await Admin.findOne({ username: credentials.username }).select("+password");
 
   if (!admin) {
-    throw new Error("Invalid credentials");
+    throw new AppError("Invalid credentials", 401);
   }
 
   const isValidPassword = await bcrypt.compare(credentials.password, admin.password);
   if (!isValidPassword) {
-    throw new Error("Invalid credentials");
+    throw new AppError("Invalid credentials", 401);
   }
 
   const token = jwt.sign(
@@ -317,7 +318,7 @@ export const getHighRiskStudents = async (
 export const getStudentDetail = async (studentId: string) => {
   const student = await Student.findById(studentId).lean();
   if (!student) {
-    throw new Error("Student not found");
+    throw new AppError("Student not found", 404);
   }
 
   const [assessments, weeklyAssessments, initialAssessments] = await Promise.all([
@@ -369,7 +370,7 @@ export const getStudentDetail = async (studentId: string) => {
 export const sendWellnessEmail = async (studentId: string): Promise<void> => {
   const student = await Student.findById(studentId).lean();
   if (!student) {
-    throw new Error("Student not found");
+    throw new AppError("Student not found", 404);
   }
 
   const tier = mapRiskLevelToTier(student.currentRiskLevel);

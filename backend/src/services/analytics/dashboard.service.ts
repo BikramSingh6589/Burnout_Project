@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 import { Student } from "../../models/Student.js";
 import { Journal } from "../../models/Journal.js";
 import { getAssessmentHistory } from "../assessment/assessment.service.js";
-import { getWeeklyAssessmentHistory } from "../assessment/weekly-assessment.service.js";
+import { getDailyAssessmentHistory } from "../assessment/daily-assessment.service.js";
 import { summarizeHistoricalAnalytics } from "../burnout/trend-analysis.service.js";
 import { getDashboardRecommendations } from "../recommendation/recommendation.service.js";
 import type { BurnoutHistoryItem } from "../../types/burnout.types.js";
@@ -79,12 +79,12 @@ export const getDashboardAnalytics = async (userId: string) => {
     throw new Error("Student profile not found");
   }
 
-  // Fetch both initial and weekly assessment history
+  // Fetch both initial and daily assessment history
   const initialHistory = await getAssessmentHistory(userId);
-  const weeklyHistory = await getWeeklyAssessmentHistory(userId);
+  const dailyHistory = await getDailyAssessmentHistory(userId);
 
   // Combine all assessments
-  const allAssessments = [...initialHistory, ...weeklyHistory];
+  const allAssessments = [...initialHistory, ...dailyHistory];
 
   // Calculate sleep average across all assessments
   const sleepAverage = calculateSleepAverage(allAssessments);

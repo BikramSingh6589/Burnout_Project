@@ -96,10 +96,13 @@ export const Dashboard: React.FC = () => {
     fetchAdminSettings();
   }, [fetchTrackerHistory, fetchRecommendations, fetchNotifications, fetchAnalytics, fetchBurnoutRisk, fetchAdminSettings]);
 
-  const isWeeklyLimitReached = useMemo(
-    () => hasReachedWeeklyAssessmentLimit(weeklyAssessmentHistory, adminSettings.maxWeeklyAssessmentsPerStudent),
-    [weeklyAssessmentHistory, adminSettings.maxWeeklyAssessmentsPerStudent],
-  );
+  const isDailyLimitReached = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return weeklyAssessmentHistory.some(
+      (assessment) => (assessment as any).date === today || 
+      new Date((assessment as any).completedAt || (assessment as any).createdAt).toISOString().split('T')[0] === today
+    );
+  }, [weeklyAssessmentHistory]);
 
   const isDataLoading = weeklyAssessmentHistoryLoading || adminSettingsLoading;
 
@@ -213,24 +216,29 @@ export const Dashboard: React.FC = () => {
             <div className="relative group">
               <button
                 type="button"
-                disabled={isDataLoading || isWeeklyLimitReached}
+                disabled={isDataLoading || isDailyLimitReached}
                 onClick={() => {
-                  if (!isWeeklyLimitReached && !isDataLoading) {
-                    navigate('/assessment/weekly');
+                  if (!isDailyLimitReached && !isDataLoading) {
+                    navigate('/assessment/daily');
                   }
                 }}
                 className={`flex items-center gap-2 bg-primary text-white font-medium px-4 py-2 rounded-xl text-sm transition-all shadow-sm ${
-                  isDataLoading || isWeeklyLimitReached
+                  isDataLoading || isDailyLimitReached
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:bg-[#4338CA] hover:shadow-md'
                 }`}
               >
-                {isDataLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                Take Assessment
+                {isDataLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isDailyLimitReached ? (
+                  '✓ Done Today'
+                ) : (
+                  'Take Assessment'
+                )}
               </button>
-              {isWeeklyLimitReached && (
-                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max max-w-xs -translate-x-1/2 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs font-medium text-[#CBD5E1] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                  Weekly assessment limit reached. Try again when the new week begins.
+              {isDailyLimitReached && (
+                <div className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-max -translate-x-1/2 rounded-lg border border-[#334155] bg-[#1E293B] px-3 py-2 text-xs font-medium text-[#CBD5E1] opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                  Daily assessment limit reached! Come back tomorrow.
                 </div>
               )}
             </div>

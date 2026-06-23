@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import * as adminService from "../services/admin/admin.service.js";
+import { runWeeklyReminderJob } from "../jobs/reminder.job.js";
 
 export const loginAdmin = async (
   req: Request<Record<string, never>, unknown, { username: string; password: string }>,
@@ -143,6 +144,23 @@ export const sendBulkWellnessEmail = async (
     res.status(200).json({
       success: true,
       message: `Sent ${result.sent} email(s) to ${riskGroup} risk students`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const triggerWeeklyReminderJob = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await runWeeklyReminderJob();
+    res.status(200).json({
+      success: true,
+      message: "Weekly reminder job triggered successfully",
       data: result,
     });
   } catch (error) {

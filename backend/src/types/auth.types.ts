@@ -69,4 +69,6 @@ export interface PublicUserProfile {
   accountStatus: string;
   profileCompleted?: boolean;
   assessmentCompleted?: boolean;
+  currentStreak: number;
+  longestStreak: number;
 }

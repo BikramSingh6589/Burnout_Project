@@ -2,35 +2,38 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { apiRequest } from '../lib/api';
-import { hasReachedWeeklyAssessmentLimit, type WeeklyAssessmentRecord } from '../lib/weeklyAssessment';
+
 import { CheckCircle2, ArrowRight, ArrowLeft, ClipboardList } from 'lucide-react';
 import { InfoPopover } from '../components/ui/InfoPopover';
 import { HelpPopover } from '../components/ui/HelpPopover';
 
 export const Assessment: React.FC = () => {
-  const { submitAssessment, isAuthenticated, authToken, fetchAdminSettings } = useStore();
+  const { submitAssessment, isAuthenticated, authToken, fetchTrackerHistory } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const isWeekly = location.pathname.includes('weekly');
-  const showDashboardRedirectMessage = !isWeekly && new URLSearchParams(location.search).get('from') === 'dashboard';
+  const isDaily = location.pathname.includes('daily');
+  const isInitial = !isDaily;
+  const showDashboardRedirectMessage = isInitial && new URLSearchParams(location.search).get('from') === 'dashboard';
 
   useEffect(() => {
-    if (!isWeekly || !isAuthenticated || !authToken) return;
+    if (!isDaily || !isAuthenticated || !authToken) return;
 
     let cancelled = false;
 
-    const enforceWeeklyLimit = async () => {
+    const enforceDailyLimit = async () => {
       try {
-        await fetchAdminSettings();
-        const { adminSettings: settings } = useStore.getState();
-        const historyResponse = await apiRequest<{
-          success: boolean;
-          data: { history: WeeklyAssessmentRecord[] };
-        }>('/weekly-assessment/history', { token: authToken });
+        await fetchTrackerHistory();
+        const { weeklyAssessmentHistory } = useStore.getState();
+        const today = new Date().toISOString().split('T')[0];
+        const todayAssessment = weeklyAssessmentHistory.find(
+          (h: any) => 
+            (h.date && new Date(h.date).toISOString().split('T')[0] === today) || 
+            (h.completedAt && new Date(h.completedAt).toISOString().split('T')[0] === today)
+        );
 
         if (cancelled) return;
 
-        if (hasReachedWeeklyAssessmentLimit(historyResponse.data.history, settings.maxWeeklyAssessmentsPerStudent)) {
+        if (todayAssessment) {
           navigate('/dashboard', { replace: true });
         }
       } catch {
@@ -38,12 +41,12 @@ export const Assessment: React.FC = () => {
       }
     };
 
-    void enforceWeeklyLimit();
+    void enforceDailyLimit();
 
     return () => {
       cancelled = true;
     };
-  }, [isWeekly, isAuthenticated, authToken, fetchAdminSettings, navigate]);
+  }, [isDaily, isAuthenticated, authToken, fetchTrackerHistory, navigate]);
 
   // Guard: Must be logged in
   if (!isAuthenticated) {
@@ -103,7 +106,7 @@ export const Assessment: React.FC = () => {
       sleepHours: formData.sleepHours === '' ? 0 : formData.sleepHours,
       screenTime: formData.screenTime === '' ? 0 : formData.screenTime,
     };
-    const errorMsg = await submitAssessment(submissionData, isWeekly);
+    const errorMsg = await submitAssessment(submissionData, isDaily);
     setSubmitting(false);
 
     if (errorMsg !== null) {
@@ -138,10 +141,10 @@ export const Assessment: React.FC = () => {
                 </div>
                 <div>
                   <h2 className="text-2xl font-display font-extrabold text-text-primary">
-                    {isWeekly ? 'Weekly Wellness Reassessment' : 'Initial Burnout Assessment'}
+                    {isDaily ? 'Daily Wellness Assessment' : 'Initial Burnout Assessment'}
                   </h2>
                   <p className="text-xs text-text-secondary">
-                    {isWeekly ? 'Track changes from your baseline wellness' : 'Complete to generate your first burnout score'}
+                    {isDaily ? 'Track your daily wellness' : 'Complete to generate your first burnout score'}
                   </p>
                 </div>
               </div>
