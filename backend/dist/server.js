@@ -1,6 +1,7 @@
+// IMPORTANT: Load environment variables FIRST before anything else!
+import { config } from "./config/env.js";
 import mongoose from "mongoose";
 import app from "./app.js";
-import { config } from "./config/env.js";
 import { connectDatabase } from "./config/database.js";
 import { logger } from "./utils/logger.js";
 import { initializeReminderJob } from "./jobs/reminder.job.js";

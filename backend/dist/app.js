@@ -4,10 +4,11 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import morgan from "morgan";
+import compression from "compression";
 import authRoutes from "./routes/auth.routes.js";
 import assessmentRoutes from "./routes/assessment.routes.js";
 import initialAssessmentRoutes from "./routes/initial-assessment.routes.js";
-import weeklyAssessmentRoutes from "./routes/weekly-assessment.routes.js";
+import dailyAssessmentRoutes from "./routes/daily-assessment.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import journalRoutes from "./routes/journal.routes.js";
 import journalAiRoutes from "./routes/journal-ai.routes.js";
@@ -27,8 +28,12 @@ const authLimiter = rateLimit({
     legacyHeaders: false,
 });
 app.use(helmet());
+app.use(compression());
 app.use(cors({
-    origin: process.env.CORS_ORIGIN?.split(",").map((origin) => origin.trim()) ?? ["http://localhost:5173"],
+    origin: (origin, callback) => {
+        // Allow all origins for now to fix the problem
+        return callback(null, true);
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     credentials: true,
 }));
@@ -46,7 +51,7 @@ app.use("/health", healthRouter);
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/assessment", assessmentRoutes);
 app.use("/api/initial-assessment", initialAssessmentRoutes);
-app.use("/api/weekly-assessment", weeklyAssessmentRoutes);
+app.use("/api/daily-assessment", dailyAssessmentRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/journal", journalRoutes);
 app.use("/api/journal-ai", journalAiRoutes);

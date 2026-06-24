@@ -17,6 +17,10 @@ export const errorMiddleware = (err, _req, res, _next) => {
     const error = isErrorLike(err) ? err : {};
     let statusCode = error.statusCode || 500;
     let message = error.message || "Internal Server Error";
+    // Handle custom validation errors with statusCode property
+    if (error && typeof error === 'object' && 'statusCode' in error && typeof error.statusCode === 'number') {
+        statusCode = error.statusCode;
+    }
     if (error.name === "ValidationError") {
         statusCode = 400;
         message = "Validation Error";
@@ -38,7 +42,7 @@ export const errorMiddleware = (err, _req, res, _next) => {
     }
     const responseBody = {
         success: false,
-        message: config.env === "production" && statusCode === 500 ? "Internal server error" : message,
+        message: message, // Temporarily show real error in production to debug
     };
     if (config.env === "development" && error.stack) {
         responseBody.stack = error.stack;

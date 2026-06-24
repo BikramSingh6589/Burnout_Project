@@ -20,6 +20,8 @@ export const connectDatabase = async () => {
     mongoose.set("strictQuery", true);
     await mongoose.connect(config.mongoUri, {
         serverSelectionTimeoutMS: 10000,
+        maxPoolSize: 10,
+        minPoolSize: 2,
     });
     console.log("MongoDB connected");
     await dropLegacyWeeklyAssessmentUniqueIndex();
