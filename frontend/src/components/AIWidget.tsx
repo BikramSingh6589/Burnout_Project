@@ -232,28 +232,22 @@ export const AIWidget: React.FC = () => {
       )}
 
       {/* Collapsed Float Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`bg-primary text-white p-4 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(79,70,229,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 relative flex items-center justify-center ${
-          isOpen ? 'bg-secondary hover:shadow-[0_8px_30px_rgb(45,212,191,0.3)]' : ''
-        }`}
-      >
-        {isOpen ? (
-          <X className="h-6 w-6 animate-in spin-in-90 duration-200" />
-        ) : (
-          <>
-            <MessageSquare className="h-6 w-6 animate-in zoom-in duration-200" />
-            {trackerHistory.length > 0 && currentScore >= 70 && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 bg-error items-center justify-center text-[8px] font-bold text-white">
-                  !
-                </span>
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`bg-primary text-white p-4 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(79,70,229,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 relative flex items-center justify-center`}
+        >
+          <MessageSquare className="h-6 w-6 animate-in zoom-in duration-200" />
+          {trackerHistory.length > 0 && currentScore >= 70 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-error items-center justify-center text-[8px] font-bold text-white">
+                !
               </span>
-            )}
-          </>
-        )}
-      </button>
+            </span>
+          )}
+        </button>
+      )}
     </div>
   );
 };
