@@ -1,0 +1,545 @@
+
+================================================================================
+BURNOUT GUARD PROJECT DOCUMENTATION
+================================================================================
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+Burnout Guard is a comprehensive wellness tracking platform that helps students monitor and manage their burnout risk through:
+- Daily/weekly assessments
+- AI-powered journaling with sentiment analysis
+- Personalized wellness recommendations
+- Real-time burnout risk tracking
+- Admin dashboard for overseeing student wellness
+- Chrome extension for quick access
+
+================================================================================
+2. PROJECT STRUCTURE
+================================================================================
+
+Burnout_Project/
+├── backend/              # Backend API (Express, TypeScript, MongoDB)
+│   ├── src/
+│   │   ├── archive/         # Unused files (legacy models)
+│   │   ├── config/          # Configuration (DB, environment)
+│   │   ├── controllers/     # Request handlers
+│   │   ├── jobs/            # Scheduled jobs (reminders, trend analysis, cleanup)
+│   │   ├── middlewares/     # Auth, error handling
+│   │   ├── models/          # Mongoose schemas
+│   │   ├── routes/          # API endpoints
+│   │   ├── services/        # Business logic
+│   │   ├── types/           # TypeScript interfaces/types
+│   │   ├── utils/           # Helpers (email, logger, Google auth, DB tests)
+│   │   ├── validators/      # Input validation schemas
+│   │   ├── app.ts           # Express app setup
+│   │   └── server.ts        # Server start file
+│   └── package.json
+│
+├── extension/            # Chrome extension
+│   ├── icons/             # Extension icons
+│   ├── manifest.json      # Extension configuration
+│   ├── background.js      # Background service worker (alarms, notifications)
+│   ├── popup.html         # Popup UI
+│   ├── popup.js           # Popup logic
+│   └── contentScript.js   # Web page integration
+│
+└── frontend/             # Frontend (React, Taro, TypeScript)
+    ├── public/
+    │   └── burnout-guard-extension.zip  # Packed extension
+    └── src/
+        ├── components/      # React components
+        ├── lib/             # Helpers (API, utils)
+        ├── pages/           # App pages
+        ├── store/           # Zustand state management
+        ├── App.tsx
+        ├── main.tsx
+        └── package.json
+
+================================================================================
+3. FEATURES & IMPLEMENTATION DETAILS
+================================================================================
+
+================================================================================
+3.1 Authentication & User Management
+================================================================================
+
+Features:
+- User registration with email/password
+- Email OTP verification for new accounts
+- Login with email/password
+- Google OAuth login
+- Password reset via OTP
+- Token-based session management (JWT)
+- Refresh tokens for prolonged sessions
+- User profile management
+
+Implementation Details:
+Backend:
+- Files: `auth.service.ts`, `token.service.ts`, `otp.service.ts`
+- Models: `Student.ts`, `Admin.ts`
+- Endpoints (`auth.routes.ts`):
+  - POST `/api/auth/register` → Register new user
+  - POST `/api/auth/verify-otp` → Verify email OTP & activate account
+  - POST `/api/auth/resend-otp` → Resend verification OTP
+  - POST `/api/auth/login` → Login with email/password
+  - POST `/api/auth/google` → Login with Google
+  - POST `/api/auth/forgot-password` → Send password reset OTP
+  - POST `/api/auth/reset-password` → Reset password with OTP
+  - GET `/api/auth/me` → Get current user profile
+  - PATCH `/api/auth/me` → Update user profile
+
+Frontend:
+- State management in `useStore.ts` with `login()`, `register()`, `verifyOtp()`, `logout()` actions
+- Tokens stored in localStorage with expiry tracking (2 days)
+- Auto-refresh token logic when needed
+
+Extension:
+- Token pasted manually or received from frontend via content script
+- Token stored locally in extension's chrome.storage
+
+================================================================================
+3.2 Burnout Assessments
+================================================================================
+
+Features:
+- Initial onboarding assessment (comprehensive)
+- Daily/weekly quick assessments
+- Burnout score calculation (0-100)
+- Risk level classification (Low/Moderate/High)
+- Assessment history tracking
+
+Implementation Details:
+Backend:
+- Files:
+  - `assessment.service.ts`, `daily-assessment.service.ts`, `weekly-assessment.service.ts`
+  - `burnout-score.service.ts`, `risk-classifier.service.ts`, `baseline-tracker.service.ts`
+- Models:
+  - `InitialAssessment.ts`, `DailyAssessment.ts`, `WeeklyAssessment.ts`, `Assessment.ts`
+- Score Calculation Logic (`burnout-score.service.ts`):
+  - Aggregates answers from assessments
+  - Normalizes responses to 0-100 scale
+  - Risk classification (High: ≥70, Moderate: 40-69, Low: <40) in `risk-classifier.service.ts`
+- Endpoints:
+  - POST `/api/assessment` → Submit initial assessment
+  - GET `/api/assessment/history` → Get initial assessment history
+  - POST `/api/daily-assessment` → Submit daily assessment
+  - GET `/api/daily-assessment/history` → Get daily assessment history
+  - GET `/api/daily-assessment/latest` → Get latest daily assessment
+  - POST `/api/weekly-assessment` → Submit weekly assessment
+  - GET `/api/weekly-assessment/history` → Get weekly assessment history
+
+Frontend:
+- Pages: `Assessment.tsx`
+- State in `useStore.ts`: `submitAssessment()`, `trackerHistory`
+- Streak tracking (user.currentStreak increments with daily check-ins)
+
+Extension:
+- Displays latest burnout score and streak in popup
+
+================================================================================
+3.3 Journal & AI-Powered Sentiment Analysis
+================================================================================
+
+Features:
+- Free-text journal entries
+- AI sentiment analysis of journal content
+- Burnout risk estimation from journal entries
+- Journal entry history
+- AI chat assistant for wellness questions
+- Topic classification for journal entries
+
+Implementation Details:
+Backend:
+- Files:
+  - `journal.service.ts`, `sentiment.service.ts`, `assistant.service.ts`, `topic-classifier.ts`
+- Models:
+  - `Journal.ts`, `MoodJournal.ts`, `AIConversation.ts`
+- Sentiment Analysis (`sentiment.service.ts`):
+  - Analyzes journal text for emotional tone
+  - Determines if sentiment is Positive/Neutral/Negative
+  - Contributes to burnout risk calculation
+- AI Assistant (`assistant.service.ts`):
+  - Handles chat conversations with wellness-focused AI
+  - Provides personalized support and insights
+- Journal AI Endpoints (`journal-ai.routes.ts`):
+  - GET `/api/journal-ai/burnout-risk` → Get AI-estimated burnout risk
+  - POST `/api/journal-ai` → Add AI journal entry
+  - GET `/api/journal-ai` → Get AI journal history
+  - DELETE `/api/journal-ai/:id` → Delete AI journal entry
+  - POST `/api/ai/clear` → Clear chat history
+  - GET `/api/ai/history` → Get chat history
+- Regular Journal Endpoints (`journal.routes.ts`):
+  - POST `/api/journal` → Add journal entry
+  - GET `/api/journal` → Get journal history
+  - DELETE `/api/journal/:id` → Delete journal entry
+
+Frontend:
+- Pages: `Journal.tsx`, `JournalAI.tsx`
+- Component: `AIWidget.tsx` (floating chat bubble)
+- State: `journalEntries`, `journalAiEntries`, `chatMessages`, `burnoutRisk` in `useStore.ts`
+- ReactMarkdown for rendering AI responses with formatting
+
+================================================================================
+3.4 Personalized Wellness Recommendations
+================================================================================
+
+Features:
+- Rule-based recommendations based on burnout risk
+- AI-enhanced recommendation personalization
+- Recommendation feedback (mark as followed/partially followed/not followed)
+- Recommendation history
+
+
+Implementation Details:
+Backend:
+- Files:
+  - `recommendation.service.ts`, `recommendation-rules.ts`, `recommendation-ai-enhancer.ts`, `recommendation.constants.ts`
+- Models:
+  - `Recommendation.ts`, `StudentRecommendation.ts`, `RecommendationFeedback.ts`
+- Rule Engine (`recommendation-rules.ts`):
+  - Triggers recommendations based on burnout score, sleep hours, stress levels, etc.
+  - Categories: sleep, stress, motivation, study, screen-time, mental-health, general
+- AI Enhancement (`recommendation-ai-enhancer.ts`):
+  - Refines recommendations based on user's journal history and preferences
+- Endpoints (`recommendation.routes.ts`):
+  - GET `/api/recommendations` → Get active recommendations
+  - GET `/api/recommendations/history` → Get recommendation history
+  - POST `/api/recommendations/:id/feedback` → Submit feedback on a recommendation
+
+Frontend:
+- State: `recommendations`, `recommendationHistory` in `useStore.ts`
+- Feedback actions: `submitRecommendationFeedback()`, `deleteRecommendation()`
+
+Admin:
+- Endpoints (`admin.routes.ts`):
+  - POST `/api/admin/recommendations` → Create custom recommendation
+  - DELETE `/api/admin/recommendations/:id` → Delete recommendation
+
+================================================================================
+3.5 Analytics & Trend Analysis
+================================================================================
+
+Features:
+- Dashboard with burnout score trends over time
+- Mood trend visualization
+- Statistics (average score, highest/lowest scores, etc.)
+- Baseline comparison (initial vs current state)
+
+Implementation Details:
+Backend:
+- Files: `dashboard.service.ts`, `trend-analysis.service.ts`
+- Jobs: `trend-analysis.job.ts` (scheduled trend calculations)
+- Models: (uses Assessment/Journal models)
+- Endpoints (`analytics.routes.ts`):
+  - GET `/api/analytics/summary` → Get dashboard summary and trends
+
+Frontend:
+- Page: `Dashboard.tsx`
+- State: `analyticsSummary`, `latestAssessment` in `useStore.ts`
+- Chart visualization for trends
+
+================================================================================
+3.6 Notifications & Reminders
+================================================================================
+
+Features:
+- In-app notifications
+- Email notifications
+- Extension daily reminders (Chrome alarms + notifications)
+- High-risk alerts
+- Assessment reminders
+
+Implementation Details:
+Backend:
+- Files: `notification.service.ts`, `reminder.job.ts`
+- Models: `Notification.ts`
+- Scheduled Job (`reminder.job.ts`):
+  - Sends periodic email reminders for assessments
+- Endpoints (`notification.routes.ts`):
+  - GET `/api/notifications` → Get user notifications
+  - PATCH `/api/notifications/:id/read` → Mark notification as read
+  - PATCH `/api/notifications/mark-all-read` → Mark all as read
+  - DELETE `/api/notifications/:id` → Delete notification
+  - DELETE `/api/notifications` → Delete all notifications
+
+Extension:
+- Files: `background.js`, `popup.html`, `popup.js`
+- Chrome Alarms API for daily reminders
+- User can set custom reminder time via popup UI
+- Reminder time saved to chrome.storage.local
+- Reminder persists even if extension popup is closed (as long as Chrome is running)
+
+Frontend:
+- State: `notifications`, `unreadNotificationCount` in `useStore.ts`
+- Actions: `markNotificationRead()`, `markAllNotificationsRead()`, `deleteNotification()`, `addNotification()`
+
+================================================================================
+3.7 Admin Dashboard
+================================================================================
+
+Features:
+- Admin login
+- View all students' wellness data
+- Filter high-risk students
+- View student details
+- Send wellness emails to students
+- Send bulk emails to risk groups
+- Manage recommendations
+- Configure platform settings
+
+Implementation Details:
+Backend:
+- Files: `admin.service.ts`, `admin.middleware.ts`
+- Models: `Admin.ts`, `Settings.ts`
+- Middleware: `admin.middleware.ts` to verify admin role
+- Endpoints (`admin.routes.ts`):
+  - POST `/api/admin/login` → Admin login
+  - GET `/api/admin/dashboard` → Get admin dashboard metrics
+  - GET `/api/admin/students` → Get all students
+  - GET `/api/admin/high-risk` → Get high-risk students
+  - GET `/api/admin/student/:id` → Get specific student details
+  - POST `/api/admin/send-email` → Send email to single student
+  - POST `/api/admin/send-bulk-email` → Send bulk email to risk group
+  - GET `/api/settings` → Get admin settings
+  - PATCH `/api/settings` → Update admin settings
+
+Frontend:
+- Admin pages in `frontend/src/pages/admin/`
+- State: `adminStudents`, `adminHighRiskStudents`, `adminDashboardMetrics`, `adminSettings` in `useStore.ts`
+
+================================================================================
+4. SESSION MANAGEMENT
+================================================================================
+
+Session Timers:
+- Access Token (JWT): 2 days expiry
+- Refresh Token: 7 days expiry
+- Frontend localStorage session duration: Also 2 days
+
+Files Involved:
+- Backend: `token.service.ts`, `auth.service.ts`
+- Frontend: `useStore.ts` (storeSession(), clearSession(), getStoredAuthToken())
+- Extension: Uses local storage with no fixed expiry (token kept until logout)
+
+Flow:
+1. User logs in → receives JWT token + refresh token
+2. JWT stored in frontend localStorage
+3. Before API requests, frontend checks if token is expired
+4. If expired, frontend attempts to refresh using refresh token
+5. If refresh fails, user is logged out
+
+================================================================================
+5. TECHNOLOGY STACK
+================================================================================
+
+Backend:
+- Runtime: Node.js
+- Framework: Express
+- Language: TypeScript
+- Database: MongoDB (Mongoose ODM)
+- Auth: JWT, Google OAuth
+- Email: Nodemailer
+- Scheduled Jobs: node-cron
+- AI: (Integrated via external services)
+
+Frontend:
+- Library: React
+- Framework: Taro (for cross-platform support)
+- Language: TypeScript
+- State Management: Zustand
+- UI: Tailwind CSS (implied by class names)
+- Markdown: ReactMarkdown, remark-gfm, rehype-sanitize
+- Icons: Lucide React
+
+Extension:
+- Chrome Extensions Manifest V3
+- Vanilla JavaScript (popup & background)
+- Chrome APIs: storage, alarms, notifications, runtime
+
+================================================================================
+6. KEY FILES REFERENCE
+================================================================================
+
+Core Backend Files:
+- `server.ts`: Starts Express server
+- `app.ts`: Express app configuration
+- `database.ts`: MongoDB connection
+- `env.ts`: Environment variables
+
+Core Frontend Files:
+- `main.tsx`: React app entry point
+- `App.tsx`: Main app component
+- `useStore.ts`: Zustand global state
+- `api.ts`: API request helper
+
+Core Extension Files:
+- `manifest.json`: Extension configuration (permissions, service worker, popup)
+- `background.js`: Alarm & notification handling
+- `popup.html/js`: Popup UI & logic
+
+================================================================================
+7. API ENDPOINTS SUMMARY
+================================================================================
+
+All endpoints are prefixed with /api
+
+Auth:
+- /auth/register
+- /auth/verify-otp
+- /auth/resend-otp
+- /auth/login
+- /auth/google
+- /auth/forgot-password
+- /auth/reset-password
+- /auth/me (GET/PATCH)
+
+Assessments:
+- /assessment (POST, GET /history)
+- /daily-assessment (POST, GET /history, GET /latest)
+- /weekly-assessment (POST, GET /history)
+
+Journal:
+- /journal (POST, GET, DELETE /:id)
+- /journal-ai (POST, GET, DELETE /:id, GET /burnout-risk)
+- /ai (POST /clear, GET /history)
+
+Recommendations:
+- /recommendations (GET, GET /history, POST /:id/feedback)
+
+Analytics:
+- /analytics/summary
+
+Notifications:
+- /notifications (GET, DELETE, PATCH /mark-all-read, PATCH /:id/read, DELETE /:id)
+
+Admin:
+- /admin/login
+- /admin/dashboard
+- /admin/students
+- /admin/high-risk
+- /admin/student/:id
+- /admin/send-email
+- /admin/send-bulk-email
+- /admin/recommendations (POST, DELETE /:id)
+
+Settings:
+- /settings (GET, PATCH)
+
+Contact:
+- /contact (POST)
+
+Health:
+- /health (GET for server health check)
+
+================================================================================
+8. CHROME EXTENSION DETAILED IMPLEMENTATION
+================================================================================
+
+8.1 Extension Overview
+The Burnout Guard Chrome extension provides quick, at-a-glance access to wellness data and daily reminders without needing to open the full web app.
+
+8.2 Extension Architecture (Manifest V3)
+Files:
+- manifest.json: Core configuration
+- background.js: Service worker (persistent logic)
+- popup.html: Popup UI
+- popup.js: Popup interactivity
+- contentScript.js: Frontend web integration
+- icons/: Extension icons in multiple sizes
+
+8.3 manifest.json Configuration
+Permissions declared:
+- "storage": For storing user token and reminder preferences
+- "alarms": For scheduling daily reminders
+- "notifications": For displaying system notifications
+- Host permissions for: localhost:5173 and burnout-project-xbf1.vercel.app
+
+Configuration details:
+- Manifest version: 3 (modern Chrome extensions standard)
+- Default popup: popup.html
+- Background service worker: background.js
+- Content script: Injected into frontend web pages for integration
+- Icons: Provided in 16x16, 48x48, 128x128 sizes
+
+8.4 background.js Implementation
+Responsibilities:
+- Scheduled reminder alarms
+- Displaying system notifications
+- Message passing with popup
+
+Core functionality:
+1. createNotification(title, message): Helper to create Chrome notifications with extension icon
+2. Alarm listener: Triggers when reminder alarm goes off, shows notification
+3. Message listener: Handles 3 types of messages from popup:
+   a. "SET_REMINDER": Saves reminder time, creates Chrome alarm
+   b. "GET_REMINDER": Retrieves saved reminder time from storage
+   c. "CLEAR_REMINDER": Cancels alarm and clears saved time
+4. Initialization: On extension startup, checks for existing saved reminder and re-creates alarm if needed
+
+Alarm implementation details:
+- Uses chrome.alarms.create(name, { when, periodInMinutes })
+- Time is converted from HH:MM format to a timestamp
+- If reminder time is already past today, schedules for tomorrow
+- Repeats every 24*60 minutes (daily)
+
+8.5 popup.html Implementation
+UI Components:
+- Loading state (dots animation)
+- Login prompt (token input + website link)
+- User dashboard (when logged in):
+  - Header with user greeting
+  - Burnout risk card (score + risk level)
+  - Stats section (just streak, no mood score anymore)
+  - NEW: Daily Reminder section (toggle + time picker + save button)
+  - Quote display
+  - Buttons: Open Dashboard, Log Out
+
+Styling details:
+- Dark theme with gradient background
+- Responsive width
+- Custom styles for reminder toggle (switch UI)
+- Gradient accent colors (purple/blue theme)
+
+8.6 popup.js Implementation
+Responsibilities:
+- User authentication (token input, storage, API calls)
+- Fetching user data (profile, burnout risk, streak)
+- Reminder UI logic
+- Communicating with background script
+
+Key functions:
+1. loadUserData(): Fetches and renders user data
+2. getReminderTime(), setReminderTime(), clearReminder(): Wrap chrome.runtime.sendMessage calls to communicate with background
+3. renderApp(user, burnout, streakData, quote): Renders dashboard UI including reminder section
+4. initReminderUI(): Loads existing reminder state, sets up toggle and save handlers
+
+Reminder UI flow:
+- User toggles "Daily Reminder" on
+- Time input appears, defaulted to 21:00 (9 PM)
+- User selects desired time
+- User clicks "Save"
+- popup.js sends "SET_REMINDER" message to background
+- background.js creates alarm and saves time
+- Status message shows "Reminder set for [time]"
+- When toggled off: sends "CLEAR_REMINDER" to cancel alarm
+
+8.7 contentScript.js Implementation
+- Injected into Burnout Guard web pages
+- Handles communication between frontend and extension
+- Can pass token from frontend to extension automatically (optional feature)
+
+8.8 Extension Token Flow
+1. User logs into web app
+2. User copies token from web app
+3. User pastes token into extension popup
+4. Token stored in chrome.storage.local
+5. Extension uses token for all API requests
+6. Token persists across browser restarts
+7. User can log out to clear token
+
+8.9 Packaging the Extension
+- All extension files are in /extension folder
+- Compress folder into ZIP for distribution
+- Updated ZIP available in /frontend/public/burnout-guard-extension.zip for web download
+- Users can install unpacked (developer mode) or from ZIP
