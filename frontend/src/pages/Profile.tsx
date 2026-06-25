@@ -4,7 +4,7 @@ import { DashboardLayout } from '../components/DashboardLayout';
 import { Save, ShieldAlert, Check } from 'lucide-react';
 
 export const Profile: React.FC = () => {
-  const { user, adminSettings, adminUpdateSettings, updateProfile } = useStore();
+  const { user, updateProfile } = useStore();
   
   const [formData, setFormData] = useState<{
     name: string;
