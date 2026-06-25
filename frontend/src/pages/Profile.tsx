@@ -26,9 +26,6 @@ export const Profile: React.FC = () => {
     confirmNewPassword: '',
   });
 
-  const [emailNotif, setEmailNotif] = useState(adminSettings.emailNotificationsEnabled);
-  const [inAppNotif, setInAppNotif] = useState(adminSettings.inAppNotificationsEnabled);
-
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [passSuccess, setPassSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,11 +50,6 @@ export const Profile: React.FC = () => {
       setError(useStore.getState().authError || 'Profile update failed.');
       return;
     }
-
-    adminUpdateSettings({
-      emailNotificationsEnabled: emailNotif,
-      inAppNotificationsEnabled: inAppNotif,
-    });
 
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
