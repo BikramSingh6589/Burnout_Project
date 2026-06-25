@@ -7,18 +7,74 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+.pnp
+.pnp.js
+
+# Build output
 dist
 dist-ssr
-*.local
+build
+*.tsbuildinfo
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+*.DS_Store
+
+# Vite cache
+.vite
+
+# Test files
+backend/test-streak.js
+*.test.js
+*.spec.js
+__tests__
+
+# Scripts
+*.ps1
+generate-icons.js
+generate-logo.js
+zip-extension.ps1
+
+# Documentation / specs (exclude from repo)
+PRD.txt
+SRS.txt
+PROJECT_DOCUMENTATION.txt
+API_DOCS.md
+
+# Backend markdown docs
+backend/*.md
+backend/FEATURE_IMPLEMENTATION_PROMPT.md
+backend/JOURNAL_API_TESTING.md
+backend/JOURNAL_FRONTEND_INTEGRATION_PLAN.md
+backend/JOURNAL_MODULE_SUMMARY.md
+
+# npm packages
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+.copilot-instructions.md

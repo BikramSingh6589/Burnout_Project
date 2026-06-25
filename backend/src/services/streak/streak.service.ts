@@ -1,21 +1,15 @@
 import { Types } from "mongoose";
-import { InitialAssessment } from "../../models/InitialAssessment.js";
+import { Student } from "../../models/Student.js";
 import { DailyAssessment } from "../../models/DailyAssessment.js";
 import { Assessment } from "../../models/Assessment.js";
 import { WeeklyAssessment } from "../../models/WeeklyAssessment.js";
-import { Student } from "../../models/Student.js";
+import { InitialAssessment } from "../../models/InitialAssessment.js";
 import { AppError } from "../../middlewares/error.middleware.js";
-import { classifyBurnoutRisk } from "../burnout/risk-classifier.service.js";
-import { calculateInitialBurnoutScore } from "../burnout/burnout-score.service.js";
-import { initializeBaseline } from "../burnout/baseline-tracker.service.js";
-import type { InitialAssessmentRequestBody } from "../../types/assessment.types.js";
-import { AssessmentStatus } from "../../types/common.types.js";
-import type { IInitialAssessment } from "../../models/InitialAssessment.js";
 
 /**
  * Calculate current and longest streaks from all assessment dates
  */
-const calculateStreaks = (assessmentDates: Date[], today: Date, isAddingToday: boolean = false) => {
+export const calculateStreaks = (assessmentDates: Date[], today: Date, isAddingToday: boolean = false) => {
   // Convert all dates to YYYY-MM-DD strings, remove duplicates, and sort in descending order (newest first)
   const dateStrings = assessmentDates
     .map(date => {
@@ -92,29 +86,13 @@ const calculateStreaks = (assessmentDates: Date[], today: Date, isAddingToday: b
   return { currentStreak, longestStreak };
 };
 
-export const submitInitialAssessment = async (
-  userId: string,
-  assessment: InitialAssessmentRequestBody,
-): Promise<IInitialAssessment> => {
+/**
+ * Recalculate streak for a student using ALL assessment records
+ */
+export const recalculateAndUpdateStreak = async (userId: string) => {
   if (!Types.ObjectId.isValid(userId)) {
     throw new AppError("Invalid user identifier", 400);
   }
-
-  const student = await Student.findById(userId);
-
-  if (!student) {
-    throw new AppError("User profile not found", 404);
-  }
-
-  const existingAssessment = await InitialAssessment.findOne({ student: new Types.ObjectId(userId) });
-  if (existingAssessment) {
-    throw new AppError("Initial assessment already completed", 400);
-  }
-
-  const baselineBurnoutScore = calculateInitialBurnoutScore(assessment);
-  const classification = classifyBurnoutRisk(baselineBurnoutScore);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
 
   // Get all assessment dates from ALL assessment types
   const [dailyAssessments, initialAssessments, weeklyAssessments, assessments] = await Promise.all([
@@ -131,51 +109,16 @@ export const submitInitialAssessment = async (
     ...assessments.map(a => a.completedAt)
   ].filter(Boolean) as Date[];
 
-  const { currentStreak: newStreak, longestStreak: newLongestStreak } = calculateStreaks(allDates, today, true);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-  const assessmentRecord = new InitialAssessment({
-    student: new Types.ObjectId(userId),
-    ...assessment,
-    baselineBurnoutScore,
-    baselineRiskLevel: classification.riskLevel,
-    responses: { ...assessment },
-    status: AssessmentStatus.Completed,
-    completedAt: new Date(),
+  const { currentStreak, longestStreak } = calculateStreaks(allDates, today, false);
+
+  // Update the student in DB
+  await Student.findByIdAndUpdate(userId, {
+    currentStreak,
+    longestStreak
   });
 
-  const createdAssessment = await assessmentRecord.save();
-
-  try {
-    const updatedStudent = await Student.findByIdAndUpdate(
-      userId,
-      {
-        assessmentCompleted: true,
-        currentBurnoutScore: baselineBurnoutScore,
-        currentRiskLevel: classification.riskLevel,
-        currentStreak: newStreak,
-        longestStreak: newLongestStreak,
-        lastAssessmentDate: today,
-      },
-      { new: true },
-    );
-
-    if (!updatedStudent) {
-      throw new AppError("User not found", 404);
-    }
-
-    await initializeBaseline(userId, baselineBurnoutScore, classification.riskLevel, createdAssessment.completedAt ?? new Date());
-  } catch (error) {
-    await InitialAssessment.findByIdAndDelete(createdAssessment._id).catch(() => null);
-    throw error;
-  }
-
-  return createdAssessment;
-};
-
-export const getInitialAssessment = async (userId: string): Promise<IInitialAssessment | null> => {
-  if (!Types.ObjectId.isValid(userId)) {
-    throw new AppError("Invalid user identifier", 400);
-  }
-
-  return InitialAssessment.findOne({ student: new Types.ObjectId(userId) });
+  return { currentStreak, longestStreak };
 };

@@ -108,18 +108,26 @@ Features:
 - Burnout score calculation (0-100)
 - Risk level classification (Low/Moderate/High)
 - Assessment history tracking
+- Dynamic streak calculation using ALL assessment types (initial, daily, weekly, standard)
+- Recalculates streak every time user profile is fetched
 
 Implementation Details:
 Backend:
 - Files:
   - `assessment.service.ts`, `daily-assessment.service.ts`, `weekly-assessment.service.ts`
   - `burnout-score.service.ts`, `risk-classifier.service.ts`, `baseline-tracker.service.ts`
+  - NEW: `streak.service.ts` (for dynamic streak calculation)
 - Models:
   - `InitialAssessment.ts`, `DailyAssessment.ts`, `WeeklyAssessment.ts`, `Assessment.ts`
 - Score Calculation Logic (`burnout-score.service.ts`):
   - Aggregates answers from assessments
   - Normalizes responses to 0-100 scale
   - Risk classification (High: ≥70, Moderate: 40-69, Low: <40) in `risk-classifier.service.ts`
+- Streak Calculation (`streak.service.ts`) and in assessment services:
+  - Collects all assessment dates (initial, daily, weekly, standard)
+  - Sorts in descending order
+  - Calculates consecutive days
+  - Recalculates every time user profile is fetched in `auth.service.ts`
 - Endpoints:
   - POST `/api/assessment` → Submit initial assessment
   - GET `/api/assessment/history` → Get initial assessment history
@@ -131,8 +139,8 @@ Backend:
 
 Frontend:
 - Pages: `Assessment.tsx`
-- State in `useStore.ts`: `submitAssessment()`, `trackerHistory`
-- Streak tracking (user.currentStreak increments with daily check-ins)
+- State in `useStore.ts`: `submitAssessment()`, `trackerHistory`, `fetchMe()`
+- Streak popup in Navbar.tsx that fetches user profile to recalculate streak
 
 Extension:
 - Displays latest burnout score and streak in popup
@@ -282,15 +290,19 @@ Features:
 - Admin login
 - View all students' wellness data
 - Filter high-risk students
-- View student details
+- View student details (including ALL assessment types)
 - Send wellness emails to students
 - Send bulk emails to risk groups
 - Manage recommendations
 - Configure platform settings
+- NEW: 3 Targeted Reminder Buttons in Notification Center:
+  1. Remind Just Logged In 🚀: Send emails to students with 0 total assessments
+  2. Remind 1 Assessment Users ✅: Send emails to students with exactly 1 assessment (any type)
+  3. Remind Streak Maintainers 🔥: Send emails to students with 2 or more assessments
 
 Implementation Details:
 Backend:
-- Files: `admin.service.ts`, `admin.middleware.ts`
+- Files: `admin.service.ts`, `admin.middleware.ts`, `email.ts` (new email templates)
 - Models: `Admin.ts`, `Settings.ts`
 - Middleware: `admin.middleware.ts` to verify admin role
 - Endpoints (`admin.routes.ts`):
@@ -298,15 +310,23 @@ Backend:
   - GET `/api/admin/dashboard` → Get admin dashboard metrics
   - GET `/api/admin/students` → Get all students
   - GET `/api/admin/high-risk` → Get high-risk students
-  - GET `/api/admin/student/:id` → Get specific student details
+  - GET `/api/admin/student/:id` → Get specific student details (includes ALL assessment types)
   - POST `/api/admin/send-email` → Send email to single student
   - POST `/api/admin/send-bulk-email` → Send bulk email to risk group
+  - NEW: POST `/api/admin/send-reminders/just-logged-in` → Send bulk reminders to students with 0 assessments
+  - NEW: POST `/api/admin/send-reminders/only-initial` → Send bulk reminders to students with exactly 1 assessment
+  - NEW: POST `/api/admin/send-reminders/active-streak` → Send bulk reminders to students with 2+ assessments
   - GET `/api/settings` → Get admin settings
   - PATCH `/api/settings` → Update admin settings
+- New Email Templates (`email.ts`):
+  - `sendJustLoggedInReminder()`: Welcoming email for new users to take first assessment
+  - `sendOnlyInitialReminder()`: Email for users with 1 assessment to keep going
+  - `sendStreakMaintainerReminder()`: Email for users with streak to maintain
 
 Frontend:
-- Admin pages in `frontend/src/pages/admin/`
+- Admin pages in `frontend/src/pages/admin/AdminDashboard.tsx`
 - State: `adminStudents`, `adminHighRiskStudents`, `adminDashboardMetrics`, `adminSettings` in `useStore.ts`
+- New store functions: `sendJustLoggedInReminders()`, `sendOnlyInitialReminders()`, `sendStreakMaintainerReminders()`
 
 ================================================================================
 4. SESSION MANAGEMENT
@@ -422,6 +442,9 @@ Admin:
 - /admin/send-email
 - /admin/send-bulk-email
 - /admin/recommendations (POST, DELETE /:id)
+- NEW: /admin/send-reminders/just-logged-in (POST)
+- NEW: /admin/send-reminders/only-initial (POST)
+- NEW: /admin/send-reminders/active-streak (POST)
 
 Settings:
 - /settings (GET, PATCH)

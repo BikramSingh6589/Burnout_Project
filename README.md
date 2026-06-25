@@ -1,44 +1,92 @@
-<<<<<<< HEAD
 # Burnout Management Application
 
-A modern web application designed to help users monitor, assess, and manage burnout through assessments, journaling, and personalized recommendations. 
+A modern full-stack web application designed to help students monitor, assess, and manage academic burnout through continuous assessments, AI-powered journal analysis, and personalized recommendations.
 
 ## Features
 
-- **Burnout Assessment**: Take comprehensive burnout assessments to track your mental health
-- **Dashboard**: Overview of your burnout metrics and progress
-- **History & Trends**: Visualize your assessment history and trends over time
-- **Journal**: Keep track of your thoughts and experiences
-- **Personalized Recommendations**: Get AI-powered recommendations
-- **Profile Management**: Manage your personal profile
-- **Notifications**: Stay updated with important notifications
-- **Admin Dashboard**: Administrative interface for managing the application
+- **Burnout Assessment**: Take initial and daily wellness assessments to track mental health
+- **Dynamic Streak Calculation**: Automatic streak calculation using all assessment types (initial, daily, weekly, standard)
+- **Dashboard**: Overview of burnout metrics, risk levels, sleep patterns, and screen time
+- **History & Trends**: Visualize assessment history and burnout trends over time
+- **AI Journal**: Sentiment-aware journaling with AI-powered wellness insights
+- **Personalized Recommendations**: Get AI-generated interventions based on your burnout profile
+- **Profile Management**: Manage personal information
+- **Notifications**: Stay updated with assessment reminders and risk alerts
+- **Admin Dashboard**: Administrative interface with 3 new reminder buttons for targeted student outreach
+  - Remind Just Logged In 🚀: Students with 0 assessments
+  - Remind 1 Assessment Users ✅: Students with exactly 1 assessment
+  - Remind Streak Maintainers 🔥: Students with 2+ assessments
+- **Browser Extension**: Chrome extension for quick streak and burnout score access
 
 ## Tech Stack
 
-- **React 19** - UI framework
-- **TypeScript** - Type-safe development
-- **Vite** - Fast build tool and dev server
-- **Tailwind CSS** - Utility-first CSS framework
-- **Zustand** - State management
-- **React Router** - Client-side routing
-- **Recharts** - Data visualization
-- **React Hook Form** - Form handling
-- **Zod** - Schema validation
-- **Lucide React** - Icons
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 19, TypeScript, Vite 8, Tailwind CSS 3, Zustand 5, React Router 7, Recharts |
+| **Backend** | Node.js, Express 4, TypeScript, Mongoose 8 (MongoDB), Zod 4, JWT |
+| **Extension** | Chrome Extension (Manifest V3) |
+| **Database** | MongoDB |
+
+## Project Structure
+
+```
+frontend/           # React SPA
+├── src/
+│   ├── components/ # Reusable UI components
+│   ├── pages/      # Page components (Dashboard, Assessment, etc.)
+│   ├── store/      # Zustand state management
+│   └── lib/        # Utilities and API client
+
+backend/            # Express API server
+├── src/
+│   ├── controllers/# Route handlers
+│   ├── services/   # Business logic
+│   ├── models/     # Mongoose schemas
+│   ├── routes/     # API route definitions
+│   └── jobs/       # Cron jobs (streak checks, reminders)
+
+extension/          # Chrome browser extension
+└── icons/          # Extension icons
+```
 
 ## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- MongoDB instance
+- npm or yarn
 
 ### Installation
 
 ```bash
+# Install frontend dependencies
 cd frontend
 npm install
+
+# Install backend dependencies
+cd ../backend
+npm install
 ```
+
+### Environment Setup
+
+Copy `.env.example` to `.env` in the backend directory and configure:
+
+- `PORT` - Server port (default: 5001)
+- `MONGODB_URI` - MongoDB connection string
+- `JWT_SECRET` - JWT signing secret
+- `FRONTEND_URL` - Frontend URL for CORS
 
 ### Development
 
 ```bash
+# Start frontend dev server
+cd frontend
+npm run dev
+
+# Start backend dev server (in separate terminal)
+cd backend
 npm run dev
 ```
 
@@ -47,121 +95,14 @@ Open [http://localhost:5173](http://localhost:5173) to view the application.
 ### Build
 
 ```bash
+cd frontend
 npm run build
 ```
 
-### Lint
+## API Documentation
 
-```bash
-npm run lint
-```
-
-### Preview Production Build
-
-```bash
-npm run preview
-```
-
-## Project Structure
-
-```
-frontend/
-├── public/          # Static assets
-├── src/
-│   ├── assets/      # Images and other assets
-│   ├── components/
-│   │   ├── skeletons/  # Loading skeletons
-│   │   └── ui/        # UI components
-│   ├── lib/         # Utility functions
-│   ├── pages/       # Page components
-│   │   ├── admin/     # Admin pages
-│   │   └── auth/      # Authentication pages
-│   ├── store/       # Zustand store
-│   ├── App.tsx      # Main app component
-│   └── main.tsx     # Entry point
-├── index.html
-├── package.json
-├── tailwind.config.js
-├── tsconfig.json
-└── vite.config.ts
-
-Thank You
-```
+See [API_DOCS.md](./API_DOCS.md) for complete API reference.
 
 ## License
 
 ISC
-=======
-# React + TypeScript + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```

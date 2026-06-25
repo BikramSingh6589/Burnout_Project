@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useStore } from '../../store/useStore';
-import { ShieldCheck, Users, AlertTriangle, Send, LogOut, Search, ShieldAlert, Moon, Sun } from 'lucide-react';
+import { ShieldCheck, Users, AlertTriangle, Send, LogOut, Search, ShieldAlert, Moon, Sun, ClipboardList, FileText, Calendar, PieChart } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
   const {
@@ -17,6 +17,9 @@ export const AdminDashboard: React.FC = () => {
     fetchAdminSettings,
     sendWellnessEmail,
     sendBulkWellnessEmail,
+    sendJustLoggedInReminders,
+    sendOnlyInitialReminders,
+    sendStreakMaintainerReminders,
     fetchAdminStudentDetail,
     adminStudentDetail,
     adminStudentLoading,
@@ -71,6 +74,7 @@ export const AdminDashboard: React.FC = () => {
 
   // Calculations
   const totalStudentsCount = adminDashboardMetrics?.totalStudents ?? adminStudents.length;
+  const totalAssessmentsCount = adminDashboardMetrics?.totalAssessments ?? 0;
   const averageBurnoutScore = adminDashboardMetrics?.averageBurnoutScore ?? 0;
   const highRiskCount = adminDashboardMetrics?.highRiskStudents ?? adminStudents.filter(s => s.burnoutScore >= adminSettings.highRiskThreshold).length;
   const lowRiskCount = adminDashboardMetrics?.lowRiskStudents ?? adminStudents.filter(s => s.burnoutScore < adminSettings.moderateRiskThreshold).length;
@@ -194,7 +198,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="space-y-6 animate-in fade-in duration-200">
               <h2 className="text-xl font-display font-extrabold text-neutral-slate dark:text-[#F8FAFC]">Overview Analytics</h2>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-2">
                   <div className="flex justify-between items-center text-slate-400">
                     <span className="text-xs uppercase font-bold tracking-wider">Total Registered</span>
@@ -202,6 +206,15 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                   <p className="text-3xl font-extrabold text-neutral-slate dark:text-white">{totalStudentsCount}</p>
                   <p className="text-[10px] text-neutral-outline">Academic wellness database</p>
+                </div>
+
+                <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-2">
+                  <div className="flex justify-between items-center text-slate-400">
+                    <span className="text-xs uppercase font-bold tracking-wider">Total Assessments</span>
+                    <ClipboardList className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <p className="text-3xl font-extrabold text-neutral-slate dark:text-white">{totalAssessmentsCount}</p>
+                  <p className="text-[10px] text-neutral-outline">Across all assessment types</p>
                 </div>
 
                 <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-2">
@@ -224,34 +237,90 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Aggregated platform data */}
-              <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-4">
-                <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-2">Recent Risk Distribution</h3>
-                <div className="space-y-4">
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between font-semibold">
-                      <span>Low Risk (Score &lt; 40)</span>
-                      <span>{lowRiskCount} Students</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-4">
+                  <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-2">Risk Distribution</h3>
+                  <div className="space-y-4">
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between font-semibold">
+                        <span>Low Risk (Score &lt; 40)</span>
+                        <span>{lowRiskCount} Students</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-success" style={{ width: `${(lowRiskCount / riskBase) * 100}%` }}></div>
+                      </div>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-success" style={{ width: `${(lowRiskCount / riskBase) * 100}%` }}></div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-200">
+                        <span>Moderate Risk (Score 40–69)</span>
+                        <span>{moderateRiskCount} Students</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-amber-500" style={{ width: `${(moderateRiskCount / riskBase) * 100}%` }}></div>
+                      </div>
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-200">
+                        <span>High Risk (Score &gt;= 70)</span>
+                        <span>{highRiskCount} Students</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-error" style={{ width: `${(highRiskCount / riskBase) * 100}%` }}></div>
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-200">
-                      <span>Moderate Risk (Score 40–69)</span>
-                      <span>{moderateRiskCount} Students</span>
+                </div>
+
+                <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-100 dark:border-[#334155] shadow-sm space-y-4">
+                  <h3 className="text-sm font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-2">Assessment Breakdown</h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-100 dark:bg-indigo-800/40 rounded-lg">
+                          <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC]">Initial Assessments</p>
+                          <p className="text-[10px] text-neutral-outline">First-time burnout evaluation</p>
+                        </div>
+                      </div>
+                      <span className="text-lg font-extrabold text-indigo-600 dark:text-indigo-400">{adminDashboardMetrics?.totalAssessments ?? 0}</span>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-amber-500" style={{ width: `${(moderateRiskCount / riskBase) * 100}%` }}></div>
+                    <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-800/40 rounded-lg">
+                          <ClipboardList className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC]">Daily Assessments</p>
+                          <p className="text-[10px] text-neutral-outline">Daily wellness check-ins</p>
+                        </div>
+                      </div>
+                      <span className="text-lg font-extrabold text-purple-600 dark:text-purple-400">{adminDashboardMetrics?.dailyAssessmentCount ?? 0}</span>
                     </div>
-                  </div>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-200">
-                      <span>High Risk (Score &gt;= 70)</span>
-                      <span>{highRiskCount} Students</span>
+                    <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-100 dark:bg-amber-800/40 rounded-lg">
+                          <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC]">Weekly Assessments</p>
+                          <p className="text-[10px] text-neutral-outline">Weekly progress tracking</p>
+                        </div>
+                      </div>
+                      <span className="text-lg font-extrabold text-amber-600 dark:text-amber-400">{adminDashboardMetrics?.weeklyAssessmentCount ?? 0}</span>
                     </div>
-                    <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-error" style={{ width: `${(highRiskCount / riskBase) * 100}%` }}></div>
+                    <div className="flex items-center justify-between p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-100 dark:bg-emerald-800/40 rounded-lg">
+                          <PieChart className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC]">Total All Types</p>
+                          <p className="text-[10px] text-neutral-outline">Combined assessment count</p>
+                        </div>
+                      </div>
+                      <span className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">{totalAssessmentsCount}</span>
                     </div>
                   </div>
                 </div>
@@ -420,6 +489,83 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                 </div>
 
+                <hr className="border-slate-200 dark:border-slate-700" />
+
+                <h3 className="text-[22px] md:text-[24px] font-bold text-neutral-slate dark:text-[#F8FAFC] border-b border-slate-50 dark:border-[#334155] pb-4 mb-4">Assessment Reminders</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  Send targeted reminders to students based on their assessment progress!
+                </p>
+                <div className="flex flex-col sm:flex-row gap-5">
+                  <button
+                    onClick={async () => {
+                      setNotificationError(null);
+                      setEmailLoading(true);
+                      try {
+                        const result = await sendJustLoggedInReminders();
+                        if (result?.sent === 0) {
+                          setNotificationError('No students found who just logged in without any assessments.');
+                          return;
+                        }
+                        setNotifSuccess(true);
+                        setTimeout(() => setNotifSuccess(false), 2500);
+                      } catch (err) {
+                        setNotificationError(err instanceof Error ? err.message : 'Failed to send reminders.');
+                      } finally {
+                        setEmailLoading(false);
+                      }
+                    }}
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
+                  >
+                    Remind Just Logged In 🚀
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      setNotificationError(null);
+                      setEmailLoading(true);
+                      try {
+                        const result = await sendOnlyInitialReminders();
+                        if (result?.sent === 0) {
+                          setNotificationError('No students found with exactly 1 assessment.');
+                          return;
+                        }
+                        setNotifSuccess(true);
+                        setTimeout(() => setNotifSuccess(false), 2500);
+                      } catch (err) {
+                        setNotificationError(err instanceof Error ? err.message : 'Failed to send reminders.');
+                      } finally {
+                        setEmailLoading(false);
+                      }
+                    }}
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-gradient-to-r from-amber-500 to-orange-600 text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
+                  >
+                    Remind 1 Assessment Users ✅
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      setNotificationError(null);
+                      setEmailLoading(true);
+                      try {
+                        const result = await sendStreakMaintainerReminders();
+                        if (result?.sent === 0) {
+                          setNotificationError('No students found with 2+ assessments who need a streak reminder.');
+                          return;
+                        }
+                        setNotifSuccess(true);
+                        setTimeout(() => setNotifSuccess(false), 2500);
+                      } catch (err) {
+                        setNotificationError(err instanceof Error ? err.message : 'Failed to send reminders.');
+                      } finally {
+                        setEmailLoading(false);
+                      }
+                    }}
+                    className="flex-1 min-h-[56px] rounded-[14px] bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-4 py-3 text-xs font-bold hover:opacity-95 transition flex items-center justify-center text-center"
+                  >
+                    Remind Streak Maintainers 🔥
+                  </button>
+                </div>
+
                 {emailLoading && (
                   <div className="text-xs text-slate-500 dark:text-slate-400 pt-2">Sending emails to the selected group. This may take a moment.</div>
                 )}
@@ -463,16 +609,42 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <div className="text-xs text-slate-400">Assessments</div>
-                  <ul className="list-disc pl-5 text-[13px]">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-xs text-slate-400">Assessment History</div>
+                    <span className="text-[10px] font-bold text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">{adminStudentDetail.totalAssessments ?? 0} total</span>
+                  </div>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
                     {adminStudentDetail.assessments && adminStudentDetail.assessments.length > 0 ? (
-                      adminStudentDetail.assessments.map((a: any, idx: number) => (
-                        <li key={idx}>{a.type ?? 'Assessment'} — {a.score ?? a.predictedScore ?? 'N/A'} ({new Date(a.date || a.createdAt).toLocaleDateString()})</li>
+                      [...adminStudentDetail.assessments].reverse().map((a: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-1.5 rounded-lg ${
+                              a.type === 'initial' ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400' :
+                              a.type === 'daily' ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400' :
+                              'bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400'
+                            }`}>
+                              {a.type === 'initial' ? <FileText className="h-3.5 w-3.5" /> :
+                               a.type === 'daily' ? <ClipboardList className="h-3.5 w-3.5" /> :
+                               <Calendar className="h-3.5 w-3.5" />}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC] capitalize">{a.type ?? 'Assessment'}</p>
+                              <p className="text-[10px] text-slate-500">{new Date(a.date || a.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                            </div>
+                          </div>
+                          <div className={`text-xs font-extrabold px-2.5 py-1 rounded-full ${
+                            (a.score ?? a.predictedScore ?? 0) >= 70 ? 'bg-error/10 text-error' :
+                            (a.score ?? a.predictedScore ?? 0) >= 40 ? 'bg-amber-500/10 text-amber-600' :
+                            'bg-success/10 text-success'
+                          }`}>
+                            {(a.score ?? a.predictedScore ?? 'N/A')}
+                          </div>
+                        </div>
                       ))
                     ) : (
-                      <li className="text-slate-500">No assessments found</li>
+                      <div className="text-center py-6 text-xs text-slate-500">No assessments found</div>
                     )}
-                  </ul>
+                  </div>
                 </div>
               </div>
             ) : (

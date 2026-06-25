@@ -8,6 +8,9 @@ import {
   sendWellnessEmail,
   sendBulkWellnessEmail,
   triggerWeeklyReminderJob,
+  sendJustLoggedInReminders,
+  sendOnlyInitialReminders,
+  sendStreakMaintainerReminders,
 } from "../controllers/admin.controller.js";
 import { authenticateAdmin } from "../middlewares/admin.middleware.js";
 import { validateAdminLogin } from "../validators/admin.validation.js";
@@ -24,5 +27,10 @@ router.get("/student/:studentId", authenticateAdmin, getStudentDetail);
 router.post("/send-email", authenticateAdmin, sendWellnessEmail);
 router.post("/send-bulk-email", authenticateAdmin, sendBulkWellnessEmail);
 router.post("/trigger-reminder-job", authenticateAdmin, triggerWeeklyReminderJob);
+
+// Assessment reminder endpoints
+router.post("/send-reminders/just-logged-in", authenticateAdmin, sendJustLoggedInReminders);
+router.post("/send-reminders/only-initial", authenticateAdmin, sendOnlyInitialReminders);
+router.post("/send-reminders/active-streak", authenticateAdmin, sendStreakMaintainerReminders);
 
 export default router;

@@ -177,39 +177,6 @@ export const Profile: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Preferences Segment */}
-                <div className="pt-4 border-t border-slate-100 dark:border-[#334155] space-y-3">
-                  <h4 className="text-xs font-bold text-neutral-slate dark:text-[#F8FAFC]">Communication Preferences</h4>
-                  
-                  <div className="space-y-2">
-                    <label className="flex items-center space-x-3 text-xs cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={emailNotif}
-                        onChange={(e) => setEmailNotif(e.target.checked)}
-                        className="rounded border-slate-300 dark:border-[#334155] text-primary dark:text-[#4F46E5] focus:ring-primary dark:focus:ring-[#4F46E5] h-4 w-4 bg-white dark:bg-[#111827]"
-                      />
-                      <div>
-                        <span className="font-semibold block text-neutral-slate dark:text-[#E2E8F0]">Email Wellness Reports</span>
-                        <span className="text-[10px] text-neutral-outline dark:text-[#CBD5E1]">Receive weekly stress alerts and analysis reports</span>
-                      </div>
-                    </label>
-
-                    <label className="flex items-center space-x-3 text-xs cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={inAppNotif}
-                        onChange={(e) => setInAppNotif(e.target.checked)}
-                        className="rounded border-slate-300 dark:border-[#334155] text-primary dark:text-[#4F46E5] focus:ring-primary dark:focus:ring-[#4F46E5] h-4 w-4 bg-white dark:bg-[#111827]"
-                      />
-                      <div>
-                        <span className="font-semibold block text-neutral-slate dark:text-[#E2E8F0]">In-App Recommendation Alerts</span>
-                        <span className="text-[10px] text-neutral-outline dark:text-[#CBD5E1]">Get immediately alerted when new self-care triggers are active</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-[#334155]">
                   {saveSuccess && (
                     <span className="text-xs text-success font-semibold flex items-center">

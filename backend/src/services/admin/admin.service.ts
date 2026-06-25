@@ -5,11 +5,15 @@ import { Student } from "../../models/Student.js";
 import { Assessment } from "../../models/Assessment.js";
 import { WeeklyAssessment } from "../../models/WeeklyAssessment.js";
 import { InitialAssessment } from "../../models/InitialAssessment.js";
+import { DailyAssessment } from "../../models/DailyAssessment.js";
 import { Journal } from "../../models/Journal.js";
 import { config } from "../../config/env.js";
 import {
   getWellnessEmailTemplate,
   sendWellnessTemplateEmail,
+  sendJustLoggedInReminder,
+  sendOnlyInitialReminder,
+  sendStreakMaintainerReminder,
   type WellnessRiskTier,
 } from "../../utils/email.js";
 import { Types } from "mongoose";
@@ -121,9 +125,8 @@ export const loginAdmin = async (credentials: AdminLoginRequest): Promise<AdminL
 };
 
 export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
-  const [totalStudents, totalAssessments, riskCountsResult, avgScoreResult] = await Promise.all([
+  const [totalStudents, riskCountsResult, avgScoreResult, assessmentCount, dailyCount, weeklyCount, initialCount] = await Promise.all([
     Student.countDocuments({}),
-    Assessment.countDocuments({}),
     Student.aggregate([
       {
         $group: {
@@ -145,7 +148,12 @@ export const getDashboardMetrics = async (): Promise<DashboardMetrics> => {
         },
       },
     ]),
+    Assessment.countDocuments({}),
+    DailyAssessment.countDocuments({}),
+    WeeklyAssessment.countDocuments({}),
+    InitialAssessment.countDocuments({}),
   ]);
+  const totalAssessments = assessmentCount + dailyCount + weeklyCount + initialCount;
 
   const riskCounts = {
     LOW: 0,
@@ -321,10 +329,11 @@ export const getStudentDetail = async (studentId: string) => {
     throw new AppError("Student not found", 404);
   }
 
-  const [assessments, weeklyAssessments, initialAssessments] = await Promise.all([
+  const [assessments, weeklyAssessments, initialAssessments, dailyAssessments] = await Promise.all([
     Assessment.find({ student: studentId }).sort({ createdAt: -1 }).lean(),
     WeeklyAssessment.find({ student: studentId }).sort({ createdAt: -1 }).lean(),
     InitialAssessment.find({ student: studentId }).sort({ createdAt: -1 }).lean(),
+    DailyAssessment.find({ student: studentId }).sort({ createdAt: -1 }).lean(),
   ]);
 
   const score = Math.round(student.currentBurnoutScore ?? 0);
@@ -345,6 +354,11 @@ export const getStudentDetail = async (studentId: string) => {
       date: i.createdAt,
       type: "initial",
       score: i.baselineBurnoutScore,
+    })),
+    ...dailyAssessments.map((d) => ({
+      date: d.createdAt,
+      type: "daily",
+      score: d.burnoutScore,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -421,4 +435,78 @@ export const seedDefaultAdmin = async (): Promise<void> => {
   });
 
   console.log("[Admin Seed] Default admin account created successfully");
+};
+
+// --- Assessment Reminder Functions ---
+
+export const sendBulkJustLoggedInReminders = async (): Promise<{ sent: number; recipients: string[] }> => {
+  const students = await Student.find({}).lean();
+  const recipients: string[] = [];
+
+  for (const student of students) {
+    const initialCount = await InitialAssessment.countDocuments({ student: student._id });
+    const dailyCount = await DailyAssessment.countDocuments({ student: student._id });
+    const weeklyCount = await WeeklyAssessment.countDocuments({ student: student._id });
+    const standardCount = await Assessment.countDocuments({ student: student._id });
+    const totalAssessments = initialCount + dailyCount + weeklyCount + standardCount;
+
+    if (totalAssessments === 0) {
+      try {
+        await sendJustLoggedInReminder(student.email, student.fullName || "Student");
+        recipients.push(student.email);
+      } catch (err) {
+        console.error(`[Admin] Failed to send just logged in reminder to ${student.email}:`, err);
+      }
+    }
+  }
+
+  return { sent: recipients.length, recipients };
+};
+
+export const sendBulkOnlyInitialReminders = async (): Promise<{ sent: number; recipients: string[] }> => {
+    const students = await Student.find({}).lean();
+    const recipients: string[] = [];
+
+    for (const student of students) {
+      const initialCount = await InitialAssessment.countDocuments({ student: student._id });
+      const dailyCount = await DailyAssessment.countDocuments({ student: student._id });
+      const weeklyCount = await WeeklyAssessment.countDocuments({ student: student._id });
+      const standardCount = await Assessment.countDocuments({ student: student._id });
+      const totalAssessments = initialCount + dailyCount + weeklyCount + standardCount;
+
+      if (totalAssessments === 1) { // Any type, as long as exactly 1 total
+        try {
+          await sendOnlyInitialReminder(student.email, student.fullName || "Student");
+          recipients.push(student.email);
+        } catch (err) {
+          console.error(`[Admin] Failed to send only initial reminder to ${student.email}:`, err);
+        }
+      }
+    }
+
+    return { sent: recipients.length, recipients };
+  };
+
+export const sendBulkStreakMaintainerReminders = async (): Promise<{ sent: number; recipients: string[] }> => {
+  const students = await Student.find({}).lean();
+  const recipients: string[] = [];
+
+  for (const student of students) {
+    const initialCount = await InitialAssessment.countDocuments({ student: student._id });
+    const dailyCount = await DailyAssessment.countDocuments({ student: student._id });
+    const weeklyCount = await WeeklyAssessment.countDocuments({ student: student._id });
+    const standardCount = await Assessment.countDocuments({ student: student._id });
+    const totalAssessments = initialCount + dailyCount + weeklyCount + standardCount;
+
+    if (totalAssessments >= 2) {
+      try {
+        await sendStreakMaintainerReminder(student.email, student.fullName || "Student");
+        recipients.push(student.email);
+      } catch (err) {
+        console.error(`[Admin] Failed to send streak maintainer reminder to ${student.email}:`, err);
+      }
+    }
+  }
+
+  return { sent: recipients.length, recipients };
 };

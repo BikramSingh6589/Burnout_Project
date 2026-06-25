@@ -16,6 +16,7 @@ import type {
 import { clearOTP, generateOTP, saveOTP, sendOTPEmail, verifyOTP } from "./otp.service.js";
 import { generateRefreshToken, generateToken, verifyRefreshToken } from "./token.service.js";
 import { verifyGoogleIdToken } from "../../utils/googleAuth.js";
+import { recalculateAndUpdateStreak } from "../streak/streak.service.js";
 
 const PASSWORD_SALT_ROUNDS = 10;
 const PASSWORD_SELECT_FIELDS = "+password +otpHash +otpExpiresAt +otpAttempts +otpPurpose";
@@ -222,7 +223,16 @@ export const getProfile = async (userId: string): Promise<PublicUserProfile> => 
     throw new AuthError("User not found", 404);
   }
 
-  return toPublicUserProfile(student);
+  // Recalculate and update streak every time profile is fetched
+  await recalculateAndUpdateStreak(userId);
+
+  // Fetch updated student after streak calculation
+  const updatedStudent = await Student.findById(userId);
+  if (!updatedStudent) {
+    throw new AuthError("User not found", 404);
+  }
+
+  return toPublicUserProfile(updatedStudent);
 };
 
 export const updateProfile = async (userId: string, payload: UpdateProfileRequestBody): Promise<PublicUserProfile> => {

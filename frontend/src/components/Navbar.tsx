@@ -12,7 +12,8 @@ export const Navbar: React.FC = () => {
     logout, 
     markNotificationRead, 
     deleteAllNotifications,
-    weeklyAssessmentHistory
+    weeklyAssessmentHistory,
+    fetchMe 
   } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -24,6 +25,13 @@ export const Navbar: React.FC = () => {
   const notifRef = useRef<HTMLDivElement | null>(null);
   const profileRef = useRef<HTMLDivElement | null>(null);
   const streakRef = useRef<HTMLDivElement | null>(null);
+
+  // Recalculate streak when opening streak popup
+  React.useEffect(() => {
+    if (streakPopupOpen && isAuthenticated) {
+      fetchMe();
+    }
+  }, [streakPopupOpen, isAuthenticated, fetchMe]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -68,7 +76,7 @@ export const Navbar: React.FC = () => {
       navigate('/assessment?from=dashboard');
       return;
     }
-    navigate('/dashboard');
+    navigate('/assessment/daily');
   };
 
   const handleLogout = () => {

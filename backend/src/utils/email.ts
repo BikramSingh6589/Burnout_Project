@@ -561,3 +561,183 @@ export const sendContactFormEmail = async (payload: ContactFormPayload): Promise
     throw error;
   }
 };
+
+// --- Assessment Reminder Emails ---
+
+const getAppUrl = (): string => {
+  return process.env.FRONTEND_URL || process.env.APP_URL || 'http://localhost:5173';
+};
+
+export const sendJustLoggedInReminder = async (to: string, name: string): Promise<void> => {
+  logger.info('[Email] sendJustLoggedInReminder called for:', to);
+  try {
+    const appUrl = getAppUrl();
+    const subject = 'Welcome! Start Your Wellness Journey 🚀';
+    const text = `Hi ${name},\n\nWelcome to Burnout Wellness! We noticed you haven't taken your first assessment yet. It only takes a few minutes and will help us personalize your wellness recommendations.\n\nTake your initial assessment now: ${appUrl}\n\nBest regards,\nBurnout Wellness Team`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>${subject}</title>
+        </head>
+        <body style="margin:0;padding:0;background:#EFF6FF;font-family:Arial,Helvetica,sans-serif;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#EFF6FF;padding:32px 16px;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #BFDBFE;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(59,130,246,0.12);">
+                  <tr>
+                    <td style="background:linear-gradient(135deg,#4F46E5 0%,#7C3AED 100%);padding:32px 28px;text-align:center;">
+                      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#C7D2FE;">Student Wellness Platform</p>
+                      <h1 style="margin:12px 0 0;font-size:28px;line-height:1.3;color:#ffffff;font-weight:700;">Welcome, ${name}! 🚀</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:36px 28px;color:#0f172a;font-size:16px;line-height:1.7;">
+                      <p style="margin:0 0 20px;color:#374151;">We noticed you haven't taken your first assessment yet! It only takes a few minutes and will help us personalize your wellness recommendations.</p>
+                      <p style="margin:0 0 28px;color:#374151;">Taking the initial assessment is the first step in understanding and managing your academic burnout levels effectively!</p>
+                      <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
+                        <tr>
+                          <td align="center" style="border-radius:12px;background:linear-gradient(135deg,#4F46E5 0%,#7C3AED 100%);">
+                            <a href="${appUrl}" style="display:inline-block;padding:16px 40px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;">
+                              Start Your First Assessment
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="margin-top:32px;padding-top:24px;border-top:1px solid #E5E7EB;text-align:center;">
+                        <p style="margin:0;color:#9CA3AF;font-size:13px;">Burnout Wellness Team</p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+    await sendEmailViaBrevo(to, subject, text, html);
+    logger.info('[Email] sendJustLoggedInReminder completed!');
+  } catch (error) {
+    logger.error('[Email] sendJustLoggedInReminder failed:', error);
+    throw error;
+  }
+};
+
+export const sendOnlyInitialReminder = async (to: string, name: string): Promise<void> => {
+  logger.info('[Email] sendOnlyInitialReminder called for:', to);
+  try {
+    const appUrl = getAppUrl();
+    const subject = 'Time for Your Daily Wellness Check-in ✅';
+    const text = `Hi ${name},\n\nGreat job on completing your initial assessment! Now it's time to start checking in daily to track your progress. Daily assessments help you stay on top of your wellness journey.\n\nTake today's assessment now: ${appUrl}\n\nBest regards,\nBurnout Wellness Team`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>${subject}</title>
+        </head>
+        <body style="margin:0;padding:0;background:#FFFBEB;font-family:Arial,Helvetica,sans-serif;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#FFFBEB;padding:32px 16px;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #FDE68A;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(245,158,11,0.12);">
+                  <tr>
+                    <td style="background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);padding:32px 28px;text-align:center;">
+                      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#FEF3C7;">Student Wellness Platform</p>
+                      <h1 style="margin:12px 0 0;font-size:28px;line-height:1.3;color:#ffffff;font-weight:700;">Great Start, ${name}! ✅</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:36px 28px;color:#0f172a;font-size:16px;line-height:1.7;">
+                      <p style="margin:0 0 20px;color:#374151;">Awesome job on completing your initial assessment! Now it's time to start your daily check-ins!</p>
+                      <p style="margin:0 0 28px;color:#374151;">Daily assessments help you keep track of your progress and build a streak of consistent wellness habits!</p>
+                      <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
+                        <tr>
+                          <td align="center" style="border-radius:12px;background:linear-gradient(135deg,#F59E0B 0%,#D97706 100%);">
+                            <a href="${appUrl}" style="display:inline-block;padding:16px 40px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;">
+                              Take Today's Assessment
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="margin-top:32px;padding-top:24px;border-top:1px solid #E5E7EB;text-align:center;">
+                        <p style="margin:0;color:#9CA3AF;font-size:13px;">Burnout Wellness Team</p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+    await sendEmailViaBrevo(to, subject, text, html);
+    logger.info('[Email] sendOnlyInitialReminder completed!');
+  } catch (error) {
+    logger.error('[Email] sendOnlyInitialReminder failed:', error);
+    throw error;
+  }
+};
+
+export const sendStreakMaintainerReminder = async (to: string, name: string): Promise<void> => {
+  logger.info('[Email] sendStreakMaintainerReminder called for:', to);
+  try {
+    const appUrl = getAppUrl();
+    const subject = 'Don\'t Break Your Streak! 🔥';
+    const text = `Hi ${name},\n\nYou're doing amazing! We noticed you've built up a streak. Keep it going and don't let it break! A daily check-in only takes a few minutes and keeps you on top of your wellness game.\n\nCheck your dashboard and take today's assessment: ${appUrl}\n\nBest regards,\nBurnout Wellness Team`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>${subject}</title>
+        </head>
+        <body style="margin:0;padding:0;background:#ECFDF5;font-family:Arial,Helvetica,sans-serif;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ECFDF5;padding:32px 16px;">
+            <tr>
+              <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:620px;background:#ffffff;border:1px solid #A7F3D0;border-radius:20px;overflow:hidden;box-shadow:0 8px 24px rgba(16,185,129,0.12);">
+                  <tr>
+                    <td style="background:linear-gradient(135deg,#10B981 0%,#059669 100%);padding:32px 28px;text-align:center;">
+                      <p style="margin:0;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#A7F3D0;">Student Wellness Platform</p>
+                      <h1 style="margin:12px 0 0;font-size:28px;line-height:1.3;color:#ffffff;font-weight:700;">Don't Break That Streak, ${name}! 🔥</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding:36px 28px;color:#0f172a;font-size:16px;line-height:1.7;">
+                      <p style="margin:0 0 20px;color:#374151;">You're doing amazing! We noticed you've been building a streak of consistent check-ins — keep it going!</p>
+                      <p style="margin:0 0 28px;color:#374151;">A daily check-in only takes a few minutes and keeps you on top of your wellness journey!</p>
+                      <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 auto;">
+                        <tr>
+                          <td align="center" style="border-radius:12px;background:linear-gradient(135deg,#10B981 0%,#059669 100%);">
+                            <a href="${appUrl}" style="display:inline-block;padding:16px 40px;font-size:16px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;">
+                              Check Your Dashboard
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      <div style="margin-top:32px;padding-top:24px;border-top:1px solid #E5E7EB;text-align:center;">
+                        <p style="margin:0;color:#9CA3AF;font-size:13px;">Burnout Wellness Team</p>
+                      </div>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+      </html>
+    `;
+    await sendEmailViaBrevo(to, subject, text, html);
+    logger.info('[Email] sendStreakMaintainerReminder completed!');
+  } catch (error) {
+    logger.error('[Email] sendStreakMaintainerReminder failed:', error);
+    throw error;
+  }
+};

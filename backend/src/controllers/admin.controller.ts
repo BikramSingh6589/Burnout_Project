@@ -167,3 +167,54 @@ export const triggerWeeklyReminderJob = async (
     next(error);
   }
 };
+
+export const sendJustLoggedInReminders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await adminService.sendBulkJustLoggedInReminders();
+    res.status(200).json({
+      success: true,
+      message: `Sent ${result.sent} reminder(s) to students who haven't taken any assessments`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendOnlyInitialReminders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await adminService.sendBulkOnlyInitialReminders();
+    res.status(200).json({
+      success: true,
+      message: `Sent ${result.sent} reminder(s) to students who only took initial assessment`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const sendStreakMaintainerReminders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const result = await adminService.sendBulkStreakMaintainerReminders();
+    res.status(200).json({
+      success: true,
+      message: `Sent ${result.sent} reminder(s) to students with 2+ assessments`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

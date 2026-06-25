@@ -174,6 +174,9 @@ export interface AdminDashboardMetrics {
   mediumRiskStudents: number;
   highRiskStudents: number;
   averageBurnoutScore: number;
+  weeklyActiveStudents?: number;
+  dailyAssessmentCount?: number;
+  weeklyAssessmentCount?: number;
 }
 
 interface AppState {
@@ -242,6 +245,9 @@ interface AppState {
   fetchAdminStudentDetail: (studentId: string) => Promise<void>;
   sendWellnessEmail: (studentId: string) => Promise<void>;
   sendBulkWellnessEmail: (riskGroup: 'high' | 'moderate' | 'low') => Promise<{ sent: number }>;
+  sendJustLoggedInReminders: () => Promise<{ sent: number }>;
+  sendOnlyInitialReminders: () => Promise<{ sent: number }>;
+  sendStreakMaintainerReminders: () => Promise<{ sent: number }>;
 
   // Actions
   login: (email: string, password: string, forceRole?: 'student' | 'admin') => Promise<boolean>;
@@ -840,6 +846,57 @@ export const useStore = create<AppState>((set, get) => ({
           method: 'POST',
           token,
           body: JSON.stringify({ riskGroup }),
+        }
+      );
+      return { sent: response.data?.sent ?? 0 };
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  sendJustLoggedInReminders: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return { sent: 0 };
+    try {
+      const response = await apiRequest<{ success: boolean; data: { sent: number } }>(
+        '/admin/send-reminders/just-logged-in',
+        {
+          method: 'POST',
+          token,
+        }
+      );
+      return { sent: response.data?.sent ?? 0 };
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  sendOnlyInitialReminders: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return { sent: 0 };
+    try {
+      const response = await apiRequest<{ success: boolean; data: { sent: number } }>(
+        '/admin/send-reminders/only-initial',
+        {
+          method: 'POST',
+          token,
+        }
+      );
+      return { sent: response.data?.sent ?? 0 };
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  sendStreakMaintainerReminders: async () => {
+    const token = get().authToken ?? getStoredAuthToken();
+    if (!token) return { sent: 0 };
+    try {
+      const response = await apiRequest<{ success: boolean; data: { sent: number } }>(
+        '/admin/send-reminders/active-streak',
+        {
+          method: 'POST',
+          token,
         }
       );
       return { sent: response.data?.sent ?? 0 };

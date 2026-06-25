@@ -1,6 +1,8 @@
 import { Types } from "mongoose";
 import { DailyAssessment } from "../../models/DailyAssessment.js";
 import { Assessment } from "../../models/Assessment.js";
+import { WeeklyAssessment } from "../../models/WeeklyAssessment.js";
+import { InitialAssessment } from "../../models/InitialAssessment.js";
 import { Student } from "../../models/Student.js";
 import { AppError } from "../../middlewares/error.middleware.js";
 import { calculateBurnoutScore } from "../burnout/burnout-score.service.js";
@@ -14,12 +16,8 @@ import type { IDailyAssessment } from "../../models/DailyAssessment.js";
 /**
  * Calculate current and longest streaks from all assessment dates
  */
-const calculateStreaks = (assessmentDates: Date[], today: Date) => {
-  if (assessmentDates.length === 0) {
-    return { currentStreak: 0, longestStreak: 0 };
-  }
-
-  // Convert all dates to YYYY-MM-DD strings and sort them
+const calculateStreaks = (assessmentDates: Date[], today: Date, isAddingToday: boolean = false) => {
+  // Convert all dates to YYYY-MM-DD strings, remove duplicates, and sort in descending order (newest first)
   const dateStrings = assessmentDates
     .map(date => {
       const d = new Date(date);
@@ -27,37 +25,56 @@ const calculateStreaks = (assessmentDates: Date[], today: Date) => {
       return d.toISOString().split('T')[0];
     })
     .filter((value, index, array) => array.indexOf(value) === index) // Remove duplicates
-    .sort();
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime()); // Sort newest first
 
-  // Add today to the list since we're submitting a new assessment
+  // Add today to the list ONLY if we are adding a new assessment today
   const todayStr = today.toISOString().split('T')[0];
-  dateStrings.push(todayStr);
-  dateStrings.sort();
+  if (isAddingToday && !dateStrings.includes(todayStr)) {
+    dateStrings.unshift(todayStr); // Add to beginning (newest)
+  }
 
-  let currentStreak = 1;
-  let longestStreak = 1;
-  let tempStreak = 1;
+  if (dateStrings.length === 0) {
+    return { currentStreak: 0, longestStreak: 0 };
+  }
 
-  // Iterate from the end to calculate current streak first
-  for (let i = dateStrings.length - 2; i >= 0; i--) {
-    const current = new Date(dateStrings[i + 1]);
-    const prev = new Date(dateStrings[i]);
-    const diffDays = (current.getTime() - prev.getTime()) / (1000 * 3600 * 24);
-
-    if (diffDays === 1) {
-      currentStreak++;
-    } else {
-      break;
+  // Calculate current streak
+  let currentStreak = 0;
+  let prevDate = new Date(dateStrings[0]);
+  prevDate.setHours(0, 0, 0, 0);
+  
+  // Check if the first date is either today or yesterday
+  const todayDate = new Date(today);
+  todayDate.setHours(0, 0, 0, 0);
+  
+  const diffDays = (todayDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24);
+  
+  if (diffDays <= 1 && diffDays >= 0) {
+    currentStreak = 1;
+    for (let i = 1; i < dateStrings.length; i++) {
+      const current = new Date(dateStrings[i]);
+      current.setHours(0, 0, 0, 0);
+      const dayDiff = (prevDate.getTime() - current.getTime()) / (1000 * 60 * 60 * 24);
+      if (dayDiff === 1) {
+        currentStreak++;
+        prevDate = current;
+      } else {
+        break;
+      }
     }
   }
 
   // Calculate longest streak
+  let longestStreak = 0;
+  let tempStreak = 1;
+  let tempPrevDate = new Date(dateStrings[0]);
+  tempPrevDate.setHours(0, 0, 0, 0);
+  
   for (let i = 1; i < dateStrings.length; i++) {
     const current = new Date(dateStrings[i]);
-    const prev = new Date(dateStrings[i - 1]);
-    const diffDays = (current.getTime() - prev.getTime()) / (1000 * 3600 * 24);
-
-    if (diffDays === 1) {
+    current.setHours(0, 0, 0, 0);
+    const dayDiff = (tempPrevDate.getTime() - current.getTime()) / (1000 * 60 * 60 * 24);
+    
+    if (dayDiff === 1) {
       tempStreak++;
       if (tempStreak > longestStreak) {
         longestStreak = tempStreak;
@@ -65,6 +82,12 @@ const calculateStreaks = (assessmentDates: Date[], today: Date) => {
     } else {
       tempStreak = 1;
     }
+    tempPrevDate = current;
+  }
+
+  // If there's only one date, longest streak is 1
+  if (longestStreak === 0 && dateStrings.length > 0) {
+    longestStreak = 1;
   }
 
   return { currentStreak, longestStreak };
@@ -99,18 +122,22 @@ export const submitDailyAssessment = async (
   const { burnoutScore, burnoutScoreBreakdown } = calculateBurnoutScore(assessment);
   const classification = classifyBurnoutRisk(burnoutScore);
 
-  // Get all assessment dates from both DailyAssessment and Assessment
-  const [dailyAssessments, initialAssessments] = await Promise.all([
+  // Get all assessment dates from ALL assessment types
+  const [dailyAssessments, initialAssessments, weeklyAssessments, assessments] = await Promise.all([
     DailyAssessment.find({ student: new Types.ObjectId(userId) }).select('date'),
+    InitialAssessment.find({ student: new Types.ObjectId(userId) }).select('completedAt'),
+    WeeklyAssessment.find({ student: new Types.ObjectId(userId) }).select('completedAt'),
     Assessment.find({ student: new Types.ObjectId(userId) }).select('completedAt')
   ]);
 
   const allDates: Date[] = [
     ...dailyAssessments.map(a => a.date),
-    ...initialAssessments.map(a => a.completedAt)
+    ...initialAssessments.map(a => a.completedAt),
+    ...weeklyAssessments.map(a => a.completedAt),
+    ...assessments.map(a => a.completedAt)
   ].filter(Boolean) as Date[];
 
-  const { currentStreak: newStreak, longestStreak: newLongestStreak } = calculateStreaks(allDates, today);
+  const { currentStreak: newStreak, longestStreak: newLongestStreak } = calculateStreaks(allDates, today, true);
 
   const assessmentRecord = new DailyAssessment({
     student: new Types.ObjectId(userId),

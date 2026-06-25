@@ -113,7 +113,7 @@ export const Assessment: React.FC = () => {
       return;
     }
 
-    setStep(3);
+    navigate('/dashboard');
   };
 
   const handleViewDashboard = () => {
