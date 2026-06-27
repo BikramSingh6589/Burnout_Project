@@ -1,7 +1,9 @@
-import React, { lazy } from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
-import { AIWidget } from './components/AIWidget';
+const AIWidget = lazy(() =>
+  import('./components/AIWidget').then((m) => ({ default: m.AIWidget }))
+);
 import { Home } from './pages/Home';
 import { Register } from './pages/auth/Register';
 import { Login } from './pages/auth/Login';
@@ -472,7 +474,11 @@ const LayoutWrapper: React.FC = () => {
           </Routes>
         </PageTransition>
       </main>
-      {!isAdminRoute && !isAuthRoute && <AIWidget />}
+      {!isAdminRoute && !isAuthRoute && (
+        <Suspense fallback={null}>
+          <AIWidget />
+        </Suspense>
+      )}
     </div>
   );
 };

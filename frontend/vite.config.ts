@@ -13,6 +13,7 @@ export default defineConfig({
   build: {
     cssCodeSplit: true,
     sourcemap: true,
+    target: 'es2020',
     rollupOptions: {
       output: {
         manualChunks: (id: string) => {
@@ -24,6 +25,9 @@ export default defineConfig({
           }
           if (id.includes('node_modules/recharts')) {
             return 'chart-vendor';
+          }
+          if (id.includes('node_modules/')) {
+            return 'vendor';
           }
         }
       }

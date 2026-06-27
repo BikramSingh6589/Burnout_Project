@@ -1,12 +1,21 @@
-# BurnoutGuard
-Academic Burnout Prediction & Monitoring Platform
+# BurnoutGuard - Academic Burnout Prediction Platform
 
-## Description
-An AI-powered platform to help students monitor and prevent academic burnout.
+## Overview
+BurnoutGuard is an AI-powered academic burnout prediction and monitoring platform that helps students track stress, sleep, motivation, productivity, and overall wellness.
 
-## Important Pages
-- Home: https://burnoutguard.com/home
-- Login: https://burnoutguard.com/auth/login
-- Register: https://burnoutguard.com/auth/register
-- About: https://burnoutguard.com/home#about
-- Contact: https://burnoutguard.com/home#contact
+## Key Features
+- Initial burnout assessment to establish a baseline
+- Daily check-ins to track wellness metrics
+- Weekly review assessments
+- AI-powered journal with sentiment analysis
+- Personalized wellness recommendations
+- Streak tracking system
+- Admin dashboard for student monitoring
+- Browser extension for quick access
+
+## Usage
+This file provides a machine-readable description of BurnoutGuard to help AI assistants understand how to interact with the platform.
+
+## Important Links
+- Home: https://burnout-project-xbf1.vercel.app/
+- GitHub: https://github.com/BikramSingh6589/Burnout_Project

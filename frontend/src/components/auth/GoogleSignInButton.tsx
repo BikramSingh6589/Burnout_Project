@@ -115,7 +115,10 @@ export const GoogleSignInButton = ({
         className={`absolute inset-0 z-10 overflow-hidden opacity-[0.01] ${
           disabled || loading ? 'pointer-events-none' : 'cursor-pointer'
         }`}
+        role="button"
         aria-label={label}
+        aria-disabled={disabled || loading}
+        tabIndex={0}
       />
     </div>
   );
