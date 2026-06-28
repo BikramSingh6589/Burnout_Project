@@ -198,6 +198,7 @@ export const Navbar: React.FC = () => {
                     setProfileDropdownOpen(false);
                   }}
                   className="relative w-10 h-10 rounded-full transition-all duration-500 flex items-center justify-center hover:scale-105 active:scale-95"
+                  aria-label="View streak progress"
                   style={{
                     background: isDailyLimitReached
                       ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
@@ -543,6 +544,7 @@ export const Navbar: React.FC = () => {
                     setProfileDropdownOpen(false);
                   }}
                   className="relative w-8 h-8 rounded-full transition-all duration-500 flex items-center justify-center hover:scale-105 active:scale-95"
+                  aria-label="View streak progress"
                   style={{
                     background: isDailyLimitReached
                       ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
@@ -685,6 +687,8 @@ export const Navbar: React.FC = () => {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-text-primary hover:bg-surface-low focus:outline-none"
+              aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+              aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>

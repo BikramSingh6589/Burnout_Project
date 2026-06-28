@@ -44,7 +44,7 @@ export const AIWidget: React.FC = () => {
   
   const getRiskBadgeColor = (score: number) => {
     if (score >= 70) return 'bg-error/10 text-error border-error/20';
-    if (score >= 40) return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+    if (score >= 40) return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
     return 'bg-success/10 text-success border-success/20';
   };
 
@@ -236,6 +236,7 @@ export const AIWidget: React.FC = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className={`bg-primary text-white p-4 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_30px_rgb(79,70,229,0.3)] hover:scale-105 active:scale-95 transition-all duration-300 relative flex items-center justify-center`}
+          aria-label="Open AI wellness chat"
         >
           <MessageSquare className="h-6 w-6 animate-in zoom-in duration-200" />
           {trackerHistory.length > 0 && currentScore >= 70 && (

@@ -17,14 +17,23 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id: string) => {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router/') || id.includes('node_modules/react-router-dom/')) {
             return 'react-vendor';
           }
-          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/framer-motion')) {
+          if (id.includes('node_modules/lucide-react/') || id.includes('node_modules/framer-motion/')) {
             return 'ui-vendor';
           }
-          if (id.includes('node_modules/recharts')) {
+          if (id.includes('node_modules/recharts/')) {
             return 'chart-vendor';
+          }
+          if (id.includes('node_modules/react-markdown/') || id.includes('node_modules/remark-gfm/') || id.includes('node_modules/rehype-sanitize/') || id.includes('node_modules/micromark') || id.includes('node_modules/mdast') || id.includes('node_modules/unist')) {
+            return 'markdown-vendor';
+          }
+          if (id.includes('node_modules/react-hook-form/') || id.includes('node_modules/@hookform/resolvers/') || id.includes('node_modules/zod/')) {
+            return 'form-vendor';
+          }
+          if (id.includes('node_modules/zustand/')) {
+            return 'state-vendor';
           }
           if (id.includes('node_modules/')) {
             return 'vendor';

@@ -4,13 +4,6 @@ import { Navbar } from './components/Navbar';
 const AIWidget = lazy(() =>
   import('./components/AIWidget').then((m) => ({ default: m.AIWidget }))
 );
-import { Home } from './pages/Home';
-import { Register } from './pages/auth/Register';
-import { Login } from './pages/auth/Login';
-import { VerifyOtp } from './pages/auth/VerifyOtp';
-import { ForgotPassword } from './pages/auth/ForgotPassword';
-import { ResetPassword } from './pages/auth/ResetPassword';
-import { AdminLogin } from './pages/admin/AdminLogin';
 import { useStore } from './store/useStore';
 import { LazyRoute } from './components/skeletons/LazyRoute';
 import { PageTransition } from './components/PageTransition';
@@ -23,7 +16,30 @@ import {
   JournalSkeleton,
   NotificationSkeleton,
   AdminDashboardSkeleton,
+  PageSkeleton,
 } from './components/skeletons';
+
+const Home = lazy(() =>
+  import('./pages/Home').then((m) => ({ default: m.Home }))
+);
+const Register = lazy(() =>
+  import('./pages/auth/Register').then((m) => ({ default: m.Register }))
+);
+const Login = lazy(() =>
+  import('./pages/auth/Login').then((m) => ({ default: m.Login }))
+);
+const VerifyOtp = lazy(() =>
+  import('./pages/auth/VerifyOtp').then((m) => ({ default: m.VerifyOtp }))
+);
+const ForgotPassword = lazy(() =>
+  import('./pages/auth/ForgotPassword').then((m) => ({ default: m.ForgotPassword }))
+);
+const ResetPassword = lazy(() =>
+  import('./pages/auth/ResetPassword').then((m) => ({ default: m.ResetPassword }))
+);
+const AdminLogin = lazy(() =>
+  import('./pages/admin/AdminLogin').then((m) => ({ default: m.AdminLogin }))
+);
 
 const Assessment = lazy(() =>
   import('./pages/Assessment').then((m) => ({ default: m.Assessment }))
@@ -342,18 +358,20 @@ const LayoutWrapper: React.FC = () => {
             <Route path="/" element={<RootRedirect />} />
 
             {/* Public Routes */}
-            <Route path="/home" element={<Home />} />
-            <Route path="/auth/login" element={<Login />} />
-            <Route path="/auth/register" element={<Register />} />
-            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-            <Route path="/auth/reset-password" element={<ResetPassword />} />
+            <Route path="/home" element={<LazyRoute fallback={<PageSkeleton />}><Home /></LazyRoute>} />
+            <Route path="/auth/login" element={<LazyRoute fallback={<PageSkeleton />}><Login /></LazyRoute>} />
+            <Route path="/auth/register" element={<LazyRoute fallback={<PageSkeleton />}><Register /></LazyRoute>} />
+            <Route path="/auth/forgot-password" element={<LazyRoute fallback={<PageSkeleton />}><ForgotPassword /></LazyRoute>} />
+            <Route path="/auth/reset-password" element={<LazyRoute fallback={<PageSkeleton />}><ResetPassword /></LazyRoute>} />
 
             {/* Student Protected Routes */}
             <Route
               path="/auth/verify-otp"
               element={
                 <OtpRoute>
-                  <VerifyOtp />
+                  <LazyRoute fallback={<PageSkeleton />}>
+                    <VerifyOtp />
+                  </LazyRoute>
                 </OtpRoute>
               }
             />
@@ -459,7 +477,7 @@ const LayoutWrapper: React.FC = () => {
             />
 
             {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/login" element={<LazyRoute fallback={<PageSkeleton />}><AdminLogin /></LazyRoute>} />
             <Route
               path="/admin/dashboard"
               element={

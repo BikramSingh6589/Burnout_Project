@@ -252,10 +252,10 @@ export const Recommendations: React.FC = () => {
                     {/* Title and details */}
                     <div className="space-y-1">
                       <div className="flex items-center space-x-2.5">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
                           rec.priority === 'High' ? 'bg-error/10 text-error border-error/15 dark:border-error/20' :
-                          rec.priority === 'Medium' ? 'bg-amber-500/10 text-amber-600 border-amber-500/15 dark:border-amber-500/20' :
-                          'bg-slate-100 dark:bg-[#334155] text-slate-600 dark:text-[#CBD5E1] border-slate-200 dark:border-[#334155]'
+                          rec.priority === 'Medium' ? 'bg-amber-500/10 text-amber-700 border-amber-500/15 dark:border-amber-500/20' :
+                          'bg-slate-100 dark:bg-[#334155] text-slate-700 dark:text-[#CBD5E1] border-slate-200 dark:border-[#334155]'
                         }`}>
                           {rec.priority} Priority
                         </span>
